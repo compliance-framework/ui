@@ -12,9 +12,13 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import Textarea from '@/ds/components/Textarea/Textarea.vue';
 import TextInput from '@/ds/components/TextInput/TextInput.vue';
 
-/** New group: a name and description. Members and roles are added on the group's page. */
+/**
+ * A group's name and description: a new group, or `group` to edit. Members and roles are managed
+ * on the group's page.
+ */
+const props = defineProps<{ group?: CCFGroup }>();
 const open = defineModel<boolean>('open', { default: false });
-const emit = defineEmits<{ created: [group: CCFGroup] }>();
+const emit = defineEmits<{ saved: [group: CCFGroup] }>();
 
 const api = useAuthenticatedInstance();
 const draft = reactive({ name: '', description: '' });
@@ -24,7 +28,10 @@ const saveError = ref<string>();
 
 watch(open, (isOpen) => {
   if (!isOpen) return;
-  Object.assign(draft, { name: '', description: '' });
+  Object.assign(draft, {
+    name: props.group?.name ?? '',
+    description: props.group?.description ?? '',
+  });
   attempted.value = false;
   saveError.value = undefined;
 });
@@ -39,16 +46,24 @@ async function submit(): Promise<void> {
   saving.value = true;
   saveError.value = undefined;
   try {
-    const response = await api.post<DataResponse<CCFGroup>>(
-      '/api/admin/groups',
-      { name: draft.name.trim(), description: draft.description.trim() },
-    );
+    const body = {
+      name: draft.name.trim(),
+      description: draft.description.trim(),
+    };
+    const response = props.group
+      ? await api.put<DataResponse<CCFGroup>>(
+          `/api/admin/groups/${props.group.id}`,
+          body,
+        )
+      : await api.post<DataResponse<CCFGroup>>('/api/admin/groups', body);
     open.value = false;
-    emit('created', response.data.data);
+    emit('saved', response.data.data);
   } catch (error) {
     saveError.value = await getErrorDetail(
       error,
-      "The group couldn't be created. Try again.",
+      props.group
+        ? "The changes weren't saved. Try again."
+        : "The group couldn't be created. Try again.",
     );
   } finally {
     saving.value = false;
@@ -59,9 +74,14 @@ async function submit(): Promise<void> {
 <template>
   <Dialog
     v-model:open="open"
-    title="New group"
-    description="Add members and roles once it's created."
-    :dirty="Boolean(draft.name || draft.description)"
+    :title="group ? 'Edit group' : 'New group'"
+    :description="
+      group ? undefined : 'Add members and roles once it\'s created.'
+    "
+    :dirty="
+      draft.name !== (group?.name ?? '') ||
+      draft.description !== (group?.description ?? '')
+    "
   >
     <template #default="{ requestClose }">
       <form novalidate @submit.prevent="submit">
@@ -72,14 +92,18 @@ async function submit(): Promise<void> {
           <FormField label="Description">
             <Textarea v-model="draft.description" :rows="3" />
           </FormField>
-          <InlineMessage v-if="saveError" tone="error" title="Not created">
+          <InlineMessage
+            v-if="saveError"
+            tone="error"
+            :title="group ? 'Not saved' : 'Not created'"
+          >
             <p>{{ saveError }}</p>
           </InlineMessage>
           <Cluster justify="end" gap="2">
             <Button @click="requestClose">Cancel</Button>
-            <Button variant="primary" type="submit" :loading="saving"
-              >Create group</Button
-            >
+            <Button variant="primary" type="submit" :loading="saving">{{
+              group ? 'Save changes' : 'Create group'
+            }}</Button>
           </Cluster>
         </Stack>
       </form>

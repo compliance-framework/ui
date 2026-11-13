@@ -27,6 +27,8 @@ const routes = [
   '/poam-items',
   '/admin/ssp-templates',
   '/dashboards',
+  '/my-tasks',
+  '/about',
   '/profiles',
   '/component-definitions',
   '/assessment-plans',

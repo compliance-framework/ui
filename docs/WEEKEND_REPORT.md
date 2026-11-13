@@ -194,3 +194,26 @@ page structurally migrated, say so and I'll switch.
   (`/dashboards/suggestions/:sspId`) is still classic.
 - **Found:** the classic `FilterForm` fails axe (inputs without labels). New filter is left out
   of the axe checks until the form is rebuilt, like the other island-heavy pages.
+
+### User and group pages, My tasks, About
+
+- **User** (`/users/:id`): name as the h1, Locked/Inactive tags, **Edit**, **Lock/Unlock** and
+  **Delete** as page actions (delete confirms with the design-system dialog), account details
+  as a description list, sign-in attributes as a code block, and groups as tags, with "(from
+  SSO)" on inherited ones. Edit is a design-system dialog (first and last name; email can't
+  change). **Gap (island):** the roles panel is classic.
+- **Group** (`/admin/groups/:id`): Edit (the New group dialog, now `GroupFormDialog`, doing both)
+  and Delete. **Gap (islands):** the members and roles panels are classic. User and group pages
+  are left out of the axe checks because of those panels (grey-text contrast, heading order).
+- **Decision:** the classic user and group pages bounced to the list when they failed to load;
+  they now stay put with an error and Retry, like every other record page.
+- **My tasks**: the classic script is kept; tasks are a table (step, workflow, status, due, with
+  a Late tag), and Open and Reassign are in the row menu (Reassign explains when a step can't be
+  reassigned). **Gap (island):** the step panel is classic. **Decision (design system):**
+  `FilterBar` can now omit its search box (`searchLabel` is optional), since My tasks has
+  filters but no text search.
+- **About**: the classic page said "This is an about page"; it now has a short description and
+  a GitHub link. Nothing links to it yet.
+- **Found:** my route-meta helper had put `ds: true` on the wrong route once (About has no
+  `meta`). I fixed it and checked every route: nothing outside `src/screens` is marked as
+  redesigned.

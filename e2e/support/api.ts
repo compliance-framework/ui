@@ -421,6 +421,54 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalPages: 1,
       });
     }
+    if (path === '/api/admin/users/u1')
+      return json(route, {
+        data: {
+          id: 'u1',
+          email: 'tony@example.com',
+          'first-name': 'Tony',
+          'last-name': 'Smith',
+          'auth-method': 'password',
+          'failed-logins': 0,
+          'last-login': '2026-11-10T09:00:00Z',
+        },
+      });
+    if (path === '/api/admin/users/u1/groups')
+      return json(route, {
+        data: [
+          { 'group-id': 'g1', 'group-name': 'Auditors', inherited: false },
+        ],
+      });
+    if (path === '/api/admin/groups/g1')
+      return json(route, {
+        data: { id: 'g1', name: 'Auditors', description: 'External audit' },
+      });
+    if (/^\/api\/admin\/(users|groups)\/[^/]+\/(roles|members)$/.test(path))
+      return json(route, { data: [] });
+    if (path === '/api/workflows/step-executions/my')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'se-1',
+              status: 'in_progress',
+              'due-date': '2026-12-01T00:00:00Z',
+              'updated-at': '2026-11-01T00:00:00Z',
+              'workflow-step-definition': { name: 'Review access list' },
+              'workflow-execution': {
+                'workflow-instance': { name: 'Payments access review' },
+              },
+            },
+          ],
+          total: 1,
+          limit: 10,
+          offset: 0,
+          'has-more': false,
+        },
+        { data: [], total: 0, limit: 10, offset: 0, 'has-more': false },
+      );
     if (path === '/api/admin/users' && method === 'GET')
       return list(
         route,

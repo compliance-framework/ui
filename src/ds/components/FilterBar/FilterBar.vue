@@ -18,7 +18,8 @@ const props = withDefaults(
   defineProps<{
     /** Accessible name of the region, e.g. "Filter evidence". */
     label: string;
-    searchLabel: string;
+    /** Omit for a bar of filters with no text search. */
+    searchLabel?: string;
     searchHint?: string;
     searchError?: string;
     searchPlaceholder?: string;
@@ -26,6 +27,7 @@ const props = withDefaults(
     summary?: string;
   }>(),
   {
+    searchLabel: undefined,
     searchHint: undefined,
     searchError: undefined,
     searchPlaceholder: undefined,
@@ -73,6 +75,7 @@ function clear(): void {
   <section ref="root" class="filter-bar" :aria-label="label">
     <div class="filter-bar__fields">
       <form
+        v-if="searchLabel"
         class="filter-bar__search"
         role="search"
         :aria-label="searchLabel"

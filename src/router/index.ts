@@ -467,9 +467,10 @@ const authenticatedRoutes = [
   {
     path: '/admin/groups/:id',
     name: 'admin-group-view',
-    component: () => import('../views/groups/GroupView.vue'),
+    component: () => import('../screens/admin/GroupScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
@@ -807,17 +808,19 @@ const authenticatedRoutes = [
   {
     path: '/users/:id',
     name: 'user-view',
-    component: () => import('../views/users/UserView.vue'),
+    component: () => import('../screens/admin/UserScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
     path: '/my-tasks',
     name: 'my-tasks',
-    component: () => import('../views/MyTasksView.vue'),
+    component: () => import('../screens/tasks/MyTasksScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -831,7 +834,8 @@ const authenticatedRoutes = [
   {
     path: '/about',
     name: 'about',
-    component: () => import('../views/AboutView.vue'),
+    component: () => import('../screens/about/AboutScreen.vue'),
+    meta: { ds: true },
   },
   {
     path: '/control-links',

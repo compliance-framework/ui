@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
-import { ref } from 'vue';
-import MyTasksView from '../MyTasksView.vue';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { enableAutoUnmount, mount, flushPromises } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h, ref } from 'vue';
+import { TooltipProvider } from 'reka-ui';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuAction } from '@/ds/components/Menu/menuEntries';
+import MyTasksView from '../MyTasksScreen.vue';
 import type { StepExecution } from '@/types/workflows';
 
 const mockAssignments = ref<StepExecution[]>([]);
@@ -63,35 +67,40 @@ function createStep(
 }
 
 function mountComponent() {
-  return mount(MyTasksView, {
-    global: {
-      stubs: {
-        PageHeader: { template: '<div><slot /></div>' },
-        PageSubHeader: { template: '<div><slot /></div>' },
-        PageCard: { template: '<div><slot /></div>' },
-        Label: { template: '<label><slot /></label>' },
-        Select: {
-          props: ['modelValue', 'options'],
-          emits: ['update:modelValue'],
-          template: '<div class="select-stub"></div>',
-        },
-        Badge: { template: '<span><slot /></span>' },
-        Message: { template: '<div><slot /></div>' },
-        SecondaryButton: { template: '<button><slot /></button>' },
-        StepExecutionPanel: {
-          name: 'StepExecutionPanel',
-          props: ['step', 'visible', 'openReassignOnOpen'],
-          emits: ['update:visible', 'step-updated'],
-          template:
-            '<div><button class="emit-update" @click="$emit(\'step-updated\')">emit</button></div>',
+  const root = mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(MyTasksView)),
+    }),
+    {
+      attachTo: document.body,
+      global: {
+        stubs: {
+          StepExecutionPanel: {
+            name: 'StepExecutionPanel',
+            props: ['step', 'visible', 'openReassignOnOpen'],
+            emits: ['update:visible', 'step-updated'],
+            template:
+              '<div><button class="emit-update" @click="$emit(\'step-updated\')">emit</button></div>',
+          },
         },
       },
     },
-  });
+  );
+  // The screen itself, so specs can read its state as they did on the classic page.
+  return root.findComponent(MyTasksView);
 }
 
-describe('MyTasksView', () => {
+const action = (wrapper: ReturnType<typeof mountComponent>, label: string) =>
+  (wrapper.findComponent(Menu).props('items') as MenuAction[]).find(
+    (item) => item.label === label,
+  )!;
+
+// The mocked assignments are shared refs, so each mounted screen must go before the next test.
+enableAutoUnmount(afterEach);
+
+describe('MyTasksScreen', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockAssignments.value = [createStep('pending')];
     mockTotal.value = 1;
@@ -106,25 +115,26 @@ describe('MyTasksView', () => {
     });
   });
 
-  it('renders quick reassign button for reassignable tasks', async () => {
+  it('offers Reassign for reassignable tasks', async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    const reassignButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Reassign'));
+    expect(action(wrapper, 'Reassign').disabledReason).toBeUndefined();
+  });
 
-    expect(reassignButton).toBeDefined();
+  it('explains why a finished task cannot be reassigned', async () => {
+    mockAssignments.value = [createStep('completed')];
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(action(wrapper, 'Reassign').disabledReason).toBeDefined();
   });
 
   it('opens reassignment drawer state from quick reassign action', async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    const reassignButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Reassign'));
-    await reassignButton!.trigger('click');
+    action(wrapper, 'Reassign').onSelect!();
     await flushPromises();
 
     expect(
@@ -198,8 +208,9 @@ describe('MyTasksView', () => {
 
     mockFetchMyAssignments.mockClear();
 
-    await wrapper.find('#dueAfterFilter').setValue('2026-05-26');
-    await wrapper.find('#dueBeforeFilter').setValue('2026-05-28');
+    const dates = wrapper.findAll('input[type="date"]');
+    await dates[0]!.setValue('2026-05-26');
+    await dates[1]!.setValue('2026-05-28');
     await flushPromises();
 
     const calls = mockFetchMyAssignments.mock.calls;

@@ -12,7 +12,7 @@ import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import { matches, useListView } from '../listView';
-import NewGroupDialog from './NewGroupDialog.vue';
+import GroupFormDialog from './GroupFormDialog.vue';
 
 /**
  * Groups (List template, admin): named sets of users that roles are granted to. Creating a group
@@ -131,5 +131,5 @@ function created(group: CCFGroup): void {
     </DataState>
   </ListTemplate>
 
-  <NewGroupDialog v-model:open="creating" @created="created" />
+  <GroupFormDialog v-model:open="creating" @saved="created" />
 </template>
