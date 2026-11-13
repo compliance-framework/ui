@@ -234,3 +234,7 @@ page structurally migrated, say so and I'll switch.
   a new ID" button under it (the classic page had an icon-only button glued to the input).
 - Live testing created a component definition "Weekend test CD" in local-dev. The API has no
   delete for component definitions, so it's still there.
+- Follow-up: **New system** and **New catalog** use the same form. A new system still becomes
+  the current system (and joins the system switcher's list), then opens in Configure System; a
+  catalog's Type is still stored as the `catalog-type` prop. The classic system-create specs were
+  ported to the shared form's spec.

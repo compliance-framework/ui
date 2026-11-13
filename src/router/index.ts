@@ -236,9 +236,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/catalog/CatalogCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -713,10 +714,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import('../views/system-security-plans/SystemSecurityPlanCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

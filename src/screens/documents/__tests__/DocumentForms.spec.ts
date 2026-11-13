@@ -5,6 +5,7 @@ import { afterEach } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
+import { useSystemStore } from '@/stores/system';
 import DocumentForms from '../DocumentForms.vue';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
@@ -32,6 +33,24 @@ async function mountForm(path: string) {
         name: 'assessment-plan-overview',
         component: Stub,
       },
+      { path: '/systems', name: 'systems', component: Stub },
+      {
+        path: '/system-security-plans/create',
+        name: 'system-security-plans-create',
+        component: DocumentForms,
+      },
+      {
+        path: '/systems/:systemId/configure',
+        name: 'system-configure',
+        component: Stub,
+      },
+      { path: '/catalogs', name: 'catalog-list', component: Stub },
+      {
+        path: '/catalogs/new',
+        name: 'catalog-create',
+        component: DocumentForms,
+      },
+      { path: '/catalogs/:id', name: 'catalog-view', component: Stub },
       {
         path: '/plan-of-action-and-milestones/:id',
         name: 'plan-of-action-and-milestones-overview',
@@ -144,6 +163,52 @@ describe('DocumentForms', () => {
     );
     expect(router.currentRoute.value.fullPath).toBe(
       '/plan-of-action-and-milestones/p-1',
+    );
+  });
+
+  it('creates a system, makes it current, and opens Configure System', async () => {
+    api.post.mockResolvedValue({
+      data: { data: { uuid: 'ssp-9', metadata: { title: 'Payments' } } },
+    });
+    const store = useSystemStore();
+    store.setAvailablePlans([]);
+    const { wrapper, router } = await mountForm(
+      '/system-security-plans/create',
+    );
+    const version = wrapper.findAll('input')[2]!;
+    await version.setValue('');
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.text()).toContain('Enter a title.');
+    expect(wrapper.text()).toContain('Enter a version');
+    await wrapper.findAll('input')[1]!.setValue('Payments');
+    await version.setValue('2.0.0');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(store.system.securityPlan?.uuid).toBe('ssp-9');
+    expect(store.availablePlans.map((p) => p.uuid)).toEqual(['ssp-9']);
+    expect(router.currentRoute.value.fullPath).toBe('/systems/ssp-9/configure');
+  });
+
+  it("stamps a catalog's type as a metadata prop", async () => {
+    api.post.mockResolvedValue({ data: { data: { uuid: 'cat-9' } } });
+    const { wrapper } = await mountForm('/catalogs/new');
+    await wrapper.findAll('input')[1]!.setValue('Access policy');
+    wrapper
+      .findComponent({ name: 'Select' })
+      .vm.$emit('update:modelValue', 'policy');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(api.post).toHaveBeenCalledWith(
+      '/api/oscal/catalogs',
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          title: 'Access policy',
+          props: [
+            expect.objectContaining({ name: 'catalog-type', value: 'policy' }),
+          ],
+        }),
+      }),
+      expect.anything(),
     );
   });
 });

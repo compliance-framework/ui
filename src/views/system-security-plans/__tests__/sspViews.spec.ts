@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, enableAutoUnmount } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
-import SystemSecurityPlanCreateView from '@/views/system-security-plans/SystemSecurityPlanCreateView.vue';
 import SystemSecurityPlanSystemImplementationEditorView from '@/views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue';
 import type { SystemSecurityPlan } from '@/oscal';
 
@@ -183,45 +182,6 @@ describe('System Security Plan views', () => {
     apiCalls.length = 0;
     apiData.clear();
     vi.clearAllMocks();
-  });
-
-  it('blocks create submit with a missing title and does not call the API', async () => {
-    const wrapper = mount(SystemSecurityPlanCreateView, {
-      global: { stubs },
-    });
-
-    await wrapper.find('#ssp-title').setValue('');
-    await wrapper.find('form').trigger('submit.prevent');
-
-    expect(wrapper.text()).toContain('Title is required');
-    const createCall = apiCalls.find(
-      (apiCall) => apiCall.url === '/api/oscal/system-security-plans',
-    );
-    expect(createCall).toBeDefined();
-    expect(createCall?.execute).not.toHaveBeenCalled();
-  });
-
-  it('creates an SSP through the existing endpoint when required fields are valid', async () => {
-    const wrapper = mount(SystemSecurityPlanCreateView, {
-      global: { stubs },
-    });
-
-    await wrapper.find('#ssp-title').setValue('New SSP');
-    await wrapper.find('form').trigger('submit.prevent');
-
-    const createCall = apiCalls.find(
-      (apiCall) => apiCall.url === '/api/oscal/system-security-plans',
-    );
-    expect(createCall?.execute).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        metadata: expect.objectContaining({ title: 'New SSP' }),
-      }),
-    });
-    // A new system becomes the active one and opens in Configure System.
-    expect(setSecurityPlan).toHaveBeenCalledWith(
-      expect.objectContaining({ uuid: 'created-ssp' }),
-    );
-    expect(push).toHaveBeenCalledWith({ name: 'system:overview' });
   });
 
   it('passes fetched system implementation data through to the overview form and updates it on save', async () => {

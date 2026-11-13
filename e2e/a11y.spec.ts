@@ -30,6 +30,8 @@ const routes = [
   '/my-tasks',
   '/component-definitions/create',
   '/profiles/create',
+  '/catalogs/new',
+  '/system-security-plans/create',
   '/assessment-plans/create',
   '/plan-of-action-and-milestones/create',
   '/about',

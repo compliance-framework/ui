@@ -20,7 +20,13 @@ import TextInput from '@/ds/components/TextInput/TextInput.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import { DOCUMENT_FORMS, validateDocument } from './formKinds';
+import Select from '@/ds/components/Select/Select.vue';
+import {
+  CATALOG_TYPE_OPTIONS,
+  DOCUMENT_FORMS,
+  validateDocument,
+  withCatalogType,
+} from './formKinds';
 
 /**
  * Create or edit an OSCAL document's metadata (component definitions, profiles, assessment plans,
@@ -51,6 +57,7 @@ const fields = reactive({
   published: '',
   importSspHref: '',
   importSspRemarks: '',
+  catalogType: 'standard',
 });
 const loaded = ref<Doc>();
 const status = ref<QueryStatus>(props.mode === 'edit' ? 'loading' : 'ready');
@@ -103,7 +110,7 @@ const back = computed(() =>
         label: loaded.value?.metadata.title
           ? String(loaded.value.metadata.title)
           : `This ${config.noun}`,
-        to: { name: config.detailRoute, params: { id } },
+        to: config.detail(id),
       },
 );
 const denied = computed(() =>
@@ -122,6 +129,14 @@ function payload(): Doc {
     uuid: props.mode === 'create' ? fields.uuid.trim() : base.uuid,
     metadata: {
       ...base.metadata,
+      ...(config.catalogType
+        ? {
+            props: withCatalogType(
+              base.metadata.props as Parameters<typeof withCatalogType>[0],
+              fields.catalogType,
+            ),
+          }
+        : {}),
       title: fields.title.trim(),
       remarks: fields.remarks.trim() || undefined,
       ...(config.version
@@ -161,16 +176,17 @@ async function submit(): Promise<void> {
             payload(),
             request,
           );
+    if (props.mode === 'create' && response.data.data)
+      config.created?.(response.data.data);
     toast.add({
       severity: 'success',
       summary: props.mode === 'create' ? 'Created' : 'Saved',
       detail: fields.title.trim(),
       life: 3000,
     });
-    void router.push({
-      name: config.detailRoute,
-      params: { id: response.data.data?.uuid ?? id ?? fields.uuid },
-    });
+    void router.push(
+      config.detail(response.data.data?.uuid || id || fields.uuid.trim()),
+    );
   } catch (error) {
     saveError.value = await getErrorDetail(
       error,
@@ -201,6 +217,8 @@ async function submit(): Promise<void> {
           <Stack v-if="mode === 'create'" gap="2" align="start">
             <FormField
               label="ID"
+              required
+              :error="errors.uuid"
               hint="A UUID. Keep the generated one unless you're recreating an existing document."
             >
               <TextInput v-model="fields.uuid" />
@@ -216,7 +234,22 @@ async function submit(): Promise<void> {
           <FormField label="Title" required :error="errors.title">
             <TextInput v-model="fields.title" />
           </FormField>
-          <FormField v-if="config.version" label="Version">
+          <FormField
+            v-if="config.catalogType && mode === 'create'"
+            label="Type"
+            hint="Which tab the catalog is listed under."
+          >
+            <Select
+              v-model="fields.catalogType"
+              :options="CATALOG_TYPE_OPTIONS"
+            />
+          </FormField>
+          <FormField
+            v-if="config.version"
+            label="Version"
+            :required="config.versionRequired"
+            :error="errors.version"
+          >
             <TextInput v-model="fields.version" placeholder="1.0" />
           </FormField>
           <FormField
