@@ -92,8 +92,8 @@ describe('LineageTreeView (smoke)', () => {
     refreshMock.mockReset();
   });
 
-  it('renders the heading and loads roots on mount', async () => {
-    const wrapper = mount(LineageTreeView, {
+  it('loads roots on mount', async () => {
+    mount(LineageTreeView, {
       global: {
         stubs: {
           Tree: true,
