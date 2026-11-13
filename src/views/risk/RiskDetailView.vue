@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between gap-3">
+  <div :class="embedded ? 'space-y-6' : 'p-6 space-y-6'">
+    <div v-if="!embedded" class="flex items-center justify-between gap-3">
       <PageHeader>{{ pageTitle }}</PageHeader>
       <TertiaryButton @click="goBackToPreviousPage">Back</TertiaryButton>
     </div>
@@ -30,7 +30,10 @@
           class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6 space-y-4"
         >
           <div class="flex flex-col gap-2">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">
+            <h2
+              v-if="!embedded"
+              class="text-xl font-semibold text-gray-900 dark:text-slate-200"
+            >
               {{ risk.title || 'Untitled Risk' }}
             </h2>
             <div class="text-sm text-gray-700 dark:text-slate-300">
@@ -1331,6 +1334,9 @@ import {
 } from '@/utils/risk-dashboard';
 import type { PoamItem } from '@/types/poam-items';
 import type { DataResponse } from '@/stores/types';
+
+// Inside a design-system screen (which shows the title and Back), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 interface AssociationPickerOption extends RiskAssociationItem {
   subtitle?: string;
@@ -4398,4 +4404,8 @@ function evidenceLabelChips(item: AssociationPickerOption): string[] {
   }
   return item.labels.map((label) => `${label.name}=${label.value}`);
 }
+
+// The design-system screen shows the risk's title and offers Back.
+const riskTitle = computed(() => risk.value?.title ?? '');
+defineExpose({ riskTitle, goBackToPreviousPage });
 </script>

@@ -187,9 +187,10 @@ const authenticatedRoutes = [
   {
     path: 'risks/:riskId',
     name: 'risks:detail',
-    component: () => import('../views/risk/RiskDetailView.vue'),
+    component: () => import('../screens/risks/RiskScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -1168,11 +1169,11 @@ const designSystemRoutes = [
     ],
   },
   {
-    // Risk detail isn't migrated yet; it keeps its SSP-scoped URL as a page of its own.
+    // Risk detail keeps its SSP-scoped URL as a page of its own (its SSP editor parent is gone).
     path: '/system-security-plans/:id/risks/:riskId',
     name: 'system-security-plan-risk-detail',
-    component: () => import('../views/risk/RiskDetailView.vue'),
-    meta: { requiresAuth: true },
+    component: () => import('../screens/risks/RiskScreen.vue'),
+    meta: { requiresAuth: true, ds: true },
   },
   {
     path: 'controls',

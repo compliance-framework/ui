@@ -343,3 +343,17 @@ page structurally migrated, say so and I'll switch.
   Create menu and the suggestions page's run buttons stay in the body.
 - **Found:** `inventory:index` was defined twice in the router (on `main` too); the duplicate is
   removed.
+
+### Risk page (`/risks/:riskId`) on the design-system frame
+
+- The risk's title is now the page's h1, with a design-system Back action. The 4,400-line
+  classic page renders below as an island (`embedded` hides its header and duplicate title)
+  and still decides where Back goes (the system's register, or history). It exposes only
+  `riskTitle` and `goBackToPreviousPage` to the frame. The SSP-scoped risk URL uses the same
+  screen. The classic spec (52 cases) runs unchanged.
+- **Milestone:** with this, **every top-level page in the app renders on the design-system
+  frame.** What's left classic is content inside frames: record tabs (profile, component
+  definition, assessment plan and results, POA&M, workflow definition and instance), Configure
+  System sections, and the island panels listed in `docs/REDESIGN.md`.
+- **Gap (island):** the risk page body (overview, lifecycle actions, the eight tabs,
+  remediation) is classic and isn't in the axe checks.
