@@ -245,3 +245,18 @@ page structurally migrated, say so and I'll switch.
     and the API rejects that ("at least one result is required"). The new form loads
     `/:id/full` for editing and sends that back, which works and keeps the results (checked with
     a throwaway record, then deleted).
+
+### Catalog page and control evidence
+
+- **Catalog** (`/catalogs/:id`): title as the h1, an Inactive tag, and Add control, Add group,
+  Edit, Activate/Deactivate and Delete as page actions; it says when the catalog is empty. **Gap
+  (islands):** the group and control tree (`CatalogGroup`/`CatalogControl`, recursive) and the
+  add, edit and delete dialogs are classic.
+- **Decision:** AppShell kept the classic catalog page alive (`KeepAlive include="CatalogView"`)
+  so its open groups survive a visit to a control and back. The KeepAlive now wraps the
+  redesigned branch for `CatalogScreen`, and the legacy branch no longer has one (nothing else
+  used it).
+- **Control evidence** (`/catalogs/:catalog/control/:id/evidence`): a design-system table
+  (status, evidence linked to its record, last seen) with a breadcrumb back to the catalog,
+  replacing the classic `EvidenceList` (now deleted). The classic spec's case (the endpoint
+  returns `labels: null`) is kept.

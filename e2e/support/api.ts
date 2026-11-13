@@ -337,6 +337,26 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         },
         { data: [] },
       );
+    if (path.startsWith('/api/evidence/for-control/'))
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'e-1',
+              title: 'MFA enforced for admins',
+              status: { state: 'satisfied' },
+              end: '2026-11-01T00:00:00Z',
+            },
+          ],
+          metadata: { control: { id: 'ac-2', title: 'Account management' } },
+        },
+        {
+          data: null,
+          metadata: { control: { id: 'ac-2', title: 'Account management' } },
+        },
+      );
     if (path === '/api/poam-items')
       return list(
         route,

@@ -291,11 +291,12 @@ const userMenu = computed<MenuEntry[]>(() => [
           data-scroll
         >
           <RouterView v-slot="{ Component }">
-            <component :is="Component" v-if="redesigned" />
+            <!-- The catalog keeps its open groups when you visit a control and come back. -->
+            <KeepAlive v-if="redesigned" include="CatalogScreen">
+              <component :is="Component" />
+            </KeepAlive>
             <LegacyPage v-else>
-              <KeepAlive include="CatalogView">
-                <component :is="Component" :key="legacyKey" />
-              </KeepAlive>
+              <component :is="Component" :key="legacyKey" />
             </LegacyPage>
           </RouterView>
           <div data-tooltip-portal />

@@ -225,9 +225,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/catalog/CatalogView.vue'),
+    component: () => import('../screens/catalogs/CatalogScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -248,9 +249,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/EvidenceByControlView.vue'),
+    component: () => import('../screens/catalogs/ControlEvidenceScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
