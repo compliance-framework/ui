@@ -863,19 +863,23 @@ const authenticatedRoutes = [
   },
   {
     path: '/lineage',
-    name: 'lineage',
-    component: () => import('../views/lineage/LineageTreeView.vue'),
+    component: () => import('../screens/lineage/LineageScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
-  },
-  {
-    path: '/lineage/graph',
-    name: 'lineage-graph',
-    component: () => import('../views/lineage/LineageGraphView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
+    children: [
+      {
+        path: '',
+        name: 'lineage',
+        component: () => import('../views/lineage/LineageTreeView.vue'),
+      },
+      {
+        path: 'graph',
+        name: 'lineage-graph',
+        component: () => import('../views/lineage/LineageGraphView.vue'),
+      },
+    ],
   },
 ];
 

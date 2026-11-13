@@ -120,7 +120,6 @@ describe('LineageGraphView risk grouping (smoke)', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },
@@ -162,7 +161,6 @@ describe('LineageGraphView persisted state', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },
@@ -189,7 +187,6 @@ describe('LineageGraphView persisted state', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },
@@ -214,7 +211,6 @@ describe('LineageGraphView persisted state', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },
@@ -250,7 +246,6 @@ describe('LineageGraphView column collapse', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },
@@ -294,7 +289,6 @@ describe('LineageGraphView refresh', () => {
       global: {
         stubs: {
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
         },
       },

@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Tree from '@/volt/Tree.vue';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
-import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
 import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
 import { nodeDetailRoute } from '@/components/lineage/nodeMeta';
@@ -163,20 +162,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-4 p-6">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold text-surface-800 dark:text-surface-0">
-          Compliance Map
-        </h1>
-        <p class="text-sm text-surface-500 dark:text-surface-400">
-          Standard → Policy → Controls → Evidence, with per-node compliance and
-          open-risk heat.
-        </p>
-      </div>
-      <LineageViewSwitch active="tree" />
-    </header>
-
+  <div class="flex h-full flex-col gap-4">
     <LineageScopeBar
       :generatedAt="generatedAt"
       :refreshing="loading || refreshing"

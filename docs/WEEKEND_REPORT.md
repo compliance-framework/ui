@@ -281,3 +281,13 @@ page structurally migrated, say so and I'll switch.
 - **Found (mine):** the user page's axe failure included a heading-order issue I'd blamed on
   its classic islands. It was my own panel sections (h3 straight after the h1). Fixed there and
   on New control link.
+
+### Compliance Map (`/lineage`)
+
+- **Decision:** the tree and graph were two sibling pages, each with its own header and a
+  Tree/Graph toggle. They're now children of one design-system frame (`LineageScreen`: title,
+  description, Tree and Graph as route tabs). The URLs and route names (`lineage`,
+  `lineage-graph`) are unchanged. The classic views lost only their headers; the graph keeps its
+  "worst N nodes" explanation.
+- **Gap (islands):** the tree, graph, scope bar and node drawer are classic, so the page isn't
+  in the axe checks.

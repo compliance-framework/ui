@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
-import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
 import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
 import { nodeCardClass, nodeDetailRoute } from '@/components/lineage/nodeMeta';
@@ -314,20 +313,11 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-4 p-6">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold text-surface-800 dark:text-surface-0">
-          Compliance Map — Graph
-        </h1>
-        <p class="text-sm text-surface-500 dark:text-surface-400">
-          The worst {{ COLUMN_PAGE_SIZE }} nodes at each level, worst first by
-          open risk. Click a box to drill into its children; use “…more” to
-          reveal more.
-        </p>
-      </div>
-      <LineageViewSwitch active="graph" />
-    </header>
+  <div class="flex h-full flex-col gap-4">
+    <p class="text-sm text-surface-500 dark:text-surface-400">
+      The worst {{ COLUMN_PAGE_SIZE }} nodes at each level, worst first by open
+      risk. Click a box to drill into its children; use “…more” to reveal more.
+    </p>
 
     <LineageScopeBar
       :generatedAt="generatedAt"

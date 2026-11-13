@@ -98,7 +98,6 @@ describe('LineageTreeView (smoke)', () => {
         stubs: {
           Tree: true,
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
           LineageNodeRow: true,
         },
@@ -107,7 +106,6 @@ describe('LineageTreeView (smoke)', () => {
 
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Compliance Map');
     expect(fetchRootsMock).toHaveBeenCalledTimes(1);
   });
 
@@ -122,7 +120,6 @@ describe('LineageTreeView (smoke)', () => {
         stubs: {
           Tree: true,
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
           LineageNodeRow: true,
         },
@@ -153,7 +150,6 @@ describe('LineageTreeView (smoke)', () => {
         stubs: {
           Tree: true,
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
           LineageNodeRow: true,
         },
@@ -184,7 +180,6 @@ describe('LineageTreeView (smoke)', () => {
         stubs: {
           Tree: true,
           LineageScopeBar: true,
-          LineageViewSwitch: true,
           LineageNodeDrawer: true,
           LineageNodeRow: true,
         },
