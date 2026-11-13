@@ -1,12 +1,14 @@
 <template>
-  <PageHeader>Agents</PageHeader>
-  <PageSubHeader>
-    {{
-      isAdmin
-        ? 'Register agents, manage their service account keys and configuration'
-        : 'Review and configure agents'
-    }}
-  </PageSubHeader>
+  <template v-if="!embedded">
+    <PageHeader>Agents</PageHeader>
+    <PageSubHeader>
+      {{
+        isAdmin
+          ? 'Register agents, manage their service account keys and configuration'
+          : 'Review and configure agents'
+      }}
+    </PageSubHeader>
+  </template>
 
   <div class="mt-6 space-y-6">
     <div v-if="isAdmin" class="flex justify-end">
@@ -517,6 +519,9 @@ import type {
   CreateAgentServiceAccountKeyRequest,
   UpsertAgentRequest,
 } from '@/types/agents';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 // The Configuration tab (js-yaml, provenance, status views) is its own chunk, fetched the
 // first time the tab is shown; the editor and CodeMirror are split further inside it.

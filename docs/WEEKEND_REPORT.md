@@ -325,3 +325,16 @@ page structurally migrated, say so and I'll switch.
   its own "Notifications" h1, which would have been a second h1 under the new frame.
 - **Decision:** the classic frame showed "Loading AI diagnostics configuration." while it
   checked the feature flag; the AI tab now simply appears once the check finishes.
+
+### Agents, risk templates, subject templates, import: design-system headers over classic bodies
+
+- **Decision:** these admin pages are large and heavily tested (Agents alone has a 700-line
+  spec), so they get the lightest migration: a design-system screen supplies the title and
+  description (and a breadcrumb on a subject template), and the classic view renders inside it
+  as an island. Each classic view takes an `embedded` prop that leaves out only its old
+  PageHeader/PageSubHeader, so the classic specs (which mount the views directly) run unchanged.
+- **Gap:** their primary actions (Register agent, Create template, Edit template) are still the
+  classic buttons inside the body rather than design-system header actions. Moving them means
+  exposing the view's handlers and updating those specs; I'd do it when each page is rebuilt
+  properly.
+- Not in the axe checks (mostly classic markup).

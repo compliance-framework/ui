@@ -1,6 +1,8 @@
 <template>
-  <PageHeader>Subject Templates</PageHeader>
-  <PageSubHeader>Administer reusable subject templates</PageSubHeader>
+  <template v-if="!embedded">
+    <PageHeader>Subject Templates</PageHeader>
+    <PageSubHeader>Administer reusable subject templates</PageSubHeader>
+  </template>
 
   <div class="mt-6 space-y-4">
     <div class="flex flex-wrap items-end gap-3">
@@ -534,6 +536,9 @@ import {
   type SubjectTemplateSourceMode,
   type SubjectTemplateType,
 } from '@/types/subject-templates';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 type DialogMode = 'create' | 'edit';
 

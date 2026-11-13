@@ -10,6 +10,9 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
 import WorkflowImportPanel from './partials/WorkflowImportPanel.vue';
 
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
+
 const configStore = useConfigStore();
 const toast = useToast();
 const apiUrl = ref<string>('');
@@ -212,7 +215,7 @@ const clearDashboardFiles = () => {
 </script>
 
 <template>
-  <PageHeader>Import Data</PageHeader>
+  <PageHeader v-if="!embedded">Import Data</PageHeader>
   <div class="mt-8">
     <p class="text-gray-600 dark:text-gray-400 mb-6">
       Import OSCAL content and evidence filters from JSON files

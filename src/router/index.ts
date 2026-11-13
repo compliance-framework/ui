@@ -345,9 +345,10 @@ const authenticatedRoutes = [
   {
     path: '/admin/agents',
     name: 'admin-agents',
-    component: () => import('../views/admin/AgentsView.vue'),
+    component: () => import('../screens/admin/AgentsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       // R40: readable with agent:read (viewer/auditor/contributor); keys and CRUD inside the
       // page stay behind admin:manage.
       permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
@@ -406,18 +407,20 @@ const authenticatedRoutes = [
   {
     path: '/admin/subject-templates',
     name: 'admin-subject-templates',
-    component: () => import('../views/admin/SubjectTemplatesView.vue'),
+    component: () => import('../screens/admin/SubjectTemplatesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
   {
     path: '/admin/subject-templates/:id',
     name: 'admin-subject-template-detail',
-    component: () => import('../views/admin/SubjectTemplateDetailView.vue'),
+    component: () => import('../screens/admin/SubjectTemplateScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
@@ -444,18 +447,20 @@ const authenticatedRoutes = [
   {
     path: '/admin/risk-templates',
     name: 'admin-risk-templates',
-    component: () => import('../views/admin/RiskTemplatesView.vue'),
+    component: () => import('../screens/admin/RiskTemplatesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
   {
     path: '/admin/import',
     name: 'admin-import',
-    component: () => import('../views/admin/ImportView.vue'),
+    component: () => import('../screens/admin/ImportScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },

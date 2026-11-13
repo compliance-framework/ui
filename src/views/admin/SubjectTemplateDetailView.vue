@@ -1,6 +1,8 @@
 <template>
-  <PageHeader>Subject Template</PageHeader>
-  <PageSubHeader v-if="template">{{ template.name }}</PageSubHeader>
+  <template v-if="!embedded">
+    <PageHeader>Subject Template</PageHeader>
+    <PageSubHeader v-if="template">{{ template.name }}</PageSubHeader>
+  </template>
 
   <div class="mt-6 space-y-4">
     <div class="flex gap-2">
@@ -315,6 +317,9 @@ import {
   type SubjectTemplateSourceMode,
   type SubjectTemplateType,
 } from '@/types/subject-templates';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 const route = useRoute();
 const toast = useToast();

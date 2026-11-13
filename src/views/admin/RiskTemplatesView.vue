@@ -1,6 +1,8 @@
 <template>
-  <PageHeader>Risk Templates</PageHeader>
-  <PageSubHeader>Administer reusable risk templates</PageSubHeader>
+  <template v-if="!embedded">
+    <PageHeader>Risk Templates</PageHeader>
+    <PageSubHeader>Administer reusable risk templates</PageSubHeader>
+  </template>
 
   <div class="mt-6">
     <div class="flex justify-end mb-4">
@@ -465,6 +467,9 @@ import {
   type UpsertRiskTemplateRequest,
 } from '@/types/risk-templates';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 interface TemplateFormData {
   pluginId: string;
