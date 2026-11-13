@@ -317,3 +317,11 @@ page structurally migrated, say so and I'll switch.
 - The account details are a description list. **Gap (island):** the Slack link section is
   classic. The classic spec (25 cases) runs unchanged against the new screen.
   `MultiSelectDropdown` was only used here and is deleted.
+
+### Diagnostics frame (`/admin/diagnostics`)
+
+- Title, description and route tabs (Notifications, plus AI suggestions when that feature is
+  on) on the design system; both sections are classic islands. The notifications section lost
+  its own "Notifications" h1, which would have been a second h1 under the new frame.
+- **Decision:** the classic frame showed "Loading AI diagnostics configuration." while it
+  checked the feature flag; the AI tab now simply appears once the check finishes.

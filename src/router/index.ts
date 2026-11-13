@@ -365,10 +365,11 @@ const authenticatedRoutes = [
   {
     path: '/admin/diagnostics',
     name: 'admin-diagnostics',
-    component: () => import('../views/admin/DiagnosticsView.vue'),
+    component: () => import('../screens/admin/DiagnosticsScreen.vue'),
     redirect: { name: 'admin-diagnostics-notifications' },
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
     children: [

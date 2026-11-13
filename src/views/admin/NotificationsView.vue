@@ -8,7 +8,6 @@ import {
   useDataApi,
 } from '@/composables/axios';
 import PageCard from '@/components/PageCard.vue';
-import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -1508,9 +1507,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <PageHeader> Notifications </PageHeader>
-
-  <div class="mt-8 space-y-5">
+  <div class="space-y-5">
     <div
       class="flex flex-wrap gap-2 border-b border-ccf-300 dark:border-slate-700"
       role="tablist"
