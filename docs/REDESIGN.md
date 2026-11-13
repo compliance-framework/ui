@@ -95,7 +95,8 @@ Replace each with a design-system version, then delete the classic component.
   The bulk "Apply all suggestions" confirmation is still PrimeVue's confirm dialog.
 
 - Record pages (workflow definition, workflow instance, profile, component definition, assessment
-  plan, POA&M, assessment results): every tab's content is the classic tab view.
+  plan, POA&M, assessment results): every tab's content is the classic tab view, except the five
+  OSCAL JSON tabs, which share `DocumentJsonTab`.
 
 ## To-dos
 

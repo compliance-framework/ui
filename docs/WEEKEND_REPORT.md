@@ -431,3 +431,13 @@ page structurally migrated, say so and I'll switch.
   System sections, and the island panels listed in `docs/REDESIGN.md`.
 - **Gap (island):** the risk page body (overview, lifecycle actions, the eight tabs,
   remediation) is classic and isn't in the axe checks.
+
+### Record pages' JSON tabs (first islands replaced)
+
+- **Decision:** the five OSCAL record pages (profile, component definition, assessment plan,
+  assessment results, POA&M) each had their own JSON tab view; they now share one
+  design-system tab (`src/screens/documents/DocumentJsonTab.vue`): the full document as
+  kebab-case OSCAL JSON in the design-system code block, which copies and downloads it. The
+  classic assessment plan tab carried a commented-out "Edit JSON" feature; that's gone with it.
+- The two workflow JSON tabs build their JSON from store state (definition plus steps, instance
+  plus role assignments), so they stay classic for now.

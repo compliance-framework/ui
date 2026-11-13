@@ -313,7 +313,7 @@ const authenticatedRoutes = [
       {
         path: 'json',
         name: 'profile:view-json',
-        component: () => import('../views/profile/ProfileJSONView.vue'),
+        component: () => import('../screens/documents/DocumentJsonTab.vue'),
         meta: {
           requiresAuth: true,
         },
@@ -535,8 +535,7 @@ const authenticatedRoutes = [
       {
         path: 'json',
         name: 'component-definition-json',
-        component: () =>
-          import('../views/component-definitions/ComponentDefinitionJSONView.vue'),
+        component: () => import('../screens/documents/DocumentJsonTab.vue'),
       },
     ],
   },
@@ -592,8 +591,7 @@ const authenticatedRoutes = [
       {
         path: 'json',
         name: 'assessment-plan-json',
-        component: () =>
-          import('../views/assessment-plans/AssessmentPlanJSONView.vue'),
+        component: () => import('../screens/documents/DocumentJsonTab.vue'),
       },
     ],
   },
@@ -698,8 +696,7 @@ const authenticatedRoutes = [
       {
         path: 'json',
         name: 'plan-of-action-and-milestones-json',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesJSONView.vue'),
+        component: () => import('../screens/documents/DocumentJsonTab.vue'),
       },
     ],
   },
@@ -785,8 +782,7 @@ const authenticatedRoutes = [
       {
         path: 'json',
         name: 'assessment-results-json',
-        component: () =>
-          import('../views/assessment-results/AssessmentResultsJSONView.vue'),
+        component: () => import('../screens/documents/DocumentJsonTab.vue'),
       },
     ],
   },
