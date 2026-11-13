@@ -9,10 +9,16 @@ import SystemEvidenceScreen from '../SystemEvidenceScreen.vue';
 const api = vi.hoisted(() => ({
   hasScope: true,
   post: vi.fn(),
+  get: vi.fn(() => Promise.resolve({ data: { data: [] } })),
+  download: vi.fn(),
 }));
 
 vi.mock('@/composables/axios', () => ({
-  useAuthenticatedInstance: () => ({ post: api.post }),
+  useAuthenticatedInstance: () => ({ post: api.post, get: api.get }),
+}));
+vi.mock('@/utils/evidence-csv', async (original) => ({
+  ...(await original<typeof import('@/utils/evidence-csv')>()),
+  downloadCsv: api.download,
 }));
 vi.mock('@/composables/useSspScope', () => ({
   sspHasScopeEntries: () => Promise.resolve(api.hasScope),
@@ -25,8 +31,15 @@ const evidence = (id: string, title: string, state: string) => ({
   title,
   status: { state, reason: '' },
   end: '2026-11-05T09:55:00Z',
-  labels: [],
+  labels: [
+    { name: 'provider', value: 'aws' },
+    { name: '_policy', value: 'backups' },
+  ],
 });
+
+/** The search calls (not the status trend's) made so far. */
+const searchCalls = () =>
+  api.post.mock.calls.filter(([url]) => String(url).endsWith('/search'));
 
 async function mountScreen(path = '/next/systems/sys-1/evidence') {
   const Stub = defineComponent({ render: () => h('div') });
@@ -41,6 +54,11 @@ async function mountScreen(path = '/next/systems/sys-1/evidence') {
       { path: '/evidence/:id', name: 'evidence:view', component: Stub },
       { path: '/system/evidence', name: 'system:evidence', component: Stub },
       { path: '/system/scope', name: 'system:scope', component: Stub },
+      {
+        path: '/dashboards/create',
+        name: 'dashboards.create',
+        component: Stub,
+      },
     ],
   });
   await router.push(path);
@@ -61,6 +79,7 @@ describe('SystemEvidenceScreen', () => {
     localStorage.clear();
     api.hasScope = true;
     api.post.mockReset();
+    api.download.mockReset();
     api.post.mockResolvedValue({
       data: {
         data: [
@@ -79,7 +98,7 @@ describe('SystemEvidenceScreen', () => {
     await mountScreen(
       '/next/systems/sys-1/evidence?filter=provider%3Daws&sortBy=name&sortDirection=asc',
     );
-    const [url, body, config] = api.post.mock.calls[0]!;
+    const [url, body, config] = searchCalls()[0]!;
     expect(url).toBe('/api/oscal/system-security-plans/sys-1/evidence/search');
     expect(JSON.stringify(body.filter)).toContain('provider');
     expect(config.params).toEqual(
@@ -118,7 +137,7 @@ describe('SystemEvidenceScreen', () => {
     await wrapper.find('input').setValue('provider=');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
-    expect(api.post).not.toHaveBeenCalled();
+    expect(searchCalls()).toHaveLength(0);
     expect(wrapper.text()).toContain('Finish the condition with a value.');
   });
 
@@ -127,5 +146,65 @@ describe('SystemEvidenceScreen', () => {
     const { wrapper } = await mountScreen();
     expect(wrapper.text()).toContain("Define this system's scope");
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('saves the applied search as a filter for this system', async () => {
+    const { wrapper } = await mountScreen(
+      '/next/systems/sys-1/evidence?filter=provider%3Daws',
+    );
+    const save = wrapper
+      .findAll('a')
+      .find((a) => a.text().includes('Save as filter'));
+    expect(save!.attributes('href')).toBe(
+      '/dashboards/create?filter=provider=aws&sspId=sys-1',
+    );
+  });
+
+  it('exports every page of the applied search as CSV', async () => {
+    const page = (n: number) => ({
+      data: {
+        data: [evidence(`e${n}`, `Item ${n}`, 'satisfied')],
+        total: 2,
+        page: n,
+        limit: 100,
+        totalPages: 2,
+      },
+    });
+    api.post.mockImplementation((url: string, _body: unknown, config) =>
+      Promise.resolve(
+        url.endsWith('/search')
+          ? page(Number(config?.params?.page ?? 1))
+          : { data: { data: [] } },
+      ),
+    );
+    const { wrapper } = await mountScreen();
+    const exportButton = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Export CSV'));
+    await exportButton!.trigger('click');
+    await flushPromises();
+    expect(api.download).toHaveBeenCalledTimes(1);
+    const csv = api.download.mock.calls[0]![0] as string;
+    expect(csv).toContain('Item 1');
+    expect(csv).toContain('Item 2');
+  });
+
+  it('shows labels, hiding system labels until asked', async () => {
+    const { wrapper } = await mountScreen();
+    expect(wrapper.text()).toContain('provider=aws');
+    expect(wrapper.text()).not.toContain('_policy=backups');
+  });
+
+  it('charts the status trend for the applied search', async () => {
+    await mountScreen('/next/systems/sys-1/evidence?filter=backups');
+    const trend = api.post.mock.calls.find(([url]) =>
+      String(url).endsWith('/status-over-time'),
+    );
+    expect(trend![0]).toBe(
+      '/api/oscal/system-security-plans/sys-1/evidence/status-over-time',
+    );
+    expect(trend![2].params).toEqual(
+      expect.objectContaining({ name: 'backups' }),
+    );
   });
 });

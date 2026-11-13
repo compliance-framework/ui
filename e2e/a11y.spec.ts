@@ -89,6 +89,13 @@ for (const theme of themes) {
     await page.keyboard.press('Escape');
 
     await open(page, `/next/systems/${SYSTEMS.scoped}/evidence`);
+    await page.getByRole('button', { name: 'Subject' }).click();
+    await page.getByRole('button', { name: 'Columns' }).click();
+    await page.getByRole('button', { name: 'Show as table' }).first().click();
+    violations.push(
+      ...(await axe(page, `${theme} evidence filters and chart table open`)),
+    );
+
     await page.locator('.switcher__trigger').first().click();
     await page.getByRole('listbox', { name: 'Systems' }).waitFor();
     violations.push(

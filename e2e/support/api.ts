@@ -126,6 +126,30 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path === '/api/me/permissions') {
       return json(route, { subject: { type: 'user', id: 'u-1' }, permissions });
     }
+    if (path === '/api/agent/heartbeat/over-time') {
+      return json(route, {
+        data: [0, 1, 2, 3, 4, 5].map((i) => ({
+          interval: new Date(Date.UTC(2026, 10, 13, 9, i * 10)).toISOString(),
+          total: 2 + (i % 2),
+        })),
+      });
+    }
+    if (path === '/api/subjects') {
+      return json(route, {
+        data: [
+          {
+            'subject-uuid': 'sub-1',
+            title: 'payments-db-1 in eu-west-1',
+            kind: 'component',
+            type: 'component',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      });
+    }
     if (path === '/api/oscal/system-security-plans' && method === 'GET') {
       return list(route, lists, { data: plans }, { data: [] });
     }
@@ -144,6 +168,24 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
             ? [{ labels: [{ name: 'system', value: 'payments' }] }]
             : [];
         return json(route, { data: { entries, exceptions: [] } });
+      }
+      if (rest === '/evidence/status-over-time') {
+        return list(
+          route,
+          lists,
+          {
+            data: [0, 1, 2, 3].map((i) => ({
+              interval: new Date(
+                Date.UTC(2026, 10, 13, 9, i * 15),
+              ).toISOString(),
+              statuses: [
+                { status: 'satisfied', count: 80 + i },
+                { status: 'not-satisfied', count: 40 - i },
+              ],
+            })),
+          },
+          { data: [] },
+        );
       }
       if (rest === '/evidence/search') {
         const page = Number(url.searchParams.get('page') ?? '1');

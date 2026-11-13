@@ -116,12 +116,20 @@ are new and still open.
       account menu button's accessible name didn't include its visible text.
     - Not ported from the mockup: the vocabulary check (terminology now follows the current app)
       and knip.
-13. **This System > Evidence is a first cut of the classic page, with a handoff for the rest.** It
-    has the scope check ("Define this system's scope"), title and label-query search with the same
-    validation as the classic page, sort by status, name and last seen, pagination, the subjects
-    column, and Share. **Not yet ported:** the compliance-over-time and agent-health charts, CSV
-    export, Save as filter, the subject filter and the labels column. "Open classic view" opens the
-    classic page with the exact same view for those.
+13. **This System > Evidence now matches the classic page** (_done 2026-11-13_): the scope check,
+    title and label-query search, the subject filter, sort, pagination, the subjects column, the
+    labels column (with system labels opt-in), the status-over-time and agent-health trends, CSV
+    export, Save as filter and Share. "Open classic view" stays for comparison.
+    - The trends use the mockup's accessible `LineChart` (marker shapes per series, "Show as
+      table"), in place of chart.js. They sit below the list rather than above it, so the list
+      and its search stay at the top.
+    - CSV export reuses the classic page's code, moved to `src/utils/evidence-csv.ts`, so both
+      pages produce identical files. Above 1,000 rows it asks first; above 5,000 it is disabled
+      with the reason.
+    - Save as filter opens the classic "new evidence filter" page with the search and system, as
+      the classic page does; it is disabled until the typed search has been applied.
+    - The subject picker narrows system components to this system (the classic one lists all).
+    - The labels column follows the classic page's Labels setting, so the two stay in step.
 14. **Evidence uses the classic page's query parameters** (`filter`, `page`, `sortBy`,
     `sortDirection`, `subject`), so a view moves between the two pages unchanged, and a subject
     filter set on the classic page is honoured (and shown as a removable chip) here.
@@ -135,6 +143,5 @@ are new and still open.
 
 - Review 13–16.
 - Add `lint:css` and `test:e2e` to the shared CI workflow.
-- Finish Evidence (charts, CSV export, save as filter, subject filter), then the evidence record
-  page, so the whole evidence journey stays in the new UI.
+- The evidence record page, so the whole evidence journey stays in the new UI.
 - Then a system page with editing (Risks or Configure System) to prove out forms and dialogs.
