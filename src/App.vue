@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router';
 import ToastRegion from '@/ds/components/ToastRegion/ToastRegion.vue';
 import ConfirmHost from '@/ds/components/ConfirmDialog/ConfirmHost.vue';
 import DemoFeedbackButton from '@/components/DemoFeedbackButton.vue';
-import ErrorDialogHost from '@/components/notifications/ErrorDialogHost.vue';
+import ErrorDialogHost from '@/ds/components/Dialog/ErrorDialogHost.vue';
 import { useTheme } from '@/composables/useTheme';
 
 // Applies the saved theme on every page, guest pages included; the app shell's account menu

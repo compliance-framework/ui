@@ -296,7 +296,7 @@ page structurally migrated, say so and I'll switch.
 
 - **Decision:** the seven classic create and edit pages (each its own copy of ID, Title,
   Version, Remarks) are now **one configurable form screen** (`src/screens/documents/
-  DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to their fields
+DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to their fields
   (title required; an assessment plan's SSP URL required and well-formed) instead of toasts.
   Edit loads the whole document and sends it back with the changed fields, as before.
 - **Found (API bug):** `PUT /api/oscal/component-definitions/:id` returns 200 and echoes the
@@ -465,3 +465,6 @@ page structurally migrated, say so and I'll switch.
 - Also in this stretch: the assessment results **Local definitions** and **Back matter** tabs
   were "coming soon" placeholders; they're removed from the tab bar and their URLs redirect to
   the overview.
+- And the app-wide **error dialog** (`services/error-dialog`, used by `useAxiosErrorDialog`) is
+  now a design-system dialog too. With the toast region and the confirm host, nothing PrimeVue
+  is mounted globally in `App.vue` any more; PrimeVue remains only inside classic islands.
