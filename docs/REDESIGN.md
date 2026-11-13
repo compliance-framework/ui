@@ -65,9 +65,9 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 | This System > Compliance                                                                         | `compliance:index` → `/systems/:id/compliance`                                                               | **Done**                                                                                                                                                                                       |
 | This System > Risks: dashboard, register, new and edit risk                                      | `risks:index` → `/systems/:id/risks` (dashboard) and `/systems/:id/risks/register`                           | **Done**; risk detail (`risks:detail`) still classic. The classic Risks view stays for the SSP editor's Risks tab, and its register panel for cross-system Risks                               |
 | This System > Workflow Instances (list, New instance)                                            | `workflow-instances:index` → `/systems/:id/workflows`                                                        | **Done**; instance editor (`workflow-instance-*`) and run view (`workflow-execution-view`) still classic                                                                                       |
-| Configure System (15 tabs)                                                                       | `system:*`, `system-component-dashboards`                                                                    | To do                                                                                                                                                                                          |
+| Configure System (15 tabs)                                                                       | `system:*`, `system-component-dashboards` → `/systems/:id/configure/...`                                     | **Done (with islands)**: frame and tabs on the design system; each section's content is the classic SSP view as an island                                                                      |
 | POA&M items, inventory                                                                           | `poam-items:index`, `inventory:index`                                                                        | To do                                                                                                                                                                                          |
-| SSP editor (16 tabs), create                                                                     | `system-security-plan-*`, `system-security-plans-create`                                                     | To do                                                                                                                                                                                          |
+| SSP editor (16 tabs)                                                                             | `system-security-plan-*` → Configure System (sections), Risks, Compliance                                    | **Merged into Configure System**; SSP create (`system-security-plans-create`) still classic                                                                                                    |
 | Evidence filters (dashboards)                                                                    | `dashboards`, `dashboards.*`                                                                                 | To do                                                                                                                                                                                          |
 | Analysis: cross-system risks, compliance map                                                     | `admin-risks`, `lineage`, `lineage-graph`                                                                    | To do                                                                                                                                                                                          |
 | Integrations: workflow definitions, agents, import                                               | `workflow:index`, `workflow-definition-*`, `admin-agents`, `admin-import`                                    | To do                                                                                                                                                                                          |
@@ -87,6 +87,9 @@ Some migrated pages embed classic components (inside `LegacyPage`) for deep edit
 large enough to rebuild separately. They work and keep their tests; they still look classic.
 Replace each with a design-system version, then delete the classic component.
 
+- Configure System: every section's content (`SystemSecurityPlan*View`, `ComponentsPanel`) —
+  Overview, Characteristics, Authorization Boundary, Components, Scope, JSON, and the hidden
+  sections reachable by link.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
   The bulk "Apply all suggestions" confirmation is still PrimeVue's confirm dialog.
@@ -100,6 +103,9 @@ Small things noticed along the way, to sweep up later:
   so on `main` it may never find the attached profiles. The new page accepts both. Worth checking
   on `main`.
 - The classic "Select a system" prompt (classic system pages) still uses classic styling.
+- Classic risk detail (`/risks/:id`, `/system-security-plans/:id/risks/:id`) highlights no nav
+  item, because its URL is outside `/systems/`. It will once risk detail is migrated under
+  `/systems/:id/risks/:riskId`.
 - Browser checks can fail on the first run after new imports, while Vite re-optimises its
   dependencies and reloads the page; a second run passes. Pre-bundling the dependencies
   (`optimizeDeps.include`) for the e2e server would stop it.

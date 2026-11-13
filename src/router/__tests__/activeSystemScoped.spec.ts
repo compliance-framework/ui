@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import router from '../index';
+import { navGroups } from '@/ds/templates/AppShell/nav';
 
 function scoped(name: string): boolean {
   return router
@@ -7,14 +8,17 @@ function scoped(name: string): boolean {
     .matched.some((record) => record.meta.activeSystemScoped);
 }
 
-// The shell remounts only `activeSystemScoped` pages when the active system changes, so the
-// flag must match the nav's classic This System pages. Migrated system pages take the system
-// from their URL (/systems/:systemId/...) instead, and their classic names only redirect.
-describe('activeSystemScoped routes', () => {
-  it.each(['system:overview', 'system:components', 'system:diagrams'])(
-    '%s follows the active system',
+// Every This System page now takes its system from the URL (/systems/:systemId/...), so links
+// are shareable and a system switch changes the URL. Classic pages that still read the current
+// system from the store carry `activeSystemScoped`, and the shell remounts them on a switch.
+describe('system-scoped routes', () => {
+  const systemItems = navGroups.find((group) => group.id === 'system')!.items;
+
+  it.each(systemItems.map((item) => item.route))(
+    '%s takes its system from the URL',
     (name) => {
-      expect(scoped(name)).toBe(true);
+      const record = router.getRoutes().find((r) => r.name === name);
+      expect(record?.path).toContain(':systemId');
     },
   );
 
@@ -25,7 +29,6 @@ describe('activeSystemScoped routes', () => {
     'catalog-list',
     'profile-list',
     'dashboards',
-    'system-security-plans',
   ])('%s ignores system switches', (name) => {
     expect(scoped(name)).toBe(false);
   });

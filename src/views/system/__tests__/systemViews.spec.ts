@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref, shallowRef, type Ref } from 'vue';
-import UsersView from '@/views/system/UsersView.vue';
-import ComponentsView from '@/views/system/ComponentsView.vue';
-import AuthorizationsView from '@/views/system/AuthorizationsView.vue';
 import DiagramsView from '@/views/system/DiagramsView.vue';
 
 const {
@@ -212,81 +209,6 @@ describe('System area views', () => {
     loadInitialProfiles.mockClear();
     configState.filterComponentLinkingEnabled = false;
   });
-
-  it.each([null, []])(
-    'renders the users empty state when the API returns %s',
-    async (payload) => {
-      apiPayloads.set(endpoint.users, payload);
-
-      const wrapper = mount(UsersView, {
-        global: { stubs },
-      });
-      await flushPromises();
-
-      expect(wrapper.text()).toContain(
-        'No users defined. Create your first user to get started.',
-      );
-    },
-  );
-
-  it.each([null, []])(
-    'renders the components empty state when the API returns %s',
-    async (payload) => {
-      apiPayloads.set(endpoint.components, payload);
-      apiPayloads.set('/api/oscal/system-security-plans/ssp-1/risks', []);
-      apiPayloads.set(endpoint.users, []);
-
-      const wrapper = mount(ComponentsView, {
-        global: { stubs },
-      });
-      await flushPromises();
-
-      expect(wrapper.text()).toContain(
-        'No components defined. Create your first component to get started.',
-      );
-    },
-  );
-
-  it.each([
-    [false, false],
-    [true, true],
-  ])(
-    'shows the component Dashboards button only when filter component linking is enabled (%s)',
-    async (enabled, expected) => {
-      configState.filterComponentLinkingEnabled = enabled;
-      apiPayloads.set(endpoint.components, [
-        { uuid: 'comp-1', title: 'API Gateway', type: 'software' },
-      ]);
-      apiPayloads.set('/api/oscal/system-security-plans/ssp-1/risks', []);
-      apiPayloads.set(endpoint.users, []);
-
-      const wrapper = mount(ComponentsView, {
-        global: { stubs },
-      });
-      await flushPromises();
-
-      expect(wrapper.text()).toContain('API Gateway');
-      expect(
-        wrapper.findAll('button').some((b) => b.text() === 'Dashboards'),
-      ).toBe(expected);
-    },
-  );
-
-  it.each([null, []])(
-    'renders the leveraged authorizations empty state when the API returns %s',
-    async (payload) => {
-      apiPayloads.set(endpoint.authorizations, payload);
-
-      const wrapper = mount(AuthorizationsView, {
-        global: { stubs },
-      });
-      await flushPromises();
-
-      expect(wrapper.text()).toContain(
-        'No leveraged authorizations defined. Create your first authorization to get started.',
-      );
-    },
-  );
 
   it('renders a diagram immediately after adding to a grouping reset by a 404', async () => {
     apiErrors.set(endpoint.networkArchitecture, { response: { status: 404 } });

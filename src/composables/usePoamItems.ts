@@ -1,6 +1,6 @@
 /**
  * Composable for the CCF POAM Items REST API (/api/poam-items)
- * Follows the same useDataApi pattern as RisksView.vue and other views.
+ * Follows the same useDataApi pattern as other views.
  */
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type {

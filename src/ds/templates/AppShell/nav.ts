@@ -60,7 +60,7 @@ export const navGroups: NavGroup[] = [
         icon: 'instances',
         permission: read(RESOURCES.WORKFLOW_INSTANCE),
       },
-      { route: 'system:overview', label: 'Configure System', icon: 'details' },
+      { route: 'system-configure', label: 'Configure System', icon: 'details' },
     ],
   },
   {

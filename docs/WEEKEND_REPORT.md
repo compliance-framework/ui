@@ -43,3 +43,26 @@ page structurally migrated, say so and I'll switch.
   suggestions panel, shared responsibilities and export dialog are classic islands.
 - **Decision:** island-heavy pages are not in the axe browser checks yet (the islands would fail
   on classic issues that their rebuild will fix).
+
+### Configure System and the SSP Editor (`/systems/:id/configure/...`)
+
+- **Decision:** Configure System (by current system) and the SSP Editor (by `:id`) showed the same
+  sections, so they are now **one page** at `/systems/:id/configure/<section>`. Every old URL
+  redirects: `/system/...` for the current system, `/system-security-plans/:id/...` for that
+  system. The SSP editor's Risks and Compliance tabs lead to This System's Risks register and
+  Compliance pages.
+- **Decision (behaviour change):** opening an old SSP-editor link now makes that system the
+  current system (like every URL-scoped page), where the classic editor browsed an SSP without
+  switching. I think that's right for shareable links, but it's a change.
+- **Decision:** classic risk detail keeps its SSP-scoped URL as a standalone page until it is
+  migrated, since its parent (the SSP editor) is gone.
+- **Gap (islands):** every section's content is still the classic SSP view; the tabs, header
+  and routing are new. Hidden sections (System Implementation, Users, Leveraged Authorizations,
+  Control Implementation, Export Offerings, Leverage, Inherited Capabilities) stay reachable by
+  link but not as tabs, as before.
+- **Found:** the classic `SystemSecurityPlanDiagramsView` ignored the `sspId` it was given and
+  only read `:id` from the URL; it now takes the prop first (fixes 400s with `undefined`).
+- Deleted: the classic Configure System frame and its 13 wrappers, the SSP editor frame, the
+  classic Risks view and dashboard widgets, and the classic SSP Compliance view (all now unused).
+- **Decision:** with every This System page URL-scoped, the router test now checks that each
+  This System nav item's route takes `:systemId`.

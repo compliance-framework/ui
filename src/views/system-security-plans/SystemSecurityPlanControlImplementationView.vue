@@ -515,7 +515,7 @@ const editingStatement = ref<Statement | null>(null);
 const editingByComponent = ref<ByComponent | null>(null);
 
 // Watched, not interpolated once: useDataApi resolves toValue(url) a single time, and this
-// view's host (<KeepAlive> in SystemSecurityPlanEditorView) keeps the instance alive across
+// view's host (formerly <KeepAlive> in the SSP editor) keeps the instance alive across
 // SSP switches — so a plain string pins the FIRST sspId and renders A's requirements while
 // every write path resolves the id at call time. That gap is what deleteRequirementByComponent
 // hangs a destructive action on. Same treatment as the sibling Inherited Capabilities view.

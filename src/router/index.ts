@@ -3,6 +3,23 @@ import AppShell from '@/ds/templates/AppShell/AppShell.vue';
 import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
 import { useSystemStore } from '@/stores/system';
+import {
+  CONFIGURE_SECTIONS,
+  sectionRouteName,
+} from '@/screens/configure/configureSections';
+
+// Where classic Configure System and SSP Editor put a section, when not at its new path.
+const CLASSIC_SYSTEM_PATHS: Record<string, string> = {
+  overview: '',
+  diagrams: 'authorization-boundary',
+  implementation: 'implementation',
+};
+const SSP_EDITOR_PATHS: Record<string, string> = {
+  overview: '',
+  characteristics: 'system-characteristics',
+  diagrams: 'authorization-boundary',
+  implementation: 'system-implementation',
+};
 import { usePermissionsStore } from '@/stores/permissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -155,107 +172,6 @@ const authenticatedRoutes = [
       import('../views/workflow-executions/WorkflowExecutionView.vue'),
     meta: {
       requiresAuth: true,
-    },
-  },
-  {
-    path: 'system',
-    name: 'system',
-    component: () => import('../views/SystemView.vue'),
-    children: [
-      {
-        path: '',
-        name: 'system:overview',
-        component: () => import('../views/system/OverviewView.vue'),
-      },
-      {
-        path: 'characteristics',
-        name: 'system:characteristics',
-        component: () => import('../views/system/CharacteristicsView.vue'),
-      },
-      {
-        path: 'authorization-boundary',
-        name: 'system:diagrams',
-        component: () =>
-          import('../views/system/AuthorizationBoundaryView.vue'),
-      },
-      {
-        path: 'implementation',
-        name: 'system:implementation',
-        component: () =>
-          import('../views/system/ImplementationOverviewView.vue'),
-      },
-      {
-        path: 'users',
-        name: 'system:users',
-        component: () => import('../views/system/UsersView.vue'),
-      },
-      {
-        path: 'components',
-        name: 'system:components',
-        component: () => import('../views/system/ComponentsView.vue'),
-      },
-      {
-        path: 'scope',
-        name: 'system:scope',
-        component: () => import('../views/system/ScopeView.vue'),
-      },
-      {
-        path: 'components/dashboards/:componentId',
-        name: 'system-component-dashboards',
-        component: () => import('../views/system/ComponentsView.vue'),
-      },
-      {
-        path: 'authorizations',
-        name: 'system:authorizations',
-        component: () => import('../views/system/AuthorizationsView.vue'),
-      },
-      {
-        path: 'control-implementation',
-        name: 'system:control-implementation',
-        component: () =>
-          import('../views/system/ControlImplementationView.vue'),
-      },
-      {
-        path: 'export-offerings',
-        name: 'system:export-offerings',
-        component: () => import('../views/system/ExportOfferingsView.vue'),
-      },
-      {
-        path: 'leverage',
-        name: 'system:leverage',
-        component: () => import('../views/system/LeverageView.vue'),
-      },
-      {
-        path: 'inherited-capabilities',
-        name: 'system:inherited-capabilities',
-        component: () =>
-          import('../views/system/InheritedCapabilitiesView.vue'),
-      },
-      // Risks and Compliance for the active system are top-level This System pages now
-      // (risks:index, compliance:index). Keep the old names resolving so bookmarks and any
-      // stray links land on the canonical page instead of a blank tab.
-      {
-        path: 'risks',
-        name: 'system:risks',
-        redirect: (to: RouteLocation) => ({
-          name: 'risks:index',
-          query: to.query,
-        }),
-      },
-      {
-        path: 'compliance',
-        name: 'system:compliance',
-        redirect: { name: 'compliance:index' },
-      },
-      {
-        path: 'json',
-        name: 'system:json',
-        component: () => import('../views/system/JsonView.vue'),
-      },
-    ],
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
     },
   },
   {
@@ -693,111 +609,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: '/system-security-plans/:id',
-    name: 'system-security-plan-editor',
-    component: () =>
-      import('../views/system-security-plans/SystemSecurityPlanEditorView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-    children: [
-      {
-        path: '',
-        name: 'system-security-plan-overview',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanOverviewView.vue'),
-      },
-      {
-        path: 'system-characteristics',
-        name: 'system-security-plan-characteristics',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue'),
-      },
-      {
-        path: 'authorization-boundary',
-        name: 'system-security-plan-diagrams',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanDiagramsView.vue'),
-      },
-      {
-        path: 'system-implementation',
-        name: 'system-security-plan-implementation',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue'),
-      },
-      {
-        path: 'users',
-        name: 'system-security-plan-users',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanUsersView.vue'),
-      },
-      {
-        path: 'components',
-        name: 'system-security-plan-components',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanComponentsView.vue'),
-      },
-      {
-        path: 'scope',
-        name: 'system-security-plan-scope',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanScopeView.vue'),
-      },
-      {
-        path: 'authorizations',
-        name: 'system-security-plan-authorizations',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'),
-      },
-      {
-        path: 'control-implementation',
-        name: 'system-security-plan-control-implementation',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanControlImplementationView.vue'),
-      },
-      {
-        path: 'export-offerings',
-        name: 'system-security-plan-export-offerings',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'),
-      },
-      {
-        path: 'leverage',
-        name: 'system-security-plan-leverage',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanLeverageView.vue'),
-      },
-      {
-        path: 'inherited-capabilities',
-        name: 'system-security-plan-inherited-capabilities',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'),
-      },
-      {
-        path: 'risks',
-        name: 'system-security-plan-risks',
-        component: () => import('../views/RisksView.vue'),
-      },
-      {
-        path: 'risks/:riskId',
-        name: 'system-security-plan-risk-detail',
-        component: () => import('../views/risk/RiskDetailView.vue'),
-      },
-      {
-        path: 'compliance',
-        name: 'system-security-plan-compliance',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanComplianceView.vue'),
-      },
-      {
-        path: 'json',
-        name: 'system-security-plan-json',
-        component: () =>
-          import('../views/system-security-plans/SystemSecurityPlanJSONView.vue'),
-      },
-    ],
-  },
-  {
     path: '/plan-of-action-and-milestones/:id',
     name: 'plan-of-action-and-milestones-editor',
     component: () =>
@@ -1143,6 +954,23 @@ const designSystemRoutes = [
         meta: { title: 'Compliance' },
       },
       {
+        path: 'configure',
+        component: () => import('@/screens/configure/ConfigureScreen.vue'),
+        meta: { title: 'Configure System' },
+        children: [
+          ...CONFIGURE_SECTIONS.map((section) => ({
+            path: section.path,
+            name: sectionRouteName(section.suffix),
+            component: () => import('@/screens/configure/ConfigureSection.vue'),
+          })),
+          {
+            path: 'components/dashboards/:componentId',
+            name: 'system-configure-component-dashboards',
+            component: () => import('@/screens/configure/ConfigureSection.vue'),
+          },
+        ],
+      },
+      {
         path: 'implementation',
         name: 'system-implementation',
         component: () =>
@@ -1234,6 +1062,86 @@ const designSystemRoutes = [
     path: 'compliance',
     name: 'compliance:index',
     redirect: toCurrentSystem('system-compliance'),
+  },
+  // Configure System (classic `system:*`, read the current system from the store) and the SSP
+  // Editor (classic `system-security-plan-*`, took the system from `:id`) both lead to
+  // /systems/:systemId/configure now. Their old names keep resolving for existing links.
+  {
+    path: 'system',
+    name: 'system',
+    redirect: toCurrentSystem('system-configure'),
+    children: [
+      ...CONFIGURE_SECTIONS.map((section) => ({
+        path: CLASSIC_SYSTEM_PATHS[section.classic] ?? section.path,
+        name: `system:${section.classic}`,
+        redirect: toCurrentSystem(sectionRouteName(section.suffix)),
+      })),
+      {
+        path: 'components/dashboards/:componentId',
+        name: 'system-component-dashboards',
+        redirect: (to: RouteLocation) => {
+          const systemId = useSystemStore().system.securityPlan?.uuid;
+          return systemId
+            ? {
+                name: 'system-configure-component-dashboards',
+                params: { systemId, componentId: to.params.componentId },
+              }
+            : { name: 'systems' };
+        },
+      },
+      {
+        path: 'risks',
+        name: 'system:risks',
+        redirect: toCurrentSystem('system-risks-register'),
+      },
+      {
+        path: 'compliance',
+        name: 'system:compliance',
+        redirect: toCurrentSystem('system-compliance'),
+      },
+    ],
+  },
+  {
+    path: '/system-security-plans/:id',
+    name: 'system-security-plan-editor',
+    redirect: (to: RouteLocation) => ({
+      name: 'system-configure',
+      params: { systemId: to.params.id },
+    }),
+    children: [
+      ...CONFIGURE_SECTIONS.map((section) => ({
+        path: SSP_EDITOR_PATHS[section.classic] ?? section.path,
+        name: `system-security-plan-${section.classic}`,
+        redirect: (to: RouteLocation) => ({
+          name: sectionRouteName(section.suffix),
+          params: { systemId: to.params.id },
+        }),
+      })),
+      {
+        path: 'risks',
+        name: 'system-security-plan-risks',
+        redirect: (to: RouteLocation) => ({
+          name: 'system-risks-register',
+          params: { systemId: to.params.id },
+          query: to.query,
+        }),
+      },
+      {
+        path: 'compliance',
+        name: 'system-security-plan-compliance',
+        redirect: (to: RouteLocation) => ({
+          name: 'system-compliance',
+          params: { systemId: to.params.id },
+        }),
+      },
+    ],
+  },
+  {
+    // Risk detail isn't migrated yet; it keeps its SSP-scoped URL as a page of its own.
+    path: '/system-security-plans/:id/risks/:riskId',
+    name: 'system-security-plan-risk-detail',
+    component: () => import('../views/risk/RiskDetailView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: 'controls',
