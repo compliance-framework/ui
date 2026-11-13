@@ -34,6 +34,7 @@ export interface ListView<K extends string> {
 export function useListView<K extends string>(
   sortKeys: readonly K[],
   defaultSort: K,
+  defaultDir: DataTableSort['direction'] = 'ascending',
 ): ListView<K> {
   const route = useRoute();
   const router = useRouter();
@@ -45,14 +46,16 @@ export function useListView<K extends string>(
       : defaultSort,
   );
   const sortDir = computed<DataTableSort['direction']>(() =>
-    route.query.dir === 'descending' ? 'descending' : 'ascending',
+    route.query.dir === 'descending' || route.query.dir === 'ascending'
+      ? route.query.dir
+      : defaultDir,
   );
 
   function go(patch: { q?: string; sort?: string; dir?: string }): void {
     const query: LocationQueryRaw = { ...route.query, ...patch };
     if (!query.q) delete query.q;
     if (query.sort === defaultSort) delete query.sort;
-    if (query.dir !== 'descending') delete query.dir;
+    if (query.dir === defaultDir) delete query.dir;
     void router.push({ query });
   }
 

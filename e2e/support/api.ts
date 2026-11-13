@@ -273,16 +273,81 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       );
     }
     if (path === '/api/admin/risk-templates') return json(route, { data: [] });
-    if (path === '/api/workflows/definitions')
-      return json(route, {
+    if (path === '/api/workflows/definitions') {
+      const definitions = {
         data: [
           {
             id: 'def-1',
             name: 'Quarterly access review',
+            description: 'Review privileged access',
+            version: '1.0.0',
+            status: 'published',
+            'suggested-cadence': 'quarterly',
+            'step-count': 3,
             'evidence-required': '',
           },
         ],
-      });
+      };
+      // Only the definitions list itself shows list states; other pages need it ready.
+      return new URL(route.request().frame().url()).pathname === '/workflows'
+        ? list(route, lists, definitions, { data: [] })
+        : json(route, definitions);
+    }
+    if (path === '/api/risks')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'risk-1',
+              title: 'Backups not tested',
+              status: 'open',
+              likelihood: 'moderate',
+              impact: 'high',
+              'ssp-id': SYSTEMS.scoped,
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/poam-items')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'poam-1',
+              'ssp-id': SYSTEMS.scoped,
+              title: 'Rotate database credentials',
+              description: 'Credentials are older than policy allows.',
+              status: 'open',
+              deadline: '2026-12-01T00:00:00Z',
+              'updated-at': '2026-11-01T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/admin/ssp-templates')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'tpl-1',
+              name: 'Applications by _app',
+              enabled: true,
+              keys: ['_app'],
+              'ssp-count': 4,
+              'last-run-at': '2026-11-01T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/workflows/instances' && method === 'GET')
       return list(
         route,

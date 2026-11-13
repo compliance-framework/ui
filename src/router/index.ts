@@ -90,9 +90,11 @@ const authenticatedRoutes = [
   {
     path: 'workflows',
     name: 'workflow:index',
-    component: () => import('../views/workflows/WorkFlowIndexView.vue'),
+    component: () =>
+      import('../screens/workflows/WorkflowDefinitionsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -177,9 +179,10 @@ const authenticatedRoutes = [
   {
     path: 'poam-items',
     name: 'poam-items:index',
-    component: () => import('../views/poam/CCFPoamItemsListView.vue'),
+    component: () => import('../screens/poam/PoamItemsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -390,9 +393,10 @@ const authenticatedRoutes = [
   {
     path: '/admin/risks',
     name: 'admin-risks',
-    component: () => import('../views/admin/AdminRisksView.vue'),
+    component: () => import('../screens/risks/RiskRegisterScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
@@ -417,18 +421,20 @@ const authenticatedRoutes = [
   {
     path: '/admin/ssp-templates',
     name: 'admin-ssp-templates',
-    component: () => import('../views/admin/SspTemplatesView.vue'),
+    component: () => import('../screens/ssp-templates/SspTemplatesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
   {
     path: '/admin/ssp-templates/:id',
     name: 'admin-ssp-template-detail',
-    component: () => import('../views/admin/SspTemplateDetailView.vue'),
+    component: () => import('../screens/ssp-templates/SspTemplateScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },

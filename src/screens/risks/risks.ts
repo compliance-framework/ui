@@ -98,11 +98,14 @@ export function registerLink(systemId: string, filters: Partial<RiskFilters>) {
   };
 }
 
-/** A risk opens on its existing detail page, which offers "back" to This System > Risks. */
-export function riskDetailLink(riskId: string) {
+/**
+ * A risk opens on its existing detail page. From a system's pages it offers "back" to This
+ * System > Risks; from the cross-system register it goes back in history.
+ */
+export function riskDetailLink(riskId: string, fromSystem = true) {
   return {
     name: 'risks:detail',
     params: { riskId },
-    query: { from: 'system' },
+    query: fromSystem ? { from: 'system' } : {},
   };
 }

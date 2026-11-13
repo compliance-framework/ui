@@ -5,7 +5,7 @@ import { useToast } from 'primevue/usetoast';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useUserSearch } from '@/composables/workflows';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
-import type { Risk } from '@/oscal';
+import type { Risk, SystemSecurityPlan } from '@/oscal';
 import { usePermissionsStore } from '@/stores/permissions';
 import type { DataResponse } from '@/stores/types';
 import { useSystemStore } from '@/stores/system';
@@ -31,7 +31,7 @@ import {
   riskStatusLabel,
 } from '@/utils/risk-workflow';
 import { formatDate, plural } from '@/ds/format';
-import type { QueryStatus } from '@/ds/query';
+import { useApiQuery, type QueryStatus } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
 import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
@@ -78,11 +78,36 @@ const permissions = usePermissionsStore();
 const systemStore = useSystemStore();
 const { loadUsersByIds, getCachedUser } = useUserSearch();
 
-const systemId = String(route.params.systemId);
-const base = `/api/oscal/system-security-plans/${systemId}/risks`;
+/** Under /systems/:systemId the register is one system's; at /admin/risks it spans them all. */
+const systemId = route.params.systemId ? String(route.params.systemId) : '';
+const global = !systemId;
 const systemName = computed(
   () => systemStore.system.securityPlan?.metadata.title ?? 'this system',
 );
+/** Global risks carry their system as `ssp-id`. */
+function riskSystem(risk: Risk): string {
+  return systemId || String((risk as { sspId?: string }).sspId ?? '');
+}
+const riskPath = (risk: Risk) =>
+  `/api/oscal/system-security-plans/${riskSystem(risk)}/risks/${getRiskIdentifier(risk)}`;
+
+// Systems, for the global register's System column, filter and New risk.
+const plans = global
+  ? useApiQuery<SystemSecurityPlan[]>('/api/oscal/system-security-plans')
+  : undefined;
+const systemOptions = computed(() =>
+  (plans?.data.value ?? [])
+    .map((plan) => ({ value: plan.uuid, label: plan.metadata.title }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
+const systemTitle = (id: string) =>
+  systemOptions.value.find((o) => o.value === id)?.label ?? 'Unknown system';
+const systemFilter = computed(() =>
+  global ? String(route.query.system ?? '') : '',
+);
+function setSystem(system: string): void {
+  void router.push({ query: { ...route.query, system: system || undefined } });
+}
 const view = computed(() => readRegisterView(route.query));
 
 function withView(next: RegisterView): LocationQueryRaw {
@@ -119,7 +144,11 @@ const risks = ref<Risk[]>([]);
 async function load(): Promise<void> {
   status.value = 'loading';
   try {
-    const response = await api.get<DataResponse<Risk[]>>(base);
+    const response = await api.get<DataResponse<Risk[]>>(
+      global
+        ? '/api/risks'
+        : `/api/oscal/system-security-plans/${systemId}/risks`,
+    );
     risks.value = response.data.data ?? [];
     status.value = 'ready';
     const owners = [...new Set(risks.value.flatMap(riskOwnerRefs))];
@@ -253,7 +282,27 @@ const chips = computed(() => {
   if (f.riskId) list.push({ label: 'One risk', remove: { riskId: '' } });
   return list;
 });
-const clearAll = () => go({ ...defaultRiskFilters });
+const allChips = computed(() => [
+  ...(systemFilter.value
+    ? [
+        {
+          label: `System: ${systemTitle(systemFilter.value)}`,
+          clear: () => setSystem(''),
+        },
+      ]
+    : []),
+  ...chips.value.map((chip) => ({
+    label: chip.label,
+    clear: () => go(chip.remove),
+  })),
+]);
+const clearAll = () =>
+  void router.push({
+    query: {
+      ...withView({ ...view.value, filters: { ...defaultRiskFilters } }),
+      system: undefined,
+    },
+  });
 
 // Free-text filters apply on Enter or when the field loses focus, so typing doesn't push history.
 const ownerDraft = ref(view.value.filters.owner);
@@ -272,7 +321,9 @@ watch(
 
 const rows = computed(() =>
   sortRisks(
-    filterRisks(risks.value, view.value.filters),
+    filterRisks(risks.value, view.value.filters).filter(
+      (risk) => !systemFilter.value || riskSystem(risk) === systemFilter.value,
+    ),
     view.value.sort,
     view.value.dir,
   ).map((risk) => {
@@ -281,6 +332,7 @@ const rows = computed(() =>
     return {
       id: getRiskIdentifier(risk),
       risk,
+      system: global ? systemTitle(riskSystem(risk)) : '',
       status: riskBadge(risk.status),
       likelihood: getRiskLikelihood(risk),
       impact: getRiskImpact(risk),
@@ -340,7 +392,7 @@ async function remove(): Promise<void> {
   toDelete.value = undefined;
   if (!risk) return;
   try {
-    await api.delete(`${base}/${getRiskIdentifier(risk)}`);
+    await api.delete(riskPath(risk));
     risks.value = risks.value.filter((r) => r !== risk);
     toast.add({
       severity: 'success',
@@ -362,7 +414,13 @@ function rowActions(risk: Risk): MenuEntry[] {
   const id = getRiskIdentifier(risk);
   return [
     ...(id
-      ? [{ label: 'Open', icon: 'next' as const, to: riskDetailLink(id) }]
+      ? [
+          {
+            label: 'Open',
+            icon: 'next' as const,
+            to: riskDetailLink(id, !global),
+          },
+        ]
       : []),
     {
       label: 'Edit',
@@ -393,8 +451,10 @@ function rowActions(risk: Risk): MenuEntry[] {
 <template>
   <ListTemplate
     title="Risks"
-    :description="`Risk register for ${systemName}.`"
-    :tabs="risksTabs(systemId)"
+    :description="
+      global ? 'Risks across every system.' : `Risk register for ${systemName}.`
+    "
+    :tabs="global ? undefined : risksTabs(systemId)"
   >
     <template #actions>
       <Button
@@ -422,16 +482,23 @@ function rowActions(risk: Risk): MenuEntry[] {
           label="Filter risks"
           search-label="Search risks"
           search-placeholder="Title, status or owner"
-          :chips="chips"
+          :chips="allChips"
           :summary="
-            chips.length && status === 'ready'
+            allChips.length && status === 'ready'
               ? `${plural(rows.length, 'risk')} match.`
               : ''
           "
           @search="go({ search: draft.trim() })"
-          @remove="(index) => go(chips[index]!.remove)"
+          @remove="(index) => allChips[index]!.clear()"
           @clear="clearAll"
         >
+          <FormField v-if="global" label="System">
+            <Select
+              :model-value="systemFilter"
+              :options="[{ value: '', label: 'Any system' }, ...systemOptions]"
+              @update:model-value="setSystem"
+            />
+          </FormField>
           <FormField label="Status">
             <Select
               :model-value="view.filters.status"
@@ -531,7 +598,7 @@ function rowActions(risk: Risk): MenuEntry[] {
       empty-title="No risks yet"
       empty-body="A risk records something that could stop a control working, with how likely it is, how much it would matter, and what is being done about it."
       icon="risks"
-      :filters="chips.map((c) => c.label)"
+      :filters="allChips.map((c) => c.label)"
       @retry="load"
       @clear-filters="clearAll"
     >
@@ -545,10 +612,11 @@ function rowActions(risk: Risk): MenuEntry[] {
         >
       </template>
       <DataTable
-        caption="Risks in this system"
+        :caption="global ? 'Risks in every system' : 'Risks in this system'"
         caption-hidden
         :columns="[
           { key: 'title', label: 'Risk', minWidth: 'md' },
+          ...(global ? [{ key: 'system', label: 'System' }] : []),
           { key: 'status', label: 'Status', nowrap: true },
           { key: 'likelihood', label: 'Likelihood', nowrap: true },
           { key: 'impact', label: 'Impact', nowrap: true },
@@ -560,7 +628,7 @@ function rowActions(risk: Risk): MenuEntry[] {
       >
         <template #cell-title="{ row: r }">
           <Stack gap="1">
-            <TextLink v-if="r.id" :to="riskDetailLink(r.id)">{{
+            <TextLink v-if="r.id" :to="riskDetailLink(r.id, !global)">{{
               r.risk.title || 'Untitled risk'
             }}</TextLink>
             <Text v-else as="span">{{ r.risk.title || 'Untitled risk' }}</Text>
@@ -608,7 +676,8 @@ function rowActions(risk: Risk): MenuEntry[] {
 
   <RiskFormDialog
     v-model:open="formOpen"
-    :system-id="systemId"
+    :system-id="editing ? riskSystem(editing) : systemId || undefined"
+    :systems="global ? systemOptions : undefined"
     :risk="editing"
     @saved="saved"
   />

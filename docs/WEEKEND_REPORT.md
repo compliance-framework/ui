@@ -126,3 +126,31 @@ page structurally migrated, say so and I'll switch.
   empty state there.
 - Live testing created a group "Weekend test group" and a user `weekend.test2@example.com` in
   local-dev. Delete them if they get in the way.
+
+### Workflow definitions, cross-system risks, POA&M items, system templates
+
+- **Workflow definitions** (`/workflows`): search, status and sort in the URL; **New definition**
+  is a design-system dialog (inline validation, then opens the new definition); Delete in the row
+  menu with a confirm.
+  - **Found:** the classic status filter never re-fetched, so it did nothing. Also, the
+    definitions API returns no `status` field at all (and returns `suggested_cadence` and
+    `step_count` in snake_case, unlike the rest of the payload).
+  - **Decision:** the Status column and filter appear only when some definition has a status, so
+    today they're hidden rather than showing a blank badge on every row.
+- **Cross-system risks** (`/admin/risks`): **Decision:** rather than a second register, the
+  This System register now has a global mode. At `/admin/risks` it reads `/api/risks`, adds a
+  System column and a System filter (`?system=`), drops the Dashboard/Register tabs, and lets New
+  risk choose the system. Risk links from it don't carry `from=system`, so the detail page's
+  Back doesn't jump into one system. The classic `RiskRegisterPanel` and `RiskTrendWidget` are
+  deleted, as nothing else used them.
+  - **Gap:** the classic global page had a risk trend chart; it isn't rebuilt (the system
+    Risks dashboard has the trend view).
+- **POA&M items** (`/poam-items`, not in the nav, in the classic app either): system and status
+  filters, title search, newest first. **Decision:** the classic free-text SSP ID, risk ID and
+  "deadline before" (typed ISO timestamp) filters became a System select. Risk ID and deadline
+  filters are dropped; say if anyone used them.
+- **System templates** (`/admin/ssp-templates` and `/:id`): list and record on the design
+  system; the classic specs were ported. **Gap (islands):** the create/edit form dialog, the
+  preview panel and the created-systems table are classic.
+- **Decision (shared):** `useListView` takes a default sort direction, so lists sorted by date
+  default to newest first without putting `dir` in the URL.
