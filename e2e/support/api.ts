@@ -142,11 +142,14 @@ export async function signIn(page: Page, theme: 'light' | 'dark' = 'light') {
   }, theme);
 }
 
-/** Bodies POSTed to /api/evidence during the test, newest last. */
+/** Bodies POSTed to /api/evidence or a system's risks during the test, newest last. */
 export const created: unknown[] = [];
+/** Evidence links POSTed to a risk during the test. */
+export const linked: { path: string; body: unknown }[] = [];
 
 export async function mockApi(page: Page, options: MockOptions = {}) {
   created.length = 0;
+  linked.length = 0;
   const lists = options.lists ?? 'ready';
   const permissions = Object.fromEntries(
     Object.values(RESOURCES).map((resource) => [resource, ALL_ACTIONS]),
@@ -339,6 +342,14 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       if (!plan) return json(route, { errors: { body: 'not found' } }, 404);
       const rest = ssp[2] ?? '';
       if (rest === '') return json(route, { data: plan });
+      if (rest === '/risks' && method === 'POST') {
+        created.push(route.request().postDataJSON());
+        return json(route, { data: { id: 'risk-9', title: 'New risk' } }, 201);
+      }
+      if (/^\/risks\/[^/]+\/evidence$/.test(rest) && method === 'POST') {
+        linked.push({ path, body: route.request().postDataJSON() });
+        return json(route, { data: {} }, 201);
+      }
       if (rest === '/risks')
         return list(
           route,

@@ -34,13 +34,23 @@ import TextInput from '@/ds/components/TextInput/TextInput.vue';
  * template's threats and remediation plan. Editing re-reads the risk first so fields this form
  * doesn't show are kept.
  */
-const props = defineProps<{ systemId: string; risk?: Risk }>();
+const props = defineProps<{
+  /** The system the risk belongs to; omit it and pass `systems` to let the user choose. */
+  systemId?: string;
+  systems?: { value: string; label: string }[];
+  risk?: Risk;
+}>();
 const open = defineModel<boolean>('open', { default: false });
-const emit = defineEmits<{ saved: [] }>();
+const emit = defineEmits<{
+  /** The saved risk (the register create responds with one carrying an `id`), and its system. */
+  saved: [risk: (Risk & { id?: string }) | undefined, systemId: string];
+}>();
 
 const api = useAuthenticatedInstance();
+const chosenSystem = ref('');
+const systemId = computed(() => props.systemId ?? chosenSystem.value);
 const base = computed(
-  () => `/api/oscal/system-security-plans/${props.systemId}/risks`,
+  () => `/api/oscal/system-security-plans/${systemId.value}/risks`,
 );
 const editing = computed(() => Boolean(props.risk));
 
@@ -98,6 +108,7 @@ watch(open, (isOpen) => {
     remarks: risk?.remarks ?? '',
   });
   template.value = undefined;
+  chosenSystem.value = '';
   attempted.value = false;
   saveError.value = undefined;
 });
@@ -115,6 +126,7 @@ const errors = computed(() => {
   if (!form.description.trim()) e.description = 'Enter a description.';
   if (!form.statement.trim()) e.statement = 'Enter the risk statement.';
   if (!form.status) e.status = 'Choose a status.';
+  if (!systemId.value) e.system = 'Choose the system this risk belongs to.';
   return e;
 });
 
@@ -176,6 +188,7 @@ async function submit(): Promise<void> {
   if (Object.keys(errors.value).length) return;
   saving.value = true;
   saveError.value = undefined;
+  let saved: Risk | undefined;
   try {
     if (props.risk) {
       const url = `${base.value}/${getRiskIdentifier(props.risk)}`;
@@ -187,44 +200,48 @@ async function submit(): Promise<void> {
       } catch {
         // Fall back to the copy the register loaded.
       }
-      await api.put(
-        url,
-        {
-          ...latest,
-          title: form.title,
-          description: form.description,
-          statement: form.statement,
-          status: form.status,
-          deadline: deadlineIso(),
-          remarks: form.remarks || undefined,
-        },
-        { transformRequest: [decamelizeKeys] },
-      );
+      saved = (
+        await api.put<DataResponse<Risk>>(
+          url,
+          {
+            ...latest,
+            title: form.title,
+            description: form.description,
+            statement: form.statement,
+            status: form.status,
+            deadline: deadlineIso(),
+            remarks: form.remarks || undefined,
+          },
+          { transformRequest: [decamelizeKeys] },
+        )
+      ).data.data;
     } else {
-      await api.post(
-        base.value,
-        {
-          uuid: uuid(),
-          title: form.title,
-          description: form.description,
-          statement: form.statement,
-          status: form.status,
-          likelihood: toOptionalString(form.likelihood),
-          impact: toOptionalString(form.impact),
-          threatIds: template.value
-            ? getThreatIdsFromTemplate(template.value)
-            : undefined,
-          remediationTemplate: template.value
-            ? getRemediationTemplateFromTemplate(template.value)
-            : undefined,
-          deadline: deadlineIso(),
-          remarks: form.remarks || undefined,
-        },
-        { transformRequest: [decamelizeKeys] },
-      );
+      saved = (
+        await api.post<DataResponse<Risk>>(
+          base.value,
+          {
+            uuid: uuid(),
+            title: form.title,
+            description: form.description,
+            statement: form.statement,
+            status: form.status,
+            likelihood: toOptionalString(form.likelihood),
+            impact: toOptionalString(form.impact),
+            threatIds: template.value
+              ? getThreatIdsFromTemplate(template.value)
+              : undefined,
+            remediationTemplate: template.value
+              ? getRemediationTemplateFromTemplate(template.value)
+              : undefined,
+            deadline: deadlineIso(),
+            remarks: form.remarks || undefined,
+          },
+          { transformRequest: [decamelizeKeys] },
+        )
+      ).data.data;
     }
     open.value = false;
-    emit('saved');
+    emit('saved', saved, systemId.value);
   } catch (error) {
     saveError.value = await getErrorDetail(
       error,
@@ -255,6 +272,17 @@ const dirty = computed(() =>
     <template #default="{ requestClose }">
       <form novalidate @submit.prevent="submit">
         <Stack gap="4">
+          <FormField
+            v-if="systems && !props.systemId && !editing"
+            label="System"
+            required
+            :error="errors.system"
+          >
+            <Select
+              v-model="chosenSystem"
+              :options="[{ value: '', label: 'Choose a system' }, ...systems]"
+            />
+          </FormField>
           <Stack v-if="!editing" gap="2">
             <Text v-if="templatesDenied" variant="caption"
               >Your access doesn't include risk templates.</Text

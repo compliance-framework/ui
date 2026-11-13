@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useAuthenticatedInstance } from '@/composables/axios';
+import { useRoute } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import type { Risk } from '@/oscal';
+import { usePermissionsStore } from '@/stores/permissions';
+import { useSystemStore } from '@/stores/system';
 import type { DataResponse } from '@/stores/types';
 import { getErrorStatus } from '@/utils/httpErrors';
 import { riskStatusLabel } from '@/utils/risk-workflow';
@@ -15,12 +21,13 @@ import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import RiskFormDialog from '../../risks/RiskFormDialog.vue';
 import { riskBadge } from '../../risks/risks';
 import { ZERO_UUID, useEvidenceRecord } from './evidenceRecord';
 
 /**
- * Risks linked to this evidence stream, across every system. Creating a risk from the evidence
- * is not rebuilt yet.
+ * Risks linked to this evidence stream, across every system. Create risk adds one (in this
+ * system, or a chosen one on a global record) and links it to the stream.
  */
 interface EvidenceRisk {
   id: string;
@@ -34,6 +41,7 @@ interface EvidenceRisk {
   sourceType?: string;
 }
 
+const route = useRoute();
 const { evidence } = useEvidenceRecord();
 const api = useAuthenticatedInstance();
 
@@ -68,12 +76,54 @@ const rows = computed(() =>
   })),
 );
 
-/** Creating a risk from evidence is not rebuilt yet; the button says why. */
-const createDenied = computed(() =>
-  hasStream.value
-    ? 'Creating a risk from evidence isn’t rebuilt yet.'
-    : 'This evidence has no stream, so risks can’t be linked to it.',
+// Create a risk from this evidence ------------------------------------------------------------
+
+const permissions = usePermissionsStore();
+const systemStore = useSystemStore();
+const toast = useToast();
+/** Inside a system the risk goes in that system; on a global record the user chooses one. */
+const systemId =
+  typeof route.params.systemId === 'string' ? route.params.systemId : undefined;
+const systems = computed(() =>
+  systemStore.availablePlans.map((plan) => ({
+    value: plan.uuid,
+    label: plan.metadata.title,
+  })),
 );
+const creating = ref(false);
+const createDenied = computed(() => {
+  if (!hasStream.value)
+    return 'This evidence has no stream, so risks can’t be linked to it.';
+  return permissions.can(RESOURCES.RISK, ACTIONS.CREATE)
+    ? undefined
+    : "Your access doesn't include creating risks.";
+});
+
+/** Link the new risk to this evidence stream, as the classic page did. */
+async function created(
+  risk: (Risk & { id?: string }) | undefined,
+  sspId: string,
+): Promise<void> {
+  const riskId = risk?.id;
+  if (riskId && evidence.value?.uuid) {
+    try {
+      await api.post(
+        `/api/oscal/system-security-plans/${sspId}/risks/${riskId}/evidence`,
+        { evidenceId: evidence.value.uuid },
+        { transformRequest: [decamelizeKeys] },
+      );
+    } catch {
+      toast.add({
+        severity: 'warn',
+        summary: 'Risk created, not linked',
+        detail:
+          "The risk was created, but it couldn't be linked to this evidence.",
+        life: 5000,
+      });
+    }
+  }
+  await load();
+}
 </script>
 
 <template>
@@ -82,7 +132,12 @@ const createDenied = computed(() =>
     description="Risks linked to this evidence stream, across every system."
   >
     <template #actions>
-      <Button icon="add" :disabled-reason="createDenied">Create risk</Button>
+      <Button
+        icon="add"
+        :disabled-reason="createDenied"
+        @click="creating = true"
+        >Create risk</Button
+      >
     </template>
     <InlineMessage v-if="!hasStream" tone="warning" title="No evidence stream">
       <p>
@@ -146,4 +201,11 @@ const createDenied = computed(() =>
       </DataTable>
     </DataState>
   </Panel>
+
+  <RiskFormDialog
+    v-model:open="creating"
+    :system-id="systemId"
+    :systems="systems"
+    @saved="created"
+  />
 </template>
