@@ -156,7 +156,7 @@ const authenticatedRoutes = [
         path: 'executions',
         name: 'workflow-instance-executions',
         component: () =>
-          import('../views/workflow-instances/WorkflowInstanceExecutionsView.vue'),
+          import('../screens/workflows/WorkflowInstanceRunsTab.vue'),
       },
       {
         path: 'json',

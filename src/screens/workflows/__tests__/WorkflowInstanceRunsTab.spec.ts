@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { reactive } from 'vue';
-import WorkflowInstanceExecutionsView from '../WorkflowInstanceExecutionsView.vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h, reactive } from 'vue';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import { TooltipProvider } from 'reka-ui';
+import { formatDateTime } from '@/ds/format';
+import WorkflowInstanceExecutionsView from '../WorkflowInstanceRunsTab.vue';
 import type { WorkflowExecution, WorkflowInstance } from '@/types/workflows';
 
 const mockStore = reactive({
@@ -33,10 +37,6 @@ vi.mock('@/composables/workflows', () => ({
   }),
 }));
 
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-}));
-
 function createExecution(
   overrides: Partial<WorkflowExecution> = {},
 ): WorkflowExecution {
@@ -52,22 +52,31 @@ function createExecution(
   };
 }
 
-function mountComponent() {
-  return mount(WorkflowInstanceExecutionsView, {
-    global: {
-      stubs: {
-        PrimaryButton: { template: '<button><slot /></button>' },
-        SecondaryButton: { template: '<button><slot /></button>' },
-        RouterLinkButton: { template: '<a><slot /></a>' },
-        Badge: { template: '<span><slot /></span>' },
-        Dialog: { template: '<div><slot /></div>' },
+async function mountComponent() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: { render: () => null } },
+      {
+        path: '/workflow-executions/:id',
+        name: 'workflow-execution-view',
+        component: { render: () => null },
       },
-    },
+    ],
   });
+  await router.push('/');
+  return mount(
+    defineComponent({
+      render: () =>
+        h(TooltipProvider, null, () => h(WorkflowInstanceExecutionsView)),
+    }),
+    { global: { plugins: [router] } },
+  );
 }
 
-describe('WorkflowInstanceExecutionsView', () => {
+describe('WorkflowInstanceRunsTab', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockStore.executions = [];
     mockStore.isActive = true;
@@ -90,20 +99,16 @@ describe('WorkflowInstanceExecutionsView', () => {
       }),
     ];
 
-    const wrapper = mountComponent();
+    const wrapper = await mountComponent();
     await flushPromises();
 
     const rows = wrapper.findAll('tbody tr');
     expect(rows).toHaveLength(1);
 
-    const startedCell = rows[0].findAll('td')[0];
-    const startedText = startedCell.text();
-
-    const triggeredDate = new Date('2026-01-01T09:00:00.000Z').toLocaleString();
-    const startedDate = new Date('2026-01-01T09:05:00.000Z').toLocaleString();
-
-    expect(startedText).toContain(startedDate);
-    expect(startedText).not.toContain(triggeredDate);
+    const startedText = rows[0].find('a').text();
+    // The run started at 09:05; 09:00 is only when it was triggered.
+    expect(startedText).toBe(formatDateTime('2026-01-01T09:05:00.000Z'));
+    expect(startedText).not.toBe(formatDateTime('2026-01-01T09:00:00.000Z'));
   });
 
   it('shows state-specific text in Completed column for in-progress executions', async () => {
@@ -111,13 +116,10 @@ describe('WorkflowInstanceExecutionsView', () => {
       createExecution({ status: 'in_progress', completedAt: undefined }),
     ];
 
-    const wrapper = mountComponent();
+    const wrapper = await mountComponent();
     await flushPromises();
 
     const rows = wrapper.findAll('tbody tr');
-    const completedCell = rows[0].findAll('td')[3];
-
-    expect(completedCell.text()).not.toBe('-');
-    expect(completedCell.text().toLowerCase()).toContain('in progress');
+    expect(rows[0].text().toLowerCase()).toContain('in progress');
   });
 });

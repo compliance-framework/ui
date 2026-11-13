@@ -520,3 +520,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Found (classic bug, fixed here):** Save was enabled on an untouched form, because the
   evidence watcher rewrote `evidenceRequired` in a normalised form after the "original" snapshot.
   The form now normalises before taking the snapshot.
+- **Workflow instance Runs tab**: a design-system table (started, status badge, triggered by,
+  completed or cancelled), newest first; each run's start time opens its run page. The classic
+  spec is ported; its date check no longer depends on the test machine's timezone.
