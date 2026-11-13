@@ -732,10 +732,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-results/create',
     name: 'assessment-results-create',
-    component: () =>
-      import('../views/assessment-results/AssessmentResultsCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -789,10 +789,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-results/:id/edit',
     name: 'assessment-results-edit',
-    component: () =>
-      import('../views/assessment-results/AssessmentResultsEditView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

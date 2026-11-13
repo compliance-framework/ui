@@ -25,8 +25,25 @@ export interface DocumentFormKind {
   versionRequired?: boolean;
   /** Edit shows the published date (assessment plans). */
   published?: boolean;
-  /** The SSP an assessment plan imports: a required URL, with remarks. */
-  importSsp?: boolean;
+  /**
+   * The document this one imports, with remarks: an assessment plan's SSP (a URL) or assessment
+   * results' plan (a reference such as `#uuid`). Required when present.
+   */
+  importRef?: {
+    key: 'importSsp' | 'importAp';
+    label: string;
+    hint: string;
+    placeholder?: string;
+    url: boolean;
+    remarksLabel: string;
+  };
+  /** Assessment results start with one result, named on create. */
+  initialResult?: boolean;
+  /**
+   * Edit loads `/{id}/full`: the plain read omits parts the update requires (assessment results'
+   * `results`), so sending it back would be rejected or lose data.
+   */
+  editFromFull?: boolean;
   /** A catalog's type, stored as a metadata prop. */
   catalogType?: boolean;
   /** Runs after a successful create, e.g. making a new system the current one. */
@@ -124,7 +141,38 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     blank: () => ({ metadata: { version: '1.0' }, importSsp: {} }),
     version: true,
     published: true,
-    importSsp: true,
+    importRef: {
+      key: 'importSsp',
+      label: 'System security plan URL',
+      hint: 'The SSP this plan assesses.',
+      url: true,
+      remarksLabel: 'Remarks on the SSP',
+    },
+  },
+  'assessment-results': {
+    noun: 'assessment results',
+    endpoint: '/api/oscal/assessment-results',
+    detail: (id) => ({ name: 'assessment-results-overview', params: { id } }),
+    listRoute: 'assessment-results',
+    listLabel: 'Assessment results',
+    resource: RESOURCES.ASSESSMENT_RESULTS,
+    blank: () => ({
+      metadata: { published: new Date().toISOString(), oscalVersion: '1.1.3' },
+      importAp: {},
+      results: [],
+    }),
+    version: true,
+    published: true,
+    importRef: {
+      key: 'importAp',
+      label: 'Assessment plan',
+      hint: 'A reference to the plan these results are for, such as #uuid-of-the-plan.',
+      placeholder: '#assessment-plan-uuid',
+      url: false,
+      remarksLabel: 'Remarks on the plan',
+    },
+    initialResult: true,
+    editFromFull: true,
   },
   poam: {
     noun: 'POA&M',
@@ -159,6 +207,8 @@ export const FORM_ROUTES: Record<
   'profile:create': { kind: 'profile', mode: 'create' },
   'assessment-plan-create': { kind: 'assessment-plan', mode: 'create' },
   'assessment-plan-edit': { kind: 'assessment-plan', mode: 'edit' },
+  'assessment-results-create': { kind: 'assessment-results', mode: 'create' },
+  'assessment-results-edit': { kind: 'assessment-results', mode: 'edit' },
   'plan-of-action-and-milestones-create': { kind: 'poam', mode: 'create' },
   'plan-of-action-and-milestones-edit': { kind: 'poam', mode: 'edit' },
 };
@@ -170,26 +220,32 @@ export function validateDocument(
     uuid: string;
     title: string;
     version: string;
-    importSspHref: string;
+    importHref: string;
+    resultTitle: string;
   },
+  mode: 'create' | 'edit' = 'create',
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!fields.uuid.trim()) errors.uuid = 'Enter an ID, or generate one.';
   if (!fields.title.trim()) errors.title = 'Enter a title.';
   if (kind.versionRequired && !fields.version.trim())
     errors.version = 'Enter a version, like 1.0.0.';
-  if (kind.importSsp) {
-    const href = fields.importSspHref.trim();
+  if (kind.importRef) {
+    const href = fields.importHref.trim();
     if (!href)
-      errors.importSspHref = 'Enter the URL of the system security plan.';
-    else {
+      errors.importHref = kind.importRef.url
+        ? 'Enter the URL of the system security plan.'
+        : 'Enter a reference to the assessment plan.';
+    else if (kind.importRef.url) {
       try {
         new URL(href);
       } catch {
-        errors.importSspHref =
+        errors.importHref =
           'Enter a full URL, like https://example.com/ssp.json.';
       }
     }
   }
+  if (kind.initialResult && mode === 'create' && !fields.resultTitle.trim())
+    errors.resultTitle = 'Name the first result.';
   return errors;
 }

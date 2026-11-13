@@ -35,6 +35,26 @@ async function mountForm(path: string) {
       },
       { path: '/systems', name: 'systems', component: Stub },
       {
+        path: '/assessment-results',
+        name: 'assessment-results',
+        component: Stub,
+      },
+      {
+        path: '/assessment-results/create',
+        name: 'assessment-results-create',
+        component: DocumentForms,
+      },
+      {
+        path: '/assessment-results/:id',
+        name: 'assessment-results-overview',
+        component: Stub,
+      },
+      {
+        path: '/assessment-results/:id/edit',
+        name: 'assessment-results-edit',
+        component: DocumentForms,
+      },
+      {
         path: '/system-security-plans/create',
         name: 'system-security-plans-create',
         component: DocumentForms,
@@ -208,6 +228,57 @@ describe('DocumentForms', () => {
           ],
         }),
       }),
+      expect.anything(),
+    );
+  });
+
+  it('creates assessment results with their first result', async () => {
+    api.post.mockResolvedValue({ data: { data: { uuid: 'ar-9' } } });
+    const { wrapper, router } = await mountForm('/assessment-results/create');
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.text()).toContain(
+      'Enter a reference to the assessment plan.',
+    );
+    expect(wrapper.text()).toContain('Name the first result.');
+    const field = (placeholder: string) =>
+      wrapper.find(`input[placeholder="${placeholder}"]`);
+    await wrapper.findAll('input')[1]!.setValue('Q4 results');
+    await field('#assessment-plan-uuid').setValue('#ap-1');
+    await field('Initial assessment result').setValue('Q4 run');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(api.post).toHaveBeenCalledWith(
+      '/api/oscal/assessment-results',
+      expect.objectContaining({
+        importAp: expect.objectContaining({ href: '#ap-1' }),
+        results: [expect.objectContaining({ title: 'Q4 run' })],
+      }),
+      expect.anything(),
+    );
+    expect(router.currentRoute.value.fullPath).toBe('/assessment-results/ar-9');
+  });
+
+  it('edits assessment results from the full document, so results go back too', async () => {
+    api.get.mockResolvedValue({
+      data: {
+        data: {
+          uuid: 'ar-1',
+          metadata: { title: 'Q4' },
+          importAp: { href: '#ap-1' },
+          results: [{ uuid: 'r-1', title: 'Run' }],
+        },
+      },
+    });
+    api.put.mockResolvedValue({ data: { data: { uuid: 'ar-1' } } });
+    const { wrapper } = await mountForm('/assessment-results/ar-1/edit');
+    expect(api.get).toHaveBeenCalledWith(
+      '/api/oscal/assessment-results/ar-1/full',
+    );
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(api.put).toHaveBeenCalledWith(
+      '/api/oscal/assessment-results/ar-1',
+      expect.objectContaining({ results: [{ uuid: 'r-1', title: 'Run' }] }),
       expect.anything(),
     );
   });

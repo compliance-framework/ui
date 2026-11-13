@@ -47,6 +47,7 @@ type Doc = Record<string, unknown> & {
   uuid?: string;
   metadata: Record<string, unknown>;
   importSsp?: Record<string, unknown>;
+  importAp?: Record<string, unknown>;
 };
 
 const fields = reactive({
@@ -55,8 +56,10 @@ const fields = reactive({
   version: '',
   remarks: '',
   published: '',
-  importSspHref: '',
-  importSspRemarks: '',
+  importHref: '',
+  importRemarks: '',
+  resultTitle: '',
+  resultDescription: '',
   catalogType: 'standard',
 });
 const loaded = ref<Doc>();
@@ -69,15 +72,18 @@ function fill(doc: Doc): void {
   fields.version = String(meta.version ?? '');
   fields.remarks = String(meta.remarks ?? '');
   fields.published = meta.published ? String(meta.published).slice(0, 10) : '';
-  fields.importSspHref = String(doc.importSsp?.href ?? '');
-  fields.importSspRemarks = String(doc.importSsp?.remarks ?? '');
+  const imported = (
+    config.importRef ? doc[config.importRef.key] : undefined
+  ) as { href?: string; remarks?: string } | undefined;
+  fields.importHref = String(imported?.href ?? '');
+  fields.importRemarks = String(imported?.remarks ?? '');
 }
 
 async function load(): Promise<void> {
   status.value = 'loading';
   try {
     const response = await api.get<DataResponse<Doc>>(
-      `${config.endpoint}/${id}`,
+      `${config.endpoint}/${id}${config.editFromFull ? '/full' : ''}`,
     );
     loaded.value = response.data.data;
     fill(loaded.value);
@@ -91,7 +97,7 @@ else fill(config.blank() as Doc);
 
 const attempted = ref(false);
 const errors = computed(() =>
-  attempted.value ? validateDocument(config, fields) : {},
+  attempted.value ? validateDocument(config, fields, props.mode) : {},
 );
 watch(
   () => fields.title,
@@ -150,12 +156,24 @@ function payload(): Doc {
         : {}),
     },
   };
-  if (config.importSsp)
-    doc.importSsp = {
-      ...base.importSsp,
-      href: fields.importSspHref.trim(),
-      remarks: fields.importSspRemarks.trim() || undefined,
+  if (config.importRef) {
+    const key = config.importRef.key;
+    doc[key] = {
+      ...(base[key] as Record<string, unknown> | undefined),
+      href: fields.importHref.trim(),
+      remarks: fields.importRemarks.trim() || undefined,
     };
+  }
+  if (config.initialResult && props.mode === 'create')
+    doc.results = [
+      {
+        uuid: uuidv4(),
+        title: fields.resultTitle.trim(),
+        description: fields.resultDescription.trim(),
+        start: new Date().toISOString(),
+        reviewedControls: { controlSelections: [{ includeAll: {} }] },
+      },
+    ];
   return doc;
 }
 
@@ -261,17 +279,37 @@ async function submit(): Promise<void> {
           <FormField label="Remarks">
             <Textarea v-model="fields.remarks" :rows="4" />
           </FormField>
-          <template v-if="config.importSsp">
+          <template v-if="config.importRef">
             <FormField
-              label="System security plan URL"
-              hint="The SSP this plan assesses."
+              :label="config.importRef.label"
+              :hint="config.importRef.hint"
               required
-              :error="errors.importSspHref"
+              :error="errors.importHref"
             >
-              <TextInput v-model="fields.importSspHref" type="url" />
+              <TextInput
+                v-model="fields.importHref"
+                :type="config.importRef.url ? 'url' : 'text'"
+                :placeholder="config.importRef.placeholder"
+              />
             </FormField>
-            <FormField label="Remarks on the SSP">
-              <Textarea v-model="fields.importSspRemarks" :rows="3" />
+            <FormField :label="config.importRef.remarksLabel">
+              <Textarea v-model="fields.importRemarks" :rows="3" />
+            </FormField>
+          </template>
+          <template v-if="config.initialResult && mode === 'create'">
+            <FormField
+              label="First result"
+              hint="Results hold the findings and observations; you can add more later."
+              required
+              :error="errors.resultTitle"
+            >
+              <TextInput
+                v-model="fields.resultTitle"
+                placeholder="Initial assessment result"
+              />
+            </FormField>
+            <FormField label="What the first result covers">
+              <Textarea v-model="fields.resultDescription" :rows="3" />
             </FormField>
           </template>
           <InlineMessage

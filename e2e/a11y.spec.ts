@@ -33,6 +33,7 @@ const routes = [
   '/catalogs/new',
   '/system-security-plans/create',
   '/assessment-plans/create',
+  '/assessment-results/create',
   '/plan-of-action-and-milestones/create',
   '/about',
   '/profiles',

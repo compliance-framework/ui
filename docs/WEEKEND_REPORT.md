@@ -238,3 +238,10 @@ page structurally migrated, say so and I'll switch.
   the current system (and joins the system switcher's list), then opens in Configure System; a
   catalog's Type is still stored as the `catalog-type` prop. The classic system-create specs were
   ported to the shared form's spec.
+- Follow-up: **assessment results** create and edit use the shared form too: import AP
+  reference (required) and, on create, the first result's title (required) and description.
+  - **Found (classic bug):** editing assessment results always failed. The plain
+    `GET /assessment-results/:id` returns `results: null`, the classic page sent `results: []`,
+    and the API rejects that ("at least one result is required"). The new form loads
+    `/:id/full` for editing and sends that back, which works and keeps the results (checked with
+    a throwaway record, then deleted).
