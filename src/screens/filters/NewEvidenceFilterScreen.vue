@@ -1,18 +1,16 @@
-<template>
-  <PageHeader> New Evidence Filter </PageHeader>
-  <PageCard class="mt-8 w-1/2">
-    <FilterForm
-      :initial-filter="initialFilter"
-      :initial-ssp-id="initialSspId"
-      @submit="submit"
-    />
-  </PageCard>
-</template>
 <script setup lang="ts">
+/**
+ * New evidence filter (/dashboards/create): the page frame is the design system's; the form is
+ * the classic filter form (a legacy island). Saving returns to the evidence it searches. The script
+ * is the classic page's.
+ */
+import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';
+import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
-import PageCard from '@/components/PageCard.vue';
 import FilterForm from '@/views/dashboard/partials/FilterForm.vue';
 import type { DashboardCreate } from '@/stores/filters.ts';
 import { serializeFilter } from '@/parsers/labelfilter.ts';
@@ -49,3 +47,24 @@ async function submit(payload: DashboardCreate) {
   }
 }
 </script>
+
+<template>
+  <Stack gap="6">
+    <Breadcrumbs
+      :crumbs="[{ label: 'Evidence filters', to: { name: 'dashboards' } }]"
+    />
+    <PageHeader
+      title="New evidence filter"
+      description="Save a search so its evidence can be linked to controls and components."
+    />
+    <Panel>
+      <LegacyPage>
+        <FilterForm
+          :initial-filter="initialFilter"
+          :initial-ssp-id="initialSspId"
+          @submit="submit"
+        />
+      </LegacyPage>
+    </Panel>
+  </Stack>
+</template>

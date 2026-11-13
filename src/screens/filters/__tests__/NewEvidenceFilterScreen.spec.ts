@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import CreateFormView from '../CreateFormView.vue';
+import CreateFormView from '../NewEvidenceFilterScreen.vue';
 
 const state = vi.hoisted(() => ({
   query: {} as Record<string, string>,
@@ -22,8 +22,7 @@ function mountView() {
   return mount(CreateFormView, {
     global: {
       stubs: {
-        PageHeader: { template: '<h1><slot /></h1>' },
-        PageCard: { template: '<section><slot /></section>' },
+        Breadcrumbs: { template: '<nav />' },
         FilterForm: {
           name: 'FilterForm',
           props: ['initialFilter', 'initialSspId'],
@@ -45,7 +44,7 @@ const payload = {
   components: [],
 };
 
-describe('CreateFormView', () => {
+describe('NewEvidenceFilterScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state.query = {};

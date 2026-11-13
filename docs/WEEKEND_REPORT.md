@@ -177,3 +177,20 @@ page structurally migrated, say so and I'll switch.
   design-system toast next.
 - e2e: a new axe test covers the signed-out pages in both themes, with an SSO provider and a
   configured banner.
+
+### Evidence filters (`/dashboards`)
+
+- List with search, Scope (any, Global or a system), Control and Component filters, all in the
+  URL (the classic ones reset on reload). Each filter's name opens **its evidence**: the system's
+  Evidence page for a system filter, the global one otherwise. "Follows scope" and "Automatic"
+  are tags.
+- **Decision:** the classic page expanded a row inline to show its chart. It's now **Show
+  trend** in the row menu, opening a drawer with the design-system line chart (same data as the
+  Evidence page's trend), the filter expression and "Open its evidence".
+- **Decision:** `/dashboards/:id` rendered the whole list and ignored the id; it now redirects
+  to the list.
+- **Gap (islands):** the create and edit form (`FilterForm`, 468 lines) is classic, inside a
+  design-system page for New filter and in the classic dialog for Edit. Suggestions
+  (`/dashboards/suggestions/:sspId`) is still classic.
+- **Found:** the classic `FilterForm` fails axe (inputs without labels). New filter is left out
+  of the axe checks until the form is rebuilt, like the other island-heavy pages.

@@ -315,6 +315,28 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         },
         { data: [] },
       );
+    if (path === '/api/filters' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'f-1',
+              name: 'Payments services',
+              'ssp-id': SYSTEMS.scoped,
+              filter: {
+                scope: {
+                  condition: { label: 'app', operator: '=', value: 'payments' },
+                },
+              },
+              controls: [{ id: 'ac-2', title: 'Account management' }],
+              components: [],
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/poam-items')
       return list(
         route,

@@ -55,21 +55,20 @@ const authenticatedRoutes = [
   {
     path: '/dashboards',
     name: 'dashboards',
-    component: () => import('../views/dashboard/IndexView.vue'),
+    component: () => import('../screens/filters/EvidenceFiltersScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
     },
   },
   {
     path: '/dashboards/create',
     name: 'dashboards.create',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboard/CreateFormView.vue'),
+    component: () => import('../screens/filters/NewEvidenceFilterScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -81,15 +80,10 @@ const authenticatedRoutes = [
     },
   },
   {
+    // The classic page ignored the id and showed the whole list.
     path: '/dashboards/:id',
     name: 'dashboards.view',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboard/IndexView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
+    redirect: { name: 'dashboards' },
   },
   {
     path: 'workflows',
