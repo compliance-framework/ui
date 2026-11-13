@@ -59,7 +59,7 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 | Systems list                                                                                     | `system-security-plans` → `/systems`                                                | **Done**                                                                                   |
 | This System > Evidence                                                                           | `system:evidence` → `/systems/:id/evidence`                                         | **Done**                                                                                   |
 | Evidence record                                                                                  | `evidence:view` → `/evidence/:id`, `/systems/:id/evidence/:id`                      | **Done, with two gaps:** policy playback and Create risk aren't rebuilt (the page says so) |
-| Global > Evidence                                                                                | `evidence:index`                                                                    | To do (next: it shares most of This System > Evidence)                                     |
+| Global > Evidence                                                                                | `evidence:index` → `/evidence` (same screen as This System > Evidence)              | **Done**                                                                                   |
 | Evidence create, update, history                                                                 | `evidence:create`, `evidence:update`, `evidence:history`                            | To do                                                                                      |
 | This System > Implementation                                                                     | `controls:index`                                                                    | To do                                                                                      |
 | This System > Compliance                                                                         | `compliance:index`                                                                  | To do                                                                                      |
@@ -112,7 +112,7 @@ Made during the work (open to review):
 - **Times show in the viewer's local time zone**, as the current app does.
 - **Evidence pages:** URL parameters keep the classic names (`filter`, `page`, `sortBy`,
   `sortDirection`, `subject`) so old links still work; CSV export shares
-  `src/utils/evidence-csv.ts` with Global > Evidence; trends use the accessible `LineChart`
+  `src/utils/evidence-csv.ts`; Global and This System > Evidence are one screen (`EvidenceScreen`) in two contexts; trends use the accessible `LineChart`
   (with "Show as table") below the list; the subject picker narrows system components to the
   current system; record tabs are routes; tasks are listed in place rather than in a dialog.
 - **ESLint's `vue/multi-word-component-names` is off for `src/ds/**`**; components are namespaced

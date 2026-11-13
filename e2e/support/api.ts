@@ -91,6 +91,39 @@ async function list(
   return json(route, state === 'empty' ? empty : body);
 }
 
+function searchResponse(route: Route, url: URL, lists: ApiState) {
+  const page = Number(url.searchParams.get('page') ?? '1');
+  const rows = Array.from({ length: 50 }, (_, i) =>
+    evidence(
+      (page - 1) * 50 + i + 1,
+      i % 4 === 1 ? 'not-satisfied' : 'satisfied',
+    ),
+  );
+  return list(
+    route,
+    lists,
+    { data: rows, total: 120, page, limit: 50, totalPages: 3 },
+    { data: [], total: 0, page: 1, limit: 50, totalPages: 1 },
+  );
+}
+
+function trendResponse(route: Route, lists: ApiState) {
+  return list(
+    route,
+    lists,
+    {
+      data: [0, 1, 2, 3].map((i) => ({
+        interval: new Date(Date.UTC(2026, 10, 13, 9, i * 15)).toISOString(),
+        statuses: [
+          { status: 'satisfied', count: 80 + i },
+          { status: 'not-satisfied', count: 40 - i },
+        ],
+      })),
+    },
+    { data: [] },
+  );
+}
+
 export async function signIn(page: Page, theme: 'light' | 'dark' = 'light') {
   await page.addInitScript((t) => {
     localStorage.setItem(
@@ -128,6 +161,10 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path === '/api/me/permissions') {
       return json(route, { subject: { type: 'user', id: 'u-1' }, permissions });
     }
+    if (path === '/api/evidence/search')
+      return searchResponse(route, url, lists);
+    if (path === '/api/evidence/status-over-time')
+      return trendResponse(route, lists);
     const record = path.match(/^\/api\/evidence\/(ev-\d+)(\/.*)?$/);
     if (record) {
       const rest = record[2] ?? '';
@@ -216,39 +253,9 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
             : [];
         return json(route, { data: { entries, exceptions: [] } });
       }
-      if (rest === '/evidence/status-over-time') {
-        return list(
-          route,
-          lists,
-          {
-            data: [0, 1, 2, 3].map((i) => ({
-              interval: new Date(
-                Date.UTC(2026, 10, 13, 9, i * 15),
-              ).toISOString(),
-              statuses: [
-                { status: 'satisfied', count: 80 + i },
-                { status: 'not-satisfied', count: 40 - i },
-              ],
-            })),
-          },
-          { data: [] },
-        );
-      }
-      if (rest === '/evidence/search') {
-        const page = Number(url.searchParams.get('page') ?? '1');
-        const rows = Array.from({ length: 50 }, (_, i) =>
-          evidence(
-            (page - 1) * 50 + i + 1,
-            i % 4 === 1 ? 'not-satisfied' : 'satisfied',
-          ),
-        );
-        return list(
-          route,
-          lists,
-          { data: rows, total: 120, page, limit: 50, totalPages: 3 },
-          { data: [], total: 0, page: 1, limit: 50, totalPages: 1 },
-        );
-      }
+      if (rest === '/evidence/status-over-time')
+        return trendResponse(route, lists);
+      if (rest === '/evidence/search') return searchResponse(route, url, lists);
     }
 
     return json(route, { errors: { body: `Unmocked ${method} ${path}` } }, 404);

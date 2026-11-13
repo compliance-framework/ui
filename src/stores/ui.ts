@@ -29,11 +29,6 @@ export const useUIStore = defineStore(
     const controlImplementationDrawerOpen = ref(false);
 
     /**
-     * The active filter string for the Evidence view.
-     */
-    const evidenceFilter = ref<string>('');
-
-    /**
      * Map of expanded node keys in the Compliance Map (lineage) tree.
      * Used to maintain tree expansion state across navigations.
      */
@@ -64,15 +59,6 @@ export const useUIStore = defineStore(
      * Controls the visibility of the detail drawer in the Compliance Map graph view.
      */
     const lineageGraphDrawerOpen = ref(false);
-    /**
-     * The active sort column for the Evidence view.
-     */
-    const evidenceSortBy = ref<'lastSeenAt' | 'name' | 'status'>('lastSeenAt');
-
-    /**
-     * The active sort direction for the Evidence view.
-     */
-    const evidenceSortDirection = ref<'asc' | 'desc'>('desc');
 
     /**
      * Updates the expanded keys for the Control Implementation tree.
@@ -98,14 +84,6 @@ export const useUIStore = defineStore(
      */
     function setControlImplementationDrawerOpen(open: boolean) {
       controlImplementationDrawerOpen.value = open;
-    }
-
-    /**
-     * Updates the evidence search filter.
-     * @param filter - The search query string.
-     */
-    function setEvidenceFilter(filter: string) {
-      evidenceFilter.value = filter;
     }
 
     /**
@@ -156,47 +134,25 @@ export const useUIStore = defineStore(
       lineageGraphDrawerOpen.value = open;
     }
 
-    /**
-     * Updates the evidence sort column.
-     * @param sortBy - The column to sort by.
-     */
-    function setEvidenceSortBy(sortBy: 'lastSeenAt' | 'name' | 'status') {
-      evidenceSortBy.value = sortBy;
-    }
-
-    /**
-     * Updates the evidence sort direction.
-     * @param sortDirection - The direction to sort in.
-     */
-    function setEvidenceSortDirection(sortDirection: 'asc' | 'desc') {
-      evidenceSortDirection.value = sortDirection;
-    }
-
     return {
       controlImplementationExpandedKeys,
       controlImplementationSelectedRequirementId,
       controlImplementationDrawerOpen,
-      evidenceFilter,
       lineageExpandedKeys,
       lineageSelectedNodeKey,
       lineageDrawerOpen,
       lineageGraphPath,
       lineageGraphSelectedNodeKey,
       lineageGraphDrawerOpen,
-      evidenceSortBy,
-      evidenceSortDirection,
       setControlImplementationExpandedKeys,
       setControlImplementationSelectedRequirementId,
       setControlImplementationDrawerOpen,
-      setEvidenceFilter,
       setLineageExpandedKeys,
       setLineageSelectedNodeKey,
       setLineageDrawerOpen,
       setLineageGraphPath,
       setLineageGraphSelectedNodeKey,
       setLineageGraphDrawerOpen,
-      setEvidenceSortBy,
-      setEvidenceSortDirection,
     };
   },
   {

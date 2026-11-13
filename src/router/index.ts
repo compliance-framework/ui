@@ -709,17 +709,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: '/evidence',
-    name: 'evidence:index',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/IndexView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
     path: '/evidence/create',
     name: 'evidence:create',
     component: () => import('../views/evidence/CreateView.vue'),
@@ -1203,7 +1192,7 @@ const designSystemRoutes = [
       {
         path: 'evidence',
         name: 'system-evidence',
-        component: () => import('@/screens/evidence/SystemEvidenceScreen.vue'),
+        component: () => import('@/screens/evidence/EvidenceScreen.vue'),
         meta: { title: 'Evidence' },
       },
       {
@@ -1214,6 +1203,13 @@ const designSystemRoutes = [
         children: evidenceRecordTabs('system-evidence-record'),
       },
     ],
+  },
+  {
+    path: 'evidence',
+    name: 'evidence:index',
+    component: () => import('@/screens/evidence/EvidenceScreen.vue'),
+    // No permission gate, as before: 'home' redirects here, so a gate would loop.
+    meta: { requiresAuth: true, ds: true, title: 'Evidence' },
   },
   {
     // The same record outside a system, for links from global pages.

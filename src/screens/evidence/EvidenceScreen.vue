@@ -46,12 +46,13 @@ import {
 } from './evidenceView';
 
 /**
- * This System > Evidence: the system's in-scope evidence, through the SSP's scoped search. The
- * system comes from the URL (SystemScope makes it current). Search, subject, sort and page live in
- * the URL under the classic page's parameter names, so old links still open the same view. It
- * has the classic page's tools: status and agent-health trends, CSV export, save as filter, the
- * subject filter and the labels column. A system with no scope entries asks for a scope rather
- * than listing nothing.
+ * The evidence list, for both Global > Evidence (/evidence: all evidence) and This System >
+ * Evidence (/systems/:systemId/evidence: the system's in-scope evidence, through the SSP's scoped
+ * search; SystemScope makes the system current). Search, subject, sort and page live in the URL
+ * under the classic page's parameter names, so old links still open the same view. It has the
+ * classic page's tools: status and agent-health trends, CSV export, save as filter, the subject
+ * filter and the labels column. A system with no scope entries asks for a scope rather than
+ * listing nothing.
  */
 const route = useRoute();
 const router = useRouter();
@@ -61,10 +62,19 @@ const systemStore = useSystemStore();
 const configStore = useConfigStore();
 const permissions = usePermissionsStore();
 
-const systemId = String(route.params.systemId);
-const base = `/api/oscal/system-security-plans/${systemId}`;
+const systemId =
+  typeof route.params.systemId === 'string' ? route.params.systemId : undefined;
+/** The search and trend endpoints: the system's scoped ones, or the global ones. */
+const base = systemId
+  ? `/api/oscal/system-security-plans/${systemId}/evidence`
+  : '/api/evidence';
 const systemName = computed(
   () => systemStore.system.securityPlan?.metadata.title ?? 'this system',
+);
+const description = computed(() =>
+  systemId
+    ? `In scope for ${systemName.value}.`
+    : 'All evidence, across every system.',
 );
 
 const view = computed(() => readView(route.query));
@@ -136,7 +146,9 @@ async function load(): Promise<void> {
   status.value = 'loading';
   try {
     if (hasScope.value === undefined) {
-      hasScope.value = await sspHasScopeEntries(api, systemId);
+      hasScope.value = systemId
+        ? await sspHasScopeEntries(api, systemId)
+        : true;
     }
     if (!hasScope.value) return;
     // A URL edited by hand can hold a query that doesn't parse; show it as an error.
@@ -149,7 +161,7 @@ async function load(): Promise<void> {
     }
     const { params, body } = searchRequest(view.value);
     const response = await api.post<PaginatedListResponse<Evidence>>(
-      `${base}/evidence/search`,
+      `${base}/search`,
       body,
       { params },
     );
@@ -237,7 +249,7 @@ const sort = computed<DataTableSort>({
 
 const caption = computed(
   () =>
-    `${plural(total.value, 'evidence item')} in scope for ${systemName.value}`,
+    `${plural(total.value, 'evidence item')} ${systemId ? `in scope for ${systemName.value}` : 'across every system'}`,
 );
 /** The count shows only while the list is narrowed. */
 const summary = computed(() => {
@@ -260,8 +272,8 @@ function pageLink(page: number) {
 /** Evidence opens in place; the list's view travels along so the breadcrumb returns to it. */
 function evidenceLink(id: string) {
   return {
-    name: 'system-evidence-record',
-    params: { systemId, evidenceId: id },
+    name: systemId ? 'system-evidence-record' : 'evidence:view',
+    params: { ...(systemId ? { systemId } : {}), evidenceId: id },
     query: viewQuery(view.value),
   };
 }
@@ -332,7 +344,7 @@ async function runExport(): Promise<void> {
     do {
       const { params, body } = searchRequest({ ...view.value, page });
       const response = await api.post<PaginatedListResponse<Evidence>>(
-        `${base}/evidence/search`,
+        `${base}/search`,
         body,
         { params: { ...params, limit: String(EXPORT_PAGE_SIZE) } },
       );
@@ -373,7 +385,7 @@ const trendRequest = computed(() => {
 </script>
 
 <template>
-  <ListTemplate title="Evidence" :description="`In scope for ${systemName}.`">
+  <ListTemplate title="Evidence" :description="description">
     <template #actions>
       <Button icon="share" @click="share">Share</Button>
       <Button
@@ -446,7 +458,11 @@ const trendRequest = computed(() => {
       subject="evidence"
       :error-message="errorMessage"
       empty-title="No evidence yet"
-      empty-body="Evidence in this system's scope appears here as agents submit it and people upload it."
+      :empty-body="
+        systemId
+          ? 'Evidence in this system\'s scope appears here as agents submit it and people upload it.'
+          : 'Evidence is proof that a control works, such as a configuration check or a reviewed policy. It appears here as agents submit it and people upload it.'
+      "
       icon="evidence"
       :filters="chipLabels"
       @retry="load"
@@ -513,7 +529,7 @@ const trendRequest = computed(() => {
       />
       <EvidenceTrends
         v-if="hasScope"
-        :endpoint="`${base}/evidence/status-over-time`"
+        :endpoint="`${base}/status-over-time`"
         :request="trendRequest"
       />
     </template>

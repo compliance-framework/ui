@@ -7,6 +7,7 @@ import { EVIDENCE_ID, mockApi, signIn, SYSTEMS } from './support/api';
  * action reachable at 1280×800 with the navigation expanded.
  */
 const routes = [
+  '/evidence',
   '/systems',
   `/systems/${SYSTEMS.scoped}/evidence`,
   `/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}/signature`,

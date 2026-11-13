@@ -13,6 +13,7 @@ import {
  * each data state, and with each menu, popover and drawer open.
  */
 const routes = [
+  '/evidence',
   '/systems',
   `/systems/${SYSTEMS.scoped}/evidence`,
   `/systems/${SYSTEMS.unscoped}/evidence`,

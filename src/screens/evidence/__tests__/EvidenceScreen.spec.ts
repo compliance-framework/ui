@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { defineComponent, h } from 'vue';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
-import SystemEvidenceScreen from '../SystemEvidenceScreen.vue';
+import EvidenceScreen from '../EvidenceScreen.vue';
 
 const api = vi.hoisted(() => ({
   hasScope: true,
@@ -46,12 +46,17 @@ async function mountScreen(path = '/systems/sys-1/evidence') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
+      { path: '/evidence', name: 'evidence:index', component: EvidenceScreen },
+      {
+        path: '/evidence/:evidenceId',
+        name: 'evidence:view',
+        component: Stub,
+      },
       {
         path: '/systems/:systemId/evidence',
         name: 'system-evidence',
-        component: SystemEvidenceScreen,
+        component: EvidenceScreen,
       },
-      { path: '/evidence/:id', name: 'evidence:view', component: Stub },
       {
         path: '/systems/:systemId/evidence/:evidenceId',
         name: 'system-evidence-record',
@@ -70,7 +75,7 @@ async function mountScreen(path = '/systems/sys-1/evidence') {
   await router.isReady();
   const wrapper = mount(
     defineComponent({
-      render: () => h(TooltipProvider, null, () => h(SystemEvidenceScreen)),
+      render: () => h(TooltipProvider, null, () => h(EvidenceScreen)),
     }),
     { global: { plugins: [router] }, attachTo: document.body },
   );
@@ -78,7 +83,7 @@ async function mountScreen(path = '/systems/sys-1/evidence') {
   return { wrapper, router };
 }
 
-describe('SystemEvidenceScreen', () => {
+describe('EvidenceScreen', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
@@ -208,5 +213,37 @@ describe('SystemEvidenceScreen', () => {
     expect(trend![2].params).toEqual(
       expect.objectContaining({ name: 'backups' }),
     );
+  });
+
+  describe('Global > Evidence', () => {
+    it('searches all evidence and opens records outside a system', async () => {
+      const { wrapper } = await mountScreen('/evidence');
+      expect(searchCalls()[0]![0]).toBe('/api/evidence/search');
+      expect(wrapper.text()).toContain('All evidence, across every system.');
+      expect(wrapper.findAll('tbody a')[0]!.attributes('href')).toBe(
+        '/evidence/e1',
+      );
+    });
+
+    it('needs no scope and saves filters without a system', async () => {
+      api.hasScope = false;
+      const { wrapper } = await mountScreen('/evidence?filter=backups');
+      expect(wrapper.text()).not.toContain("Define this system's scope");
+      const save = wrapper
+        .findAll('a')
+        .find((a) => a.text().includes('Save as filter'));
+      expect(save!.attributes('href')).toBe(
+        '/dashboards/create?filter=backups',
+      );
+    });
+
+    it('charts the global status trend', async () => {
+      await mountScreen('/evidence');
+      expect(
+        api.post.mock.calls.some(
+          ([url]) => url === '/api/evidence/status-over-time',
+        ),
+      ).toBe(true);
+    });
   });
 });

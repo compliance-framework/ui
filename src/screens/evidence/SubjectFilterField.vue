@@ -11,11 +11,11 @@ import Stack from '@/ds/components/layout/Stack.vue';
 
 /**
  * Filter evidence by what it is about, like the classic page's subject filter: type to find a
- * subject (GET /api/subjects, narrowed to this system's components), then choose it. The chosen
+ * subject (GET /api/subjects; inside a system, narrowed to its components), then choose it. The chosen
  * subject's UUID lives in the URL; its title is looked up so the chip can name it. Hidden when the
  * API has no subjects endpoint.
  */
-const props = defineProps<{ systemId: string }>();
+const props = defineProps<{ systemId?: string }>();
 const subject = defineModel<string>({ default: '' });
 const emit = defineEmits<{ titled: [title: string] }>();
 
