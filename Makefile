@@ -36,6 +36,12 @@ dev: check-version install   ## Run development environment
 	@./hack/local-shared/do start_docker
 	@npm run dev
 
+lint-css: ## Lint design-system CSS (tokens only)
+	@npm run lint:css
+
+e2e: ## Run browser checks (axe, reflow, keyboard) for the redesigned screens
+	@npm run test:e2e
+
 typecheck: ## Run typecheck
 	@npm run type-check
 
@@ -45,5 +51,5 @@ lint: ## Run lint
 formatcheck: ## Run format check
 	@npm run format:check
 
-reviewable: formatcheck typecheck lint unit-test
+reviewable: formatcheck typecheck lint lint-css unit-test
 	@echo "All checks passed, ready for review"

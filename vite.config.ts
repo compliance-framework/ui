@@ -12,7 +12,8 @@ const apiProxy = process.env.VITE_API_PROXY;
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), vueDevTools(), tailwindcss()],
+  // The dev tools overlay is left out of browser checks (E2E=1), so it can't affect them.
+  plugins: [vue(), ...(process.env.E2E ? [] : [vueDevTools()]), tailwindcss()],
   server: {
     port: 3000, // must be a port other than 5173
     host: true,

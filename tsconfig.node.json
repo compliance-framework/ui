@@ -4,7 +4,9 @@
     "vite.config.*",
     "vitest.config.*",
     "cypress.config.*",
-    "playwright.config.*"
+    "playwright.config.*",
+    "e2e/**/*",
+    "src/constants/permissions.ts"
   ],
   "compilerOptions": {
     "composite": true,

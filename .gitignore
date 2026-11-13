@@ -37,3 +37,7 @@ eslint-report.json
 
 # Husky test files
 test-husky.js
+
+# Playwright
+/test-results/
+/playwright-report/

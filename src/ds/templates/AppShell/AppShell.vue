@@ -205,11 +205,12 @@ const userMenu = computed<MenuEntry[]>(() => [
             </RouterLink>
             <Menu :label="`Account menu, ${userName}`" :items="userMenu">
               <template #trigger>
-                <button
-                  type="button"
-                  class="shell__account"
-                  :aria-label="`Account menu, ${userName}`"
-                >
+                <button type="button" class="shell__account">
+                  <!-- Named by hidden text rather than aria-label, so the name always includes
+                       what is visible (WCAG 2.5.3) even when the name is hidden on narrow screens. -->
+                  <span class="visually-hidden"
+                    >Account menu, {{ userName }}</span
+                  >
                   <span class="shell__avatar" aria-hidden="true">{{
                     initials
                   }}</span>

@@ -20,7 +20,9 @@
     "format:staged": "lint-staged",
     "format:check": "prettier --check src/",
     "sync:agentconfig-conformance": "scripts/sync-agentconfig-conformance.sh",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint:css": "stylelint \"src/ds/**/*.{vue,css}\" \"src/screens/**/*.vue\"",
+    "test:e2e": "playwright test"
   },
   "lint-staged": {
     "*.{js,ts,tsx,vue,json,css,md}": "npm run format:fix"
@@ -72,6 +74,8 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tsconfig/node24": "^24.0.0",
     "@types/js-yaml": "^4.0.9",
@@ -91,7 +95,10 @@
     "jsdom": "^25.0.1",
     "lint-staged": "^16.2.3",
     "npm-run-all2": "^7.0.2",
+    "postcss-html": "^2.0.0",
     "prettier": "^3.6.2",
+    "stylelint": "^17.16.0",
+    "stylelint-declaration-strict-value": "^1.13.0",
     "tailwindcss": "^4.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.0",

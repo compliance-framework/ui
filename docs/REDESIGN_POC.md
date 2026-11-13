@@ -96,10 +96,26 @@ are new and still open.
 11. **Toasts still use PrimeVue's global Toast.** The mockup's `ToastRegion` and toast state
     weren't ported, to keep one toast system during the migration. The floating theme toggle and
     demo feedback button from the legacy `App.vue` also still show on new pages.
-12. **The mockup's tooling isn't ported yet:** Playwright browser tests, axe accessibility checks,
-    stylelint token enforcement, the vocabulary check and knip. They're the biggest remaining win
-    from the mockup and should come next, before more screens are migrated. This branch has Vitest
-    specs for both screens, their URL state, `SystemScope` and `useApiQuery`.
+12. **Browser, accessibility and style checks are ported** (_done 2026-11-13_).
+    - `npm run test:e2e` (Playwright, `e2e/`) runs axe (WCAG 2.2 A/AA plus best practice) on
+      every `/next` route in light and dark and in the ready, empty, error and loading states, and
+      with each menu, popover and drawer open. It also checks reflow at 320, 1024 and 1440 px, the
+      skip link, Escape and focus return on menus, the keyboard system switcher, and that every
+      action is reachable at 1280×800.
+    - The API is mocked in the browser (`e2e/support/api.ts`) with fixtures in the API's wire
+      format, so no backend is needed. It runs on the installed Chrome locally and on Playwright's
+      Chromium in CI.
+    - `npm run lint:css` (stylelint) holds `src/ds` and `src/screens` to the design tokens: no
+      raw colours, lengths, durations or type values. It is part of `make reviewable`.
+    - **CI doesn't run either yet.** CI calls the shared `ci-ui.yml` workflow, which runs the
+      checks individually rather than `make reviewable`, so both need adding there, plus
+      `npx playwright install chromium` for the browser checks.
+    - Porting surfaced and fixed real issues: `<html lang="">` app-wide (now `en`); the classic
+      floating theme and feedback buttons came before the skip link in tab order (they now follow
+      the page, and the theme button is hidden in the new shell, which has its own); and the
+      account menu button's accessible name didn't include its visible text.
+    - Not ported from the mockup: the vocabulary check (terminology now follows the current app)
+      and knip.
 13. **This System > Evidence is a first cut of the classic page, with a handoff for the rest.** It
     has the scope check ("Define this system's scope"), title and label-query search with the same
     validation as the classic page, sort by status, name and last seen, pagination, the subjects
@@ -118,7 +134,7 @@ are new and still open.
 ## Suggested next steps
 
 - Review 13–16.
-- Port the Playwright, axe and stylelint setup and run it on `/next/*`.
+- Add `lint:css` and `test:e2e` to the shared CI workflow.
 - Finish Evidence (charts, CSV export, save as filter, subject filter), then the evidence record
   page, so the whole evidence journey stays in the new UI.
 - Then a system page with editing (Risks or Configure System) to prove out forms and dialogs.
