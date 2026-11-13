@@ -8,6 +8,80 @@ How to read it: **Decision** lines are judgement calls you may want to reverse. 
 things a migrated page doesn't do yet. **Found** lines are bugs or oddities in the classic app or
 the API that I noticed along the way.
 
+## At a glance (read this first)
+
+**Where it stands.** Every top-level page in the app now renders on the design-system frame
+(AppShell, design-system title, actions, breadcrumbs and tabs). Nothing classic is reachable
+without a redesigned page around it. Pages fall into three kinds:
+
+- **Fully rebuilt** (design system end to end): Systems; Evidence (list, record, create, history);
+  Compliance; Risks dashboard and register (system and cross-system); Workflow instances and
+  definitions lists; the five OSCAL document lists and Catalogs; create and edit forms for
+  systems, catalogs, profiles, component definitions, assessment plans and results, and POA&Ms;
+  users, groups, parties and roles; system templates list; POA&M items; evidence filters list;
+  control links (list and create); control evidence; My tasks; Preferences; About; and every
+  signed-out page.
+- **Design-system page with classic islands inside**: Implementation, Configure System, the
+  seven record pages (their tabs), catalog page, user and group pages, workflow run, Compliance
+  Map, Diagnostics, risk page, system template record, New evidence filter.
+- **Design-system header over a classic body**: Agents, risk and subject templates, Import,
+  Inventory, Build a profile from props, Filter suggestions.
+
+The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
+page below.
+
+**Decisions most worth your review**
+
+1. Islands, page first (see the first log entry): structure everywhere first, deep editors
+   later.
+2. Configure System and the SSP Editor merged into one page; old SSP-editor links now switch the
+   current system.
+3. Shared building blocks instead of per-page copies: one list screen for five document types,
+   one create/edit form for seven document types, `useListView` for URL search and sort.
+4. The cross-system risk register is the system register in a global mode, not a second page.
+5. New design-system pieces: `Combobox` (filterable picker), `GuestTemplate`, query-based
+   `Tabs`, optional search in `FilterBar`, `disabledReason` on checkbox options.
+6. Several "toast after submit" and `window.prompt()` flows became inline field errors and
+   design-system dialogs (sign-in, password reset, cancel a run, all new forms).
+7. Header-only migration for the big admin pages (`embedded` prop), so their large specs run
+   unchanged; their primary actions are still classic buttons in the body.
+
+**Bugs found that probably affect `main` too** (worth tickets)
+
+- `PUT /api/oscal/component-definitions/:id` returns 200 but stores nothing (API).
+- Editing assessment results always fails: the plain GET returns `results: null`, the edit page
+  sent `results: []`, and the API rejects that (classic UI; fixed here by loading `/full`).
+- The workflow definitions status filter never re-fetched; the definitions API returns no
+  `status` and snake_case `suggested_cadence`/`step_count` (UI and API).
+- The Compliance page read `uuid` from SSP profiles, but the API returns `id` (from before the
+  weekend).
+- `SystemSecurityPlanDiagramsView` ignored its `sspId` prop; `inventory:index` was defined twice.
+- The global PrimeVue toast fails axe colour contrast; the classic `FilterForm` has unlabelled
+  inputs.
+
+**Options for you to choose from (next phase)**
+
+- **A. Replace islands by traffic:** risk page body, then Configure System sections, then
+  record tabs. Highest user impact, biggest pieces first.
+- **B. Primitives first, then sweep:** build the few missing design-system pieces the islands
+  need (toast, tree, JSON/code viewer for the record JSON tabs, a key/value editor), then
+  replace islands quickly, smallest first. Steadier progress, and it removes PrimeVue sooner.
+- **C. Prepare to merge:** freeze scope, rebase onto `main`, and harden what's here (axe on
+  island pages, CI for `lint:css` and `test:e2e`) so the branch can land, with islands replaced
+  afterwards on `main`.
+
+My recommendation is **B then C**: the islands share a handful of patterns, so building those
+primitives once makes the rest fast, and merging sooner reduces the conflict cost of the big
+bang.
+
+**Test data I created in local-dev:** a group "Weekend test group", a user
+`weekend.test2@example.com` (renamed "Weekend2 Tester"), and a component definition "Weekend
+test CD" (the API can't delete those). Every other record I created was deleted again.
+
+**How to look:** `VITE_API_PROXY=http://localhost:8080 npm run dev`, sign in, and click
+through the nav. `make reviewable`, `npm run build` and `npm run test:e2e` all pass at the head
+of the branch.
+
 ## Starting point
 
 Done before the weekend: app shell and nav, Systems list, Evidence (global and system, record,
