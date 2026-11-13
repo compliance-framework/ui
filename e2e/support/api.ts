@@ -331,7 +331,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       });
     }
     const documentList = path.match(
-      /^\/api\/oscal\/(profiles|component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)$/,
+      /^\/api\/oscal\/(catalogs|profiles|component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)$/,
     );
     if (documentList && method === 'GET') {
       const documents = [1, 2].map((i) => ({

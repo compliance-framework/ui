@@ -17,6 +17,7 @@ const routes = [
   '/evidence/create',
   `/evidence/${EVIDENCE_ID}/update`,
   '/systems',
+  '/catalogs',
   '/profiles',
   '/component-definitions',
   '/assessment-plans',

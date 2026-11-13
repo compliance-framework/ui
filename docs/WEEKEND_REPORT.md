@@ -98,3 +98,14 @@ page structurally migrated, say so and I'll switch.
   get its own screen next.
 - e2e: the five lists are in the axe checks. The "every route" axe test now scales its timeout
   with the number of routes, since it was hitting the 30s default.
+
+### Catalogs list (`/catalogs`)
+
+- Type tabs as before (Standards, Policies, Procedures, Internal catalogs, Other), now with the
+  tab in the URL (`?type=policy`), plus title search and sort. Tab counts follow the search.
+- **Decision:** Activate/Deactivate, Download and Delete moved from row buttons into the row
+  menu; Delete confirms with the design-system dialog. Inactive catalogs keep their
+  **Inactive** tag.
+- **Decision (design system):** route-bound `Tabs` now also select tabs that differ only by
+  query: the tab whose query values all match the URL wins, most specific first, so a tab with no
+  query is the default. This makes query tabs available to other lists.

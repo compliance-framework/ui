@@ -212,9 +212,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/catalog/CatalogListView.vue'),
+    component: () => import('../screens/catalogs/CatalogsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

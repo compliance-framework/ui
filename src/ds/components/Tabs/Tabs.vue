@@ -20,11 +20,27 @@ const baseId = useId();
 const { scrollable } = useScrollable('list', 'horizontal');
 const tabRefs = ref<{ $el: HTMLElement }[]>([]);
 
+/**
+ * The tab for the current route: same route name, with every query value the tab sets. Tabs that
+ * differ only by query (e.g. `?type=policy`) pick the most specific match, so a tab without a
+ * query is the default.
+ */
 const selectedIndex = computed(() => {
-  const index = props.tabs.findIndex(
-    (tab) => router.resolve(tab.to).name === route.name,
-  );
-  if (index !== -1) return index;
+  const index = props.tabs
+    .map((tab, at) => ({ at, resolved: router.resolve(tab.to) }))
+    .filter(
+      ({ resolved }) =>
+        resolved.name === route.name &&
+        Object.entries(resolved.query).every(
+          ([key, value]) => route.query[key] === value,
+        ),
+    )
+    .sort(
+      (a, b) =>
+        Object.keys(b.resolved.query).length -
+        Object.keys(a.resolved.query).length,
+    )[0]?.at;
+  if (index !== undefined) return index;
   const ancestor = props.tabs
     .map((tab, at) => ({ at, path: router.resolve(tab.to).path }))
     .filter(
