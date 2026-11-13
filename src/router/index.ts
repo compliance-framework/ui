@@ -1,6 +1,10 @@
-import { createRouter, createWebHistory, type RouteLocation } from 'vue-router';
+import {
+  createRouter,
+  createWebHistory,
+  RouterView,
+  type RouteLocation,
+} from 'vue-router';
 import AppShell from '@/ds/templates/AppShell/AppShell.vue';
-import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
 import { useSystemStore } from '@/stores/system';
 import {
@@ -873,32 +877,32 @@ const publicRoutes = [
   {
     path: 'login',
     name: 'login',
-    component: () => import('@/views/LoginView.vue'),
+    component: () => import('@/screens/auth/LoginScreen.vue'),
   },
   {
     path: 'forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/ForgotPasswordView.vue'),
+    component: () => import('@/screens/auth/ForgotPasswordScreen.vue'),
   },
   {
     path: 'password-reset',
     name: 'password-reset',
-    component: () => import('@/views/PasswordResetView.vue'),
+    component: () => import('@/screens/auth/PasswordResetScreen.vue'),
   },
   {
     path: 'sso/callback',
     name: 'sso-callback',
-    component: () => import('@/views/SSOCallbackView.vue'),
+    component: () => import('@/screens/auth/SSOCallbackScreen.vue'),
   },
   {
     path: 'slack/callback',
     name: 'slack-link-callback',
-    component: () => import('@/views/SlackLinkCallbackView.vue'),
+    component: () => import('@/screens/auth/SlackLinkCallbackScreen.vue'),
   },
   {
     path: 'logout',
     name: 'logout',
-    component: () => import('@/views/LogoutView.vue'),
+    component: () => import('@/screens/auth/LogoutScreen.vue'),
   },
 ];
 
@@ -1201,7 +1205,8 @@ const router = createRouter({
     {
       path: '/auth',
       name: 'auth',
-      component: GuestLayout,
+      // Each guest screen renders its own GuestTemplate.
+      component: RouterView,
       children: publicRoutes,
       meta: {
         requiresAuth: false,

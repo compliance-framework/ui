@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import LoginView from '../LoginView.vue';
+import LoginView from '../LoginScreen.vue';
 import { useUserStore } from '@/stores/auth';
 
 const mocks = vi.hoisted(() => ({
@@ -52,28 +52,8 @@ function mountComponent() {
   return mount(LoginView, {
     global: {
       stubs: {
-        PageCard: { template: '<div><slot /></div>' },
-        SideNavLogo: { template: '<div />' },
-        PrimaryButton: {
-          props: ['type'],
-          template: '<button :type="type"><slot /></button>',
-        },
-        FormInput: {
-          props: ['modelValue', 'placeholder', 'type'],
-          emits: ['update:modelValue'],
-          template:
-            '<input :value="modelValue" :placeholder="placeholder" :type="type || \'text\'" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-        },
-        Message: {
-          props: {
-            severity: String,
-            closable: Boolean,
-          },
-          emits: ['close'],
-          template:
-            '<div data-testid="login-banner" :data-severity="severity"><slot /><button v-if="closable" data-testid="login-banner-close" @click="$emit(\'close\')">Close</button></div>',
-        },
-        'router-link': { template: '<a><slot /></a>' },
+        // A real link would need a router; the screen's own markup is what's under test.
+        TextLink: { template: '<a><slot /></a>' },
       },
     },
   });
@@ -92,7 +72,7 @@ function mockConfig(config: Record<string, unknown>) {
 const loginBannerDismissalKey = (message: string) =>
   `login-banner-dismissed:${encodeURIComponent(message)}`;
 
-describe('LoginView', () => {
+describe('LoginScreen', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -162,11 +142,7 @@ describe('LoginView', () => {
         summary: 'Unable to Load Account',
       }),
     );
-    expect(mocks.toastAdd).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        summary: 'Login Failed',
-      }),
-    );
+    expect(wrapper.text()).not.toContain('Not signed in');
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
@@ -187,13 +163,8 @@ describe('LoginView', () => {
     await flushPromises();
 
     expect(mocks.get).not.toHaveBeenCalled();
-    expect(mocks.toastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        severity: 'error',
-        summary: 'Login Failed',
-      }),
-    );
-    expect(wrapper.text()).toContain('Login');
+    expect(wrapper.text()).toContain("Those details don't match an account.");
+    expect(wrapper.text()).toContain('Sign in');
   });
 
   it('ignores malformed auth error field values', async () => {
@@ -220,11 +191,7 @@ describe('LoginView', () => {
     expect(mocks.get).not.toHaveBeenCalled();
     expect(wrapper.text()).not.toContain('not-an-array');
     expect(wrapper.text()).not.toContain('123');
-    expect(mocks.toastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        summary: 'Login Failed',
-      }),
-    );
+    expect(wrapper.text()).toContain('Not signed in');
   });
 
   it('uses a safe relative next path after password login', async () => {
@@ -298,7 +265,7 @@ describe('LoginView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper.get('[data-testid="login-banner-close"]').trigger('click');
+    await wrapper.get('button[aria-label="Dismiss message"]').trigger('click');
 
     expect(localStorage.getItem(loginBannerDismissalKey(bannerText))).toBe(
       'true',

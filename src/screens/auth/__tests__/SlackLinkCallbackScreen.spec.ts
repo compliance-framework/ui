@@ -5,7 +5,7 @@ import {
   CALLBACK_CODE_QUERY_KEY,
   CALLBACK_STATUS_QUERY_KEY,
 } from '@/utils/slack-link-callback';
-import SlackLinkCallbackView from '../SlackLinkCallbackView.vue';
+import SlackLinkCallbackView from '../SlackLinkCallbackScreen.vue';
 
 const { mockRoute, mockReplace, mockIsNavigationFailure } = vi.hoisted(() => ({
   mockRoute: {

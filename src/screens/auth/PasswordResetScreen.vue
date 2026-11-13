@@ -1,99 +1,21 @@
-<template>
-  <PageCard class="mx-auto mt-12 max-w-96 py-8 space-y-6">
-    <AuthFormHeader
-      title="Reset Password"
-      subtitle="Enter your new password below."
-    >
-      <p v-if="tokenError" class="mt-4 text-sm text-red-600 dark:text-red-400">
-        {{ tokenError }}
-      </p>
-    </AuthFormHeader>
-
-    <form @submit.prevent="onSubmit" class="space-y-4 px-8">
-      <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >New Password</label
-        >
-        <FormInput
-          v-model="password"
-          placeholder="Enter new password"
-          type="password"
-          id="password"
-        />
-        <span
-          class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in errors.password || []"
-          :key="error"
-          >{{ error }}</span
-        >
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Password must be at least 8 characters and include uppercase,
-          lowercase, number, and a special character (allowed:
-          !@#$%^&*(),.?":{}|&lt;&gt;_-).
-        </p>
-        <p
-          v-if="password && !passwordRequirementsMet"
-          class="text-xs text-red-500 dark:text-red-500 mt-1"
-        >
-          Ensure your password meets all complexity requirements.
-        </p>
-      </div>
-
-      <div>
-        <label
-          for="confirmPassword"
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Confirm New Password</label
-        >
-        <FormInput
-          v-model="confirmPassword"
-          placeholder="Confirm new password"
-          type="password"
-          id="confirmPassword"
-        />
-        <span
-          class="text-sm text-red-500 dark:text-red-500"
-          v-if="passwordMismatch"
-          >Passwords do not match</span
-        >
-      </div>
-
-      <div>
-        <PrimaryButton
-          type="submit"
-          class="w-full"
-          :disabled="isLoading || !isFormValid"
-        >
-          <span v-if="isLoading">Resetting...</span>
-          <span v-else>Reset Password</span>
-        </PrimaryButton>
-      </div>
-    </form>
-
-    <div class="px-8 mt-6 text-center">
-      <router-link
-        :to="{ name: 'login' }"
-        class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >
-        Back to Login
-      </router-link>
-    </div>
-  </PageCard>
-</template>
-
 <script setup lang="ts">
-import PageCard from '@/components/PageCard.vue';
+/**
+ * Choose a new password (Guest template), from the emailed reset link's token. The script is the
+ * classic page's; the form now shows what's wrong next to each field instead of a disabled button.
+ */
 import { ref, computed, onMounted } from 'vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRouter, useRoute } from 'vue-router';
-import FormInput from '@/components/forms/FormInput.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { DataResponse } from '@/stores/types';
-import AuthFormHeader from '@/components/auth/AuthFormHeader.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import GuestTemplate from '@/ds/templates/GuestTemplate/GuestTemplate.vue';
 
 interface AuthError {
   password: string[];
@@ -106,6 +28,8 @@ const token = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const isLoading = ref(false);
 const tokenError = ref('');
+/** Field errors show once the form has been submitted. */
+const attempted = ref(false);
 
 const router = useRouter();
 const route = useRoute();
@@ -195,20 +119,15 @@ onMounted(() => {
     token.value = tokenParam[0] || '';
   }
 
-  // If token is missing or invalid, redirect to forgot password
+  // A missing or malformed token is explained in place (the inline message), not in a toast.
   if (!token.value || !isTokenFormatValid.value) {
-    toast.add({
-      severity: 'error',
-      summary: 'Invalid Reset Link',
-      detail: 'This password reset link is invalid or has expired.',
-      life: 4000,
-    });
     tokenError.value =
       'This password reset link appears invalid or expired. Please request a new link.';
   }
 });
 
 async function onSubmit() {
+  attempted.value = true;
   if (!isFormValid.value) {
     toast.add({
       severity: 'error',
@@ -284,4 +203,54 @@ async function onSubmit() {
     isLoading.value = false;
   }
 }
+
+const passwordError = computed(() => {
+  const server = (errors.value.password || []).join(' ');
+  if (server) return server;
+  if (!attempted.value) return undefined;
+  if (!password.value) return 'Enter a new password.';
+  return passwordRequirementsMet.value
+    ? undefined
+    : "This password doesn't meet the requirements.";
+});
+const confirmError = computed(() =>
+  attempted.value && passwordMismatch.value
+    ? "The passwords don't match."
+    : undefined,
+);
 </script>
+
+<template>
+  <GuestTemplate
+    title="Choose a new password"
+    description="Enter your new password below."
+  >
+    <InlineMessage
+      v-if="tokenError"
+      tone="error"
+      title="This link doesn't work"
+    >
+      <p>{{ tokenError }}</p>
+    </InlineMessage>
+    <form novalidate @submit.prevent="onSubmit">
+      <Stack gap="4">
+        <FormField
+          label="New password"
+          hint="At least 8 characters, with an uppercase letter, a lowercase letter, a number and a special character."
+          :error="passwordError"
+        >
+          <TextInput v-model="password" type="password" />
+        </FormField>
+        <FormField label="Confirm new password" :error="confirmError">
+          <TextInput v-model="confirmPassword" type="password" />
+        </FormField>
+        <Button variant="primary" type="submit" :loading="isLoading"
+          >Reset password</Button
+        >
+      </Stack>
+    </form>
+    <template #footer>
+      <TextLink :to="{ name: 'login' }">Back to sign in</TextLink>
+    </template>
+  </GuestTemplate>
+</template>

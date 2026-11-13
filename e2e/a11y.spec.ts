@@ -87,6 +87,36 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
 });
 
+const guestRoutes = [
+  '/auth/login',
+  '/auth/login?error=session_expired',
+  '/auth/forgot-password',
+  '/auth/password-reset?token=not-a-token',
+];
+
+for (const theme of themes) {
+  test(`axe: signed-out pages (${theme})`, async ({ page }) => {
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme);
+    await mockApi(page);
+    // A sign-in banner, as an administrator can configure.
+    await page.route('**/config.json', (route) =>
+      route.fulfill({
+        json: {
+          API_URL: '',
+          LOGIN_BANNER: 'Maintenance on Saturday from 02:00 UTC.',
+          LOGIN_BANNER_SEVERITY: 'warn',
+        },
+      }),
+    );
+    const violations: string[] = [];
+    for (const url of guestRoutes) {
+      await open(page, url);
+      violations.push(...(await axe(page, `${theme} ${url}`)));
+    }
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+}
+
 for (const theme of themes) {
   for (const state of states) {
     test(`axe: every route, ${state} (${theme})`, async ({ page }) => {

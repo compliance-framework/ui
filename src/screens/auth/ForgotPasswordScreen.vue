@@ -1,60 +1,20 @@
-<template>
-  <PageCard class="mx-auto mt-12 max-w-96 py-8 space-y-6">
-    <AuthFormHeader
-      title="Forgot Password"
-      subtitle="Enter your email address and we'll send you a link to reset your password."
-    />
-
-    <form @submit.prevent="onSubmit" class="space-y-4 px-8">
-      <div>
-        <label
-          for="email"
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Email</label
-        >
-        <FormInput
-          v-model="email"
-          placeholder="Enter your email"
-          type="email"
-          id="email"
-        />
-        <span
-          class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in errors.email || []"
-          :key="error"
-          >{{ error }}</span
-        >
-      </div>
-      <div>
-        <PrimaryButton type="submit" class="w-full" :disabled="isLoading">
-          <span v-if="isLoading">Sending...</span>
-          <span v-else>Send Reset Link</span>
-        </PrimaryButton>
-      </div>
-    </form>
-
-    <div class="px-8 mt-6 text-center">
-      <router-link
-        :to="{ name: 'login' }"
-        class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-      >
-        Back to Login
-      </router-link>
-    </div>
-  </PageCard>
-</template>
-
 <script setup lang="ts">
-import PageCard from '@/components/PageCard.vue';
+/**
+ * Forgot password (Guest template): sends a reset link by email. The script is the classic
+ * page's.
+ */
 import { ref } from 'vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRouter } from 'vue-router';
-import FormInput from '@/components/forms/FormInput.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { DataResponse } from '@/stores/types';
-import AuthFormHeader from '@/components/auth/AuthFormHeader.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import GuestTemplate from '@/ds/templates/GuestTemplate/GuestTemplate.vue';
 
 interface AuthError {
   email: string[];
@@ -116,3 +76,27 @@ async function onSubmit() {
   }
 }
 </script>
+
+<template>
+  <GuestTemplate
+    title="Reset your password"
+    description="Enter your email address and we'll send you a link to reset your password."
+  >
+    <form novalidate @submit.prevent="onSubmit">
+      <Stack gap="4">
+        <FormField
+          label="Email"
+          :error="(errors.email || []).join(' ') || undefined"
+        >
+          <TextInput v-model="email" type="email" />
+        </FormField>
+        <Button variant="primary" type="submit" :loading="isLoading"
+          >Send reset link</Button
+        >
+      </Stack>
+    </form>
+    <template #footer>
+      <TextLink :to="{ name: 'login' }">Back to sign in</TextLink>
+    </template>
+  </GuestTemplate>
+</template>

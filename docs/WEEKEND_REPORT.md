@@ -154,3 +154,26 @@ page structurally migrated, say so and I'll switch.
   preview panel and the created-systems table are classic.
 - **Decision (shared):** `useListView` takes a default sort direction, so lists sorted by date
   default to newest first without putting `dir` in the URL.
+
+### Signed-out pages: sign in, forgot and reset password, SSO and Slack callbacks, sign out
+
+- New design-system **`GuestTemplate`**: the CCF mark above one centred panel with the page's
+  h1. The classic `GuestLayout` is gone (the `/auth` route renders a bare `RouterView`). Each
+  page keeps its classic script (the template-transplant approach), so the sign-in, SSO,
+  banner-dismissal and redirect logic are unchanged and the classic specs were ported.
+- **Decision:** a failed sign-in is explained above the form ("Those details don't match an
+  account…") instead of a "Login Failed" toast. The reset page explains a bad link inline and no
+  longer also toasts it. Its rules now show as field errors after submit, instead of a
+  silently disabled button.
+- **Decision:** SSO buttons are plain "Continue with Google" buttons; the classic provider logos
+  and initials badges are dropped (third-party images of arbitrary size). Easy to bring back as
+  a small design-system component if you want them.
+- **Decision:** the configurable sign-in banner is a design-system message with a Dismiss
+  button; its `warn` severity maps to the warning tone.
+- **Found:** guest pages render outside AppShell, so they had no reka `TooltipProvider`; the
+  template now provides one.
+- **Found (to-do):** the global PrimeVue toast fails axe colour contrast (`.text-base`). It's
+  the one PrimeVue piece the redesign still uses everywhere, and worth replacing with a
+  design-system toast next.
+- e2e: a new axe test covers the signed-out pages in both themes, with an SSO provider and a
+  configured banner.

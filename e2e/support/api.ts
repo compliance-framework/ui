@@ -172,6 +172,10 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       return json(route, { data: { id: 'ev-9' } }, 201);
     }
 
+    if (path === '/api/auth/sso/providers')
+      return json(route, {
+        data: [{ name: 'google', 'display-name': 'Google', enabled: true }],
+      });
     if (path === '/api/me/permissions') {
       return json(route, { subject: { type: 'user', id: 'u-1' }, permissions });
     }

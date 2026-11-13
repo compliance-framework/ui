@@ -1,34 +1,17 @@
-<template>
-  <div
-    class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900"
-  >
-    <div class="rounded-lg bg-white p-8 text-center shadow-lg dark:bg-gray-800">
-      <div
-        class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
-      ></div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        Finishing SSO Sign-in
-      </h1>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-        {{ statusMessage }}
-      </p>
-      <button
-        v-if="status === 'error'"
-        @click="goToLogin"
-        class="mt-6 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Return to Login
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * Finishing SSO sign-in (Guest template): loads the account the provider signed in, then goes on
+ * to the page the user asked for. The script is the classic page's.
+ */
 import { onMounted, ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import Button from '@/ds/components/Button/Button.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import GuestTemplate from '@/ds/templates/GuestTemplate/GuestTemplate.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -84,14 +67,14 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-</style>
+<template>
+  <GuestTemplate title="Finishing sign-in">
+    <InlineMessage v-if="status === 'error'" tone="error">
+      <p>{{ statusMessage }}</p>
+    </InlineMessage>
+    <Text v-else role="status">{{ statusMessage }}</Text>
+    <Button v-if="status === 'error'" variant="primary" @click="goToLogin"
+      >Back to sign in</Button
+    >
+  </GuestTemplate>
+</template>

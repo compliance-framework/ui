@@ -1,150 +1,27 @@
-<template>
-  <PageCard class="mx-auto mt-12 max-w-96 py-8">
-    <div class="px-8 pb-8">
-      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
-      <SideNavLogo
-        alt="Vue logo"
-        :src="darkLogo"
-        class="w-full hidden dark:block"
-      />
-    </div>
-    <Message
-      v-if="showLoginBanner"
-      :severity="loginBannerSeverity"
-      closable
-      class="mx-8 mb-4"
-      @close="dismissLoginBanner"
-    >
-      {{ loginBanner }}
-    </Message>
-    <form @submit.prevent="onSubmit" class="space-y-4">
-      <div>
-        <label
-          for="email"
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-        >
-          Email
-        </label>
-        <FormInput v-model="email" placeholder="Email" />
-        <span
-          class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in errors.email"
-          :key="error"
-        >
-          {{ error }}
-        </span>
-      </div>
-      <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-        >
-          Password
-        </label>
-        <FormInput v-model="password" placeholder="Password" type="password" />
-        <span
-          class="dark:text-red-500"
-          v-for="error in errors.password"
-          :key="error"
-        >
-          {{ error }}
-        </span>
-      </div>
-      <div>
-        <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
-      </div>
-
-      <div class="text-center">
-        <router-link
-          :to="{ name: 'forgot-password' }"
-          class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          Forgot Password?
-        </router-link>
-      </div>
-    </form>
-
-    <!-- SSO Divider -->
-    <div class="relative my-6">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span
-          class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-        >
-          Or continue with
-        </span>
-      </div>
-    </div>
-
-    <!-- SSO Buttons -->
-    <div class="space-y-3 px-8">
-      <template v-if="hasSSOProviders">
-        <button
-          v-for="provider in ssoProviders"
-          :key="provider.name"
-          @click="loginWithSSO(provider.name)"
-          :disabled="isSSOLoading"
-          class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-100 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <span
-            class="mr-2 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-gray-700 shadow-sm dark:bg-slate-200 dark:text-gray-900"
-          >
-            <img
-              v-if="provider.iconUrl"
-              :src="provider.iconUrl"
-              :alt="`${formatProviderLabel(provider)} logo`"
-              class="h-5 w-5 object-contain"
-              loading="lazy"
-            />
-            <span v-else class="text-xs font-semibold">
-              {{ providerInitials(provider) }}
-            </span>
-          </span>
-          Continue with {{ formatProviderLabel(provider) }}
-        </button>
-      </template>
-      <template v-else>
-        <div
-          class="rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500 dark:border-gray-600 dark:text-gray-300"
-        >
-          No SSO providers are configured for this environment. Please use the
-          form above or contact your administrator.
-        </div>
-      </template>
-
-      <div
-        v-if="loginNotice"
-        class="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/40 dark:text-amber-200"
-      >
-        {{ loginNotice }}
-      </div>
-
-      <div v-if="ssoError" class="text-sm text-red-500">
-        {{ ssoError }}
-      </div>
-    </div>
-  </PageCard>
-</template>
-
 <script setup lang="ts">
-import PageCard from '@/components/PageCard.vue';
+/**
+ * Sign in (Guest template): email and password, then any configured SSO providers. The script is
+ * the classic sign-in page's, except that a failed sign-in is explained above the form rather than
+ * in a toast, and the banner severity is mapped to a design-system tone.
+ */
 import { ref, onMounted, watch, computed } from 'vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRoute, useRouter } from 'vue-router';
-// import type { DataResponse } from '@/stores/api.ts';
-import FormInput from '@/components/forms/FormInput.vue';
-import Message from '@/volt/Message.vue';
-import lightLogo from '@/assets/logo-light.svg';
-import darkLogo from '@/assets/logo-dark.svg';
-import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import type { MessageTone } from '@/ds/components/InlineMessage/tone';
+import Stack from '@/ds/components/layout/Stack.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import GuestTemplate from '@/ds/templates/GuestTemplate/GuestTemplate.vue';
 import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
 
 interface AuthError {
@@ -155,6 +32,8 @@ interface AuthError {
 const email = ref('');
 const password = ref('');
 const errors = ref<AuthError>(createDefaultAuthErrors());
+/** Why the last sign-in failed, shown above the form. */
+const loginFailed = ref('');
 
 const { hydrateCurrentUser } = useAuthHydration();
 const {
@@ -212,13 +91,6 @@ const formatProviderLabel = (provider: OIDCProvider) => {
     return provider.displayName;
   }
   return provider.name.charAt(0).toUpperCase() + provider.name.slice(1);
-};
-
-const providerInitials = (provider: OIDCProvider) => {
-  const label = formatProviderLabel(provider);
-  const parts = label.split(/\s+/);
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
 };
 
 const loginErrorMessages: Record<string, string> = {
@@ -327,11 +199,10 @@ function showLoginFailed(error: unknown) {
     errors.value = normalizeAuthErrors(authErrors);
   }
 
-  toast.add({
-    severity: 'error',
-    summary: 'Login Failed',
-    life: 3000,
-  });
+  loginFailed.value =
+    response.response?.status === 401
+      ? "Those details don't match an account. Check your email and password."
+      : "We couldn't sign you in. Try again in a moment.";
 }
 
 function showHydrationFailed() {
@@ -346,6 +217,7 @@ function showHydrationFailed() {
 
 async function onSubmit() {
   errors.value = createDefaultAuthErrors();
+  loginFailed.value = '';
 
   try {
     await login({
@@ -374,4 +246,83 @@ async function onSubmit() {
   });
   return router.push(resolveAuthNextLocation(route.query.next));
 }
+
+/** The configured banner severity in design-system tones. */
+const bannerTone = computed<MessageTone>(() => {
+  const severity = loginBannerSeverity.value as string;
+  if (severity === 'warn') return 'warning';
+  if (severity === 'error' || severity === 'success') return severity;
+  return 'info';
+});
 </script>
+
+<template>
+  <GuestTemplate title="Sign in">
+    <InlineMessage
+      v-if="showLoginBanner"
+      :tone="bannerTone"
+      data-testid="login-banner"
+      :data-severity="loginBannerSeverity"
+    >
+      <p>{{ loginBanner }}</p>
+      <template #dismiss>
+        <IconButton
+          icon="close"
+          label="Dismiss message"
+          size="sm"
+          @click="dismissLoginBanner"
+        />
+      </template>
+    </InlineMessage>
+
+    <form novalidate @submit.prevent="onSubmit">
+      <Stack gap="4">
+        <InlineMessage v-if="loginFailed" tone="error" title="Not signed in">
+          <p>{{ loginFailed }}</p>
+        </InlineMessage>
+        <FormField label="Email" :error="errors.email.join(' ') || undefined">
+          <TextInput v-model="email" type="email" placeholder="Email" />
+        </FormField>
+        <FormField
+          label="Password"
+          :error="errors.password.join(' ') || undefined"
+        >
+          <TextInput
+            v-model="password"
+            type="password"
+            placeholder="Password"
+          />
+        </FormField>
+        <Button variant="primary" type="submit">Sign in</Button>
+        <Text variant="caption"
+          ><TextLink :to="{ name: 'forgot-password' }"
+            >Forgot your password?</TextLink
+          ></Text
+        >
+      </Stack>
+    </form>
+
+    <Stack gap="3">
+      <Text variant="caption">Or continue with single sign-on</Text>
+      <template v-if="hasSSOProviders">
+        <Button
+          v-for="provider in ssoProviders"
+          :key="provider.name"
+          :loading="isSSOLoading"
+          @click="loginWithSSO(provider.name)"
+          >Continue with {{ formatProviderLabel(provider) }}</Button
+        >
+      </template>
+      <Text v-else variant="caption"
+        >No single sign-on providers are set up here. Sign in with your email
+        and password, or ask your administrator.</Text
+      >
+      <InlineMessage v-if="loginNotice" tone="warning">
+        <p>{{ loginNotice }}</p>
+      </InlineMessage>
+      <InlineMessage v-if="ssoError" tone="error">
+        <p>{{ ssoError }}</p>
+      </InlineMessage>
+    </Stack>
+  </GuestTemplate>
+</template>

@@ -17,7 +17,7 @@
   --color-ccf-950: var(--color-gray-950);
 }
 
-/* Classic pages get Inter from their frame (LegacyPage, GuestLayout); the design system sets the
+/* Classic pages get Inter from their frame (LegacyPage); the design system sets the
    document font. */
 
 .field-sizing-content {

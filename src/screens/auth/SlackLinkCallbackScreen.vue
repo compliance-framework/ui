@@ -1,31 +1,8 @@
-<template>
-  <div
-    class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900"
-  >
-    <div
-      class="max-w-md rounded-lg bg-white p-8 text-center shadow-lg dark:bg-gray-800"
-    >
-      <div
-        class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
-      ></div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        Completing Slack Link
-      </h1>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-        {{ statusMessage }}
-      </p>
-      <button
-        v-if="showReturnButton"
-        @click="goToPreferences"
-        class="mt-6 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Return to Preferences
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * Back from linking Slack (Guest template): returns to Preferences with the outcome. The script
+ * is the classic page's.
+ */
 import { computed, onMounted, ref } from 'vue';
 import { isNavigationFailure, useRoute, useRouter } from 'vue-router';
 import {
@@ -34,6 +11,9 @@ import {
   resolveSlackCallbackCode,
   resolveSlackCallbackStatus,
 } from '@/utils/slack-link-callback';
+import Button from '@/ds/components/Button/Button.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import GuestTemplate from '@/ds/templates/GuestTemplate/GuestTemplate.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -101,3 +81,12 @@ onMounted(() => {
   });
 });
 </script>
+
+<template>
+  <GuestTemplate title="Linking Slack">
+    <Text role="status">{{ statusMessage }}</Text>
+    <Button v-if="showReturnButton" variant="primary" @click="goToPreferences"
+      >Return to Preferences</Button
+    >
+  </GuestTemplate>
+</template>
