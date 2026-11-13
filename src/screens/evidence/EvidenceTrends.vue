@@ -25,10 +25,12 @@ import {
  * own loading, empty and error state, so one failing never hides the other.
  */
 const props = defineProps<{
-  /** The scoped status-over-time endpoint. */
+  /** A status-over-time endpoint: the scoped search one (POST) or one stream's (GET). */
   endpoint: string;
-  /** The applied search, as sent to the search endpoint. */
-  request: { body: { filter: Filter }; name?: string };
+  /** For the search endpoint, the applied search; omitted for a stream's GET endpoint. */
+  request?: { body: { filter: Filter }; name?: string };
+  /** What the status trend covers, for its description. */
+  subject?: string;
 }>();
 
 const api = useAuthenticatedInstance();
@@ -48,16 +50,19 @@ async function loadStatus(): Promise<void> {
   const request = ++latest;
   status.value = { status: 'loading', series: [] };
   try {
-    const response = await api.post<DataResponse<ComplianceInterval[]>>(
-      props.endpoint,
-      props.request.body,
-      {
-        params: {
-          interval: STATUS_INTERVAL,
-          ...(props.request.name ? { name: props.request.name } : {}),
-        },
-      },
-    );
+    const params = {
+      interval: STATUS_INTERVAL,
+      ...(props.request?.name ? { name: props.request.name } : {}),
+    };
+    const response = props.request
+      ? await api.post<DataResponse<ComplianceInterval[]>>(
+          props.endpoint,
+          props.request.body,
+          { params },
+        )
+      : await api.get<DataResponse<ComplianceInterval[]>>(props.endpoint, {
+          params,
+        });
     if (request !== latest) return;
     const series = statusSeries(response.data.data ?? []);
     status.value = { status: hasPoints(series) ? 'ready' : 'empty', series };
@@ -97,7 +102,7 @@ const healthTime = computed(() => timeFormatter(health.value.series));
   <Grid min="lg">
     <Panel
       title="Status over time"
-      description="Satisfied and not satisfied evidence for this search, over time."
+      :description="`Satisfied and not satisfied evidence for ${subject ?? 'this search'}, over time.`"
     >
       <DataState
         :status="status.status"
@@ -109,7 +114,7 @@ const healthTime = computed(() => timeFormatter(health.value.series));
         @retry="loadStatus"
       >
         <LineChart
-          label="Evidence status over time for this search"
+          :label="`Evidence status over time for ${subject ?? 'this search'}`"
           :series="status.series"
           y-label="Evidence"
           x-label="Time"

@@ -257,12 +257,12 @@ function pageLink(page: number) {
   return { query: withView({ ...view.value, page }) };
 }
 
-/** Evidence opens on its classic page, which offers "back" to This System > Evidence. */
+/** Evidence opens in place; the list's view travels along so the breadcrumb returns to it. */
 function evidenceLink(id: string) {
   return {
-    name: 'evidence:view',
-    params: { id },
-    query: { ...viewQuery(view.value), from: 'system' },
+    name: 'ds-evidence-overview',
+    params: { systemId, evidenceId: id },
+    query: viewQuery(view.value),
   };
 }
 

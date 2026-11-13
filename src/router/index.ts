@@ -1219,6 +1219,48 @@ const designSystemRoutes = [
         component: () => import('@/screens/evidence/SystemEvidenceScreen.vue'),
         meta: { title: 'Evidence' },
       },
+      {
+        // Each tab of an evidence record is its own route, so tabs are shareable.
+        path: 'evidence/:evidenceId',
+        component: () =>
+          import('@/screens/evidence/record/EvidenceRecordScreen.vue'),
+        meta: { title: 'Evidence' },
+        children: [
+          {
+            path: '',
+            name: 'ds-evidence-overview',
+            component: () =>
+              import('@/screens/evidence/record/OverviewTab.vue'),
+          },
+          {
+            path: 'metadata',
+            name: 'ds-evidence-metadata',
+            component: () =>
+              import('@/screens/evidence/record/MetadataTab.vue'),
+          },
+          {
+            path: 'risks',
+            name: 'ds-evidence-risks',
+            component: () => import('@/screens/evidence/record/RisksTab.vue'),
+          },
+          {
+            path: 'media',
+            name: 'ds-evidence-media',
+            component: () => import('@/screens/evidence/record/MediaTab.vue'),
+          },
+          {
+            path: 'signature',
+            name: 'ds-evidence-signature',
+            component: () =>
+              import('@/screens/evidence/record/SignatureTab.vue'),
+          },
+          {
+            path: 'history',
+            name: 'ds-evidence-history',
+            component: () => import('@/screens/evidence/record/HistoryTab.vue'),
+          },
+        ],
+      },
     ],
   },
 ];

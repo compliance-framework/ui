@@ -88,6 +88,15 @@ const systems = computed(() =>
 function switchSystem(id: string): void {
   if (typeof route.params.systemId === 'string') {
     if (route.params.systemId === id) return;
+    // A record belongs to the system it was opened from, so switching from one goes to the
+    // new system's list for that section.
+    if (route.params.evidenceId) {
+      void router.push({
+        name: 'ds-system-evidence',
+        params: { systemId: id },
+      });
+      return;
+    }
     void router.push({
       name: route.name ?? 'ds-system-evidence',
       params: { ...route.params, systemId: id },

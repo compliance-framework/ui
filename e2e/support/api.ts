@@ -7,6 +7,8 @@ import { RESOURCES } from '../../src/constants/permissions';
  * exercised. `signIn` seeds the persisted auth store, as a real sign-in would.
  */
 
+export const EVIDENCE_ID = 'ev-1';
+
 export const SYSTEMS = {
   scoped: 'a1b2c3d4-0000-4000-8000-000000000001',
   unscoped: 'a1b2c3d4-0000-4000-8000-000000000002',
@@ -126,6 +128,51 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path === '/api/me/permissions') {
       return json(route, { subject: { type: 'user', id: 'u-1' }, permissions });
     }
+    const record = path.match(/^\/api\/evidence\/(ev-\d+)(\/.*)?$/);
+    if (record) {
+      const rest = record[2] ?? '';
+      const item = {
+        ...evidence(Number(record[1]!.slice(3)), 'satisfied'),
+        description: 'Daily restore test of the payments database.',
+        props: [{ name: 'check', value: 'restore' }],
+        links: [{ href: '#log', rel: 'evidence' }],
+        'back-matter': {
+          resources: [
+            {
+              uuid: 'log',
+              title: 'restore.log',
+              base64: { 'media-type': 'text/plain', value: btoa('restore ok') },
+            },
+          ],
+        },
+        expires: '2026-12-30T00:00:00Z',
+      };
+      if (rest === '') return json(route, { data: item });
+      if (rest === '/signature')
+        return json(route, { data: { status: 'unsigned' } });
+      if (rest === '/risks') return json(route, { data: [] });
+      if (rest === '/verify')
+        return json(route, {
+          data: {
+            status: 'unsigned',
+            'is-valid': false,
+            checks: {
+              'hash-match': false,
+              'signature-valid': false,
+              'temporal-valid': false,
+              'signed-content-matches': false,
+            },
+          },
+        });
+    }
+    if (path.startsWith('/api/evidence/latest/'))
+      return json(route, { data: { id: EVIDENCE_ID } });
+    if (path.startsWith('/api/evidence/history/'))
+      return json(route, {
+        data: [1, 2, 3].map((i) => evidence(i, 'satisfied')),
+      });
+    if (path.startsWith('/api/evidence/status-over-time/'))
+      return json(route, { data: [] });
     if (path === '/api/agent/heartbeat/over-time') {
       return json(route, {
         data: [0, 1, 2, 3, 4, 5].map((i) => ({

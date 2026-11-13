@@ -52,6 +52,11 @@ async function mountScreen(path = '/next/systems/sys-1/evidence') {
         component: SystemEvidenceScreen,
       },
       { path: '/evidence/:id', name: 'evidence:view', component: Stub },
+      {
+        path: '/next/systems/:systemId/evidence/:evidenceId',
+        name: 'ds-evidence-overview',
+        component: Stub,
+      },
       { path: '/system/evidence', name: 'system:evidence', component: Stub },
       { path: '/system/scope', name: 'system:scope', component: Stub },
       {
@@ -110,13 +115,13 @@ describe('SystemEvidenceScreen', () => {
     );
   });
 
-  it('lists evidence with its status, linking to the classic record', async () => {
+  it('lists evidence with its status, opening each record in place', async () => {
     const { wrapper } = await mountScreen();
     expect(wrapper.text()).toContain('Satisfied');
     expect(wrapper.text()).toContain('Not satisfied');
     const link = wrapper.findAll('tbody a')[0]!;
     expect(link.text()).toBe('Backups verified');
-    expect(link.attributes('href')).toBe('/evidence/e1?from=system');
+    expect(link.attributes('href')).toBe('/next/systems/sys-1/evidence/e1');
   });
 
   it('carries the view to the classic page', async () => {

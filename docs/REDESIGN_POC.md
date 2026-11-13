@@ -133,15 +133,34 @@ are new and still open.
 14. **Evidence uses the classic page's query parameters** (`filter`, `page`, `sortBy`,
     `sortDirection`, `subject`), so a view moves between the two pages unchanged, and a subject
     filter set on the classic page is honoured (and shown as a removable chip) here.
-15. **Evidence records still open on the classic record page**, with `from=system` so its "back"
-    returns to This System > Evidence. The record page is the obvious next migration after this
-    one.
+15. **Evidence records open in the new UI** (_done 2026-11-13; supersedes "records open on the
+    classic page"). See 17–19.
 16. **Times show in the viewer's local time zone.** The mockup used UTC everywhere so its
     screenshots were stable; for real data, local time matches the classic page.
+
+17. **The evidence record is `/next/systems/:systemId/evidence/:evidenceId`, with the classic
+    page's six tabs as routes** (`…/metadata`, `/risks`, `/media`, `/signature`, `/history`), so
+    every tab is shareable, and the list's search travels in the query so the "Evidence"
+    breadcrumb returns to the same view. The record sits under the system it was opened from;
+    switching system from a record goes to the new system's Evidence list. A record the user
+    can't read shows as not found, like a system.
+18. **What the record page covers:** the header (status, signature, collected, expiry or a link
+    to the stream's latest record, counts, Back to execution, Re-submit, Open classic view);
+    Overview (description, status reason, tasks, subjects); Metadata (all labels, props, links);
+    Risks (linked risks across systems, with shared status and level badges); Media (text and
+    JSON open in place as code, images preview, every payload downloads); Signature (verify now,
+    with the four checks, and the stored signature, signer, claims and token); History (the
+    stream's records, newest first, with its status trend and agent health).
+    - Changed from the classic page: tasks are listed in place rather than in a dialog;
+      descriptions stay plain text, as on the classic page.
+19. **Still on the classic record page:** policy **playback** (the Overview links to it when the
+    agent stored a playback bundle) and **Create risk** (the Risks tab links there). Both are
+    sizeable (playback is ~600 lines with source highlighting and artifact fetches; Create risk
+    is a form plus a linking step) and are the next pieces to port.
 
 ## Suggested next steps
 
 - Review 13–16.
 - Add `lint:css` and `test:e2e` to the shared CI workflow.
-- The evidence record page, so the whole evidence journey stays in the new UI.
+- Port playback and Create risk, so the evidence journey never leaves the new UI.
 - Then a system page with editing (Risks or Configure System) to prove out forms and dialogs.

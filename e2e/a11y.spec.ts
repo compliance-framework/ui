@@ -1,6 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { mockApi, signIn, SYSTEMS, type ApiState } from './support/api';
+import {
+  EVIDENCE_ID,
+  mockApi,
+  signIn,
+  SYSTEMS,
+  type ApiState,
+} from './support/api';
 
 /**
  * axe-core (WCAG 2.2 A/AA plus best practice) on every redesigned route, in light and dark, in
@@ -11,6 +17,15 @@ const routes = [
   `/next/systems/${SYSTEMS.scoped}/evidence`,
   `/next/systems/${SYSTEMS.unscoped}/evidence`,
   `/next/systems/${SYSTEMS.missing}/evidence`,
+];
+const record = `/next/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}`;
+const recordTabs = [
+  '',
+  '/metadata',
+  '/risks',
+  '/media',
+  '/signature',
+  '/history',
 ];
 const themes = ['light', 'dark'] as const;
 const states: ApiState[] = ['ready', 'empty', 'error', 'loading'];
@@ -102,6 +117,25 @@ for (const theme of themes) {
       ...(await axe(page, `${theme} system switcher`, { menuOpen: true })),
     );
 
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
+  test(`axe: every evidence record tab (${theme})`, async ({ page }) => {
+    await signIn(page, theme);
+    await mockApi(page);
+    const violations: string[] = [];
+    for (const tab of recordTabs) {
+      await open(page, `${record}${tab}`);
+      if (tab === '/media')
+        await page.getByRole('button', { name: 'Show restore.log' }).click();
+      if (tab === '/signature') {
+        await page.getByRole('button', { name: 'Verify' }).click();
+        await page.getByText('The signature is not valid').waitFor();
+      }
+      violations.push(
+        ...(await axe(page, `${theme} record${tab || ' overview'}`)),
+      );
+    }
     expect(violations, violations.join('\n')).toEqual([]);
   });
 

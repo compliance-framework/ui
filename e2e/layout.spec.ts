@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, signIn, SYSTEMS } from './support/api';
+import { EVIDENCE_ID, mockApi, signIn, SYSTEMS } from './support/api';
 
 /**
  * Reflow and keyboard checks for the redesigned shell: no sideways page scrolling down to 320 CSS
  * pixels (WCAG 1.4.10), the skip link, menus that close on Escape and return focus, and every
  * action reachable at 1280×800 with the navigation expanded.
  */
-const routes = ['/next/systems', `/next/systems/${SYSTEMS.scoped}/evidence`];
+const routes = [
+  '/next/systems',
+  `/next/systems/${SYSTEMS.scoped}/evidence`,
+  `/next/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}/signature`,
+];
 
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
