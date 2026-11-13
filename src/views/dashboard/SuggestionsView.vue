@@ -1,6 +1,9 @@
 <template>
-  <div class="flex items-start justify-between gap-4">
-    <div>
+  <div
+    class="flex items-start gap-4"
+    :class="embedded ? 'justify-end' : 'justify-between'"
+  >
+    <div v-if="!embedded">
       <PageHeader>Evidence filter suggestions</PageHeader>
       <PageSubHeader>{{ sspTitle }}</PageSubHeader>
     </div>
@@ -553,6 +556,9 @@ import {
 } from './partials/dashboard-suggestions';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 const { can, permissionTooltip } = usePermissions();
 

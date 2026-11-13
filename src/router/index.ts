@@ -74,9 +74,10 @@ const authenticatedRoutes = [
   {
     path: '/dashboards/suggestions/:sspId',
     name: 'dashboards.suggestions',
-    component: () => import('../views/dashboard/SuggestionsView.vue'),
+    component: () => import('../screens/filters/SuggestionsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -194,17 +195,10 @@ const authenticatedRoutes = [
   {
     path: 'inventory',
     name: 'inventory:index',
-    component: () => import('../views/InventoryView.vue'),
+    component: () => import('../screens/inventory/InventoryScreen.vue'),
     meta: {
       requiresAuth: true,
-    },
-  },
-  {
-    path: 'inventory',
-    name: 'inventory:index',
-    component: () => import('../views/InventoryView.vue'),
-    meta: {
-      requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -276,9 +270,10 @@ const authenticatedRoutes = [
   {
     path: '/profiles/build-props',
     name: 'profile-build-props',
-    component: () => import('../views/profile/ProfileBuildPropsView.vue'),
+    component: () => import('../screens/profiles/BuildProfileScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

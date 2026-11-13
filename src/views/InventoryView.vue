@@ -1,22 +1,17 @@
 <template>
   <div>
-    <PageHeader>
-      Inventory
-      <template #menu>
-        <BurgerMenu
-          :items="[
-            {
-              label: 'Create New',
-              command: () => {
-                showCreateInventoryItemModal = true;
-              },
-              disabled: !can(RESOURCES.INVENTORY, ACTIONS.CREATE),
-            },
-          ]"
-        />
-      </template>
-    </PageHeader>
-    <PageSubHeader>All system inventory from all sources</PageSubHeader>
+    <template v-if="!embedded">
+      <PageHeader>
+        Inventory
+        <template #menu>
+          <BurgerMenu :items="menuItems" />
+        </template>
+      </PageHeader>
+      <PageSubHeader>All system inventory from all sources</PageSubHeader>
+    </template>
+    <div v-else class="flex justify-end">
+      <BurgerMenu :items="menuItems" />
+    </div>
 
     <!-- Filters Section -->
     <div class="mb-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
@@ -364,6 +359,9 @@ import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
+
 // Extended inventory item type with source information
 interface InventoryItemWithSource extends InventoryItem {
   source: string;
@@ -524,6 +522,15 @@ onMounted(async () => {
 
 const editingInventoryItem = ref<InventoryItemWithSource | null>(null);
 const showCreateInventoryItemModal = ref(false);
+const menuItems = computed(() => [
+  {
+    label: 'Create New',
+    command: () => {
+      showCreateInventoryItemModal.value = true;
+    },
+    disabled: !can(RESOURCES.INVENTORY, ACTIONS.CREATE),
+  },
+]);
 const showEditInventoryItemModal = ref(false);
 const showInventoryItemAttachModal = ref(false);
 

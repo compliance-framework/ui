@@ -1,11 +1,13 @@
 <template>
-  <div class="p-6">
-    <PageHeader>Build Profile by Props</PageHeader>
-    <div class="mt-2">
-      <PageSubHeader
-        >Select controls from a catalog using prop rules</PageSubHeader
-      >
-    </div>
+  <div :class="embedded ? '' : 'p-6'">
+    <template v-if="!embedded">
+      <PageHeader>Build Profile by Props</PageHeader>
+      <div class="mt-2">
+        <PageSubHeader
+          >Select controls from a catalog using prop rules</PageSubHeader
+        >
+      </div>
+    </template>
 
     <div
       class="mt-4 rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 p-4"
@@ -174,6 +176,9 @@ import type { AxiosHeaders } from 'axios';
 import type { Catalog } from '@/oscal';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Inside a design-system screen (which shows the title), the classic header is left out.
+defineProps<{ embedded?: boolean }>();
 
 const { can, permissionTooltip } = usePermissions();
 const toast = useToast();

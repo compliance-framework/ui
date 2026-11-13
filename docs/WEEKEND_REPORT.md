@@ -338,3 +338,8 @@ page structurally migrated, say so and I'll switch.
   exposing the view's handlers and updating those specs; I'd do it when each page is rebuilt
   properly.
 - Not in the axe checks (mostly classic markup).
+- Follow-up: **Inventory**, **Build a profile from props** and **Filter suggestions** get the
+  same treatment (design-system header and breadcrumb, classic body via `embedded`). Inventory's
+  Create menu and the suggestions page's run buttons stay in the body.
+- **Found:** `inventory:index` was defined twice in the router (on `main` too); the duplicate is
+  removed.
