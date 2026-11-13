@@ -27,6 +27,7 @@ make reviewable                              # format check + type-check + lint 
 npx vitest run src/path/to/file.spec.ts      # one spec
 npm run dev                                  # dev server on http://localhost:3000
 VITE_API_URL=http://localhost:8080 npm run dev   # against a local-dev API
+VITE_API_PROXY=http://localhost:8080 npm run dev # same, proxied: works on any port (no CORS)
 npm run format:fix                           # prettier --write src/
 ```
 
