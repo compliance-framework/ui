@@ -16,7 +16,13 @@ import { joinIds } from '../FormField/field';
 const props = withDefaults(
   defineProps<{
     legend: string;
-    options: { value: string; label: string; description?: string }[];
+    /** `disabledReason` makes one option unavailable and says why, below it. */
+    options: {
+      value: string;
+      label: string;
+      description?: string;
+      disabledReason?: string;
+    }[];
     hint?: string;
     error?: string;
     required?: boolean;
@@ -85,6 +91,7 @@ function toggle(value: string, checked: boolean): void {
         :model-value="model.includes(option.value)"
         :label="option.label"
         :description="option.description"
+        :disabled-reason="option.disabledReason"
         @update:model-value="(checked) => toggle(option.value, checked)"
       />
       <FieldMessages

@@ -376,6 +376,24 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       );
     if (path === '/api/control-links/catalog' && method === 'GET')
       return json(route, { data: [] });
+    if (path === '/api/users/me')
+      return json(route, {
+        data: {
+          id: 'u-1',
+          email: 'tony@example.com',
+          'first-name': 'Tony',
+          'last-name': 'Smith',
+          'auth-method': 'password',
+        },
+      });
+    if (path === '/api/users/me/subscriptions' && method === 'GET')
+      return json(route, {
+        data: { notifications: { 'evidence-digest': ['email'] } },
+      });
+    if (path === '/api/notifications/providers')
+      return json(route, { data: { email: true, slack: false } });
+    if (path === '/api/auth/slack/link/status')
+      return json(route, { data: { configured: false, linked: false } });
     if (path === '/api/poam-items')
       return list(
         route,

@@ -831,9 +831,10 @@ const authenticatedRoutes = [
   {
     path: '/preferences',
     name: 'preferences',
-    component: () => import('../views/PreferencesView.vue'),
+    component: () => import('../screens/preferences/PreferencesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

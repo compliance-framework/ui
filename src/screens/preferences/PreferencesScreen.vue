@@ -1,260 +1,22 @@
-<template>
-  <template v-if="loading">
-    <PageHeader>Loading preferences...</PageHeader>
-  </template>
-  <template v-else-if="loadError">
-    <PageHeader>Error Loading Preferences</PageHeader>
-
-    <div class="max-w-2xl mx-auto">
-      <PageCard class="mb-6">
-        <div class="p-6">
-          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-            <p class="text-sm text-red-800 dark:text-red-200">
-              {{ loadError }}
-            </p>
-            <button
-              @click="loadUserData"
-              class="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </PageCard>
-    </div>
-  </template>
-  <template v-else>
-    <PageHeader>User Preferences</PageHeader>
-
-    <div class="max-w-2xl mx-auto">
-      <PageCard class="mb-6">
-        <div class="p-6">
-          <h2
-            class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100"
-          >
-            Email Notifications
-          </h2>
-
-          <div class="space-y-6">
-            <div class="space-y-3">
-              <h3
-                class="text-base font-semibold text-gray-900 dark:text-gray-100"
-              >
-                Evidence Notifications
-              </h3>
-
-              <div
-                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div class="flex-1">
-                  <h4
-                    id="evidence-digest-heading"
-                    class="text-lg font-medium text-gray-900 dark:text-gray-100"
-                  >
-                    <TooltipTitle
-                      text="Evidence Digest"
-                      :tooltip-text="evidenceDigestTooltipText"
-                    />
-                  </h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Choose where evidence digest alerts are sent
-                  </p>
-                </div>
-
-                <div class="ml-4 w-48">
-                  <MultiSelectDropdown
-                    :options="notificationChannelOptions"
-                    :model-value="evidenceDigestAlertChannels"
-                    :disabled="updating"
-                    placeholder="Select channels"
-                    id="evidence-digest"
-                    aria-labelledby="evidence-digest-heading"
-                    @update:model-value="onEvidenceDigestChannelsChange"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700"
-            >
-              <h3
-                class="text-base font-semibold text-gray-900 dark:text-gray-100"
-              >
-                Task Notifications
-              </h3>
-
-              <div
-                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div class="flex-1">
-                  <h4
-                    id="task-available-heading"
-                    class="text-lg font-medium text-gray-900 dark:text-gray-100"
-                  >
-                    <TooltipTitle
-                      text="Task Available Alerts"
-                      :tooltip-text="taskAvailableTooltipText"
-                    />
-                  </h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Choose where task available alerts are sent
-                  </p>
-                </div>
-
-                <div class="ml-4 w-48">
-                  <MultiSelectDropdown
-                    :options="notificationChannelOptions"
-                    :model-value="taskAvailableAlertChannels"
-                    :disabled="updating"
-                    placeholder="Select channels"
-                    id="task-available"
-                    aria-labelledby="task-available-heading"
-                    @update:model-value="onTaskAvailableChannelsChange"
-                  />
-                </div>
-              </div>
-
-              <div
-                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div class="flex-1">
-                  <h4
-                    id="task-digest-heading"
-                    class="text-lg font-medium text-gray-900 dark:text-gray-100"
-                  >
-                    <TooltipTitle
-                      text="Daily Task Digest"
-                      :tooltip-text="taskDailyDigestTooltipText"
-                    />
-                  </h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Choose where daily task digest alerts are sent
-                  </p>
-                </div>
-
-                <div class="ml-4 w-48">
-                  <MultiSelectDropdown
-                    :options="notificationChannelOptions"
-                    :model-value="taskDailyDigestAlertChannels"
-                    :disabled="updating"
-                    placeholder="Select channels"
-                    id="task-digest"
-                    aria-labelledby="task-digest-heading"
-                    @update:model-value="onTaskDailyDigestChannelsChange"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700"
-            >
-              <h3
-                class="text-base font-semibold text-gray-900 dark:text-gray-100"
-              >
-                Risk Notifications
-              </h3>
-
-              <div
-                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div class="flex-1">
-                  <h4
-                    id="risk-notifications-heading"
-                    class="text-lg font-medium text-gray-900 dark:text-gray-100"
-                  >
-                    <TooltipTitle
-                      text="Risk Notifications"
-                      :tooltip-text="riskNotificationsTooltipText"
-                    />
-                  </h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Choose where risk notifications are sent
-                  </p>
-                </div>
-
-                <div class="ml-4 w-48">
-                  <MultiSelectDropdown
-                    :options="notificationChannelOptions"
-                    :model-value="riskNotificationsAlertChannels"
-                    :disabled="updating"
-                    placeholder="Select channels"
-                    id="risk-notifications"
-                    aria-labelledby="risk-notifications-heading"
-                    @update:model-value="onRiskNotificationsChannelsChange"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="updateError"
-            class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg"
-          >
-            <p class="text-sm text-red-800 dark:text-red-200">
-              {{ updateError }}
-            </p>
-          </div>
-
-          <div
-            v-if="updateSuccess"
-            class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg"
-          >
-            <p class="text-sm text-green-800 dark:text-green-200">
-              Preferences updated successfully!
-            </p>
-          </div>
-        </div>
-      </PageCard>
-
-      <PageCard>
-        <div class="p-6">
-          <h2
-            class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100"
-          >
-            Account Information
-          </h2>
-
-          <div class="space-y-3">
-            <div class="flex justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Email:</span>
-              <span class="text-gray-900 dark:text-gray-100">{{
-                user?.email
-              }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600 dark:text-gray-400">Name:</span>
-              <span class="text-gray-900 dark:text-gray-100"
-                >{{ user?.firstName }} {{ user?.lastName }}</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600 dark:text-gray-400"
-                >Authentication Method:</span
-              >
-              <span class="text-gray-900 dark:text-gray-100">{{
-                user?.authMethod || 'Password'
-              }}</span>
-            </div>
-            <SlackAccountLinkSection @status-change="onSlackLinkStatusChange" />
-          </div>
-        </div>
-      </PageCard>
-    </div>
-  </template>
-</template>
-
 <script setup lang="ts">
+/**
+ * Preferences (/preferences): where each kind of notification is sent (email, Slack), and the
+ * signed-in account. The Slack link section is the classic one (a legacy island). The script is
+ * the classic page's; the template and the helpers at the end are new.
+ */
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
-import PageHeader from '@/components/PageHeader.vue';
-import PageCard from '@/components/PageCard.vue';
-import TooltipTitle from '@/components/TooltipTitle.vue';
-import MultiSelectDropdown from '@/components/forms/MultiSelectDropdown.vue';
 import SlackAccountLinkSection from '@/components/preferences/SlackAccountLinkSection.vue';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 
 type NotificationAlertChannel = 'email' | 'slack';
 
@@ -817,4 +579,108 @@ onUnmounted(() => {
     clearTimeout(successTimeoutId.value);
   }
 });
+
+// Design-system view ---------------------------------------------------------------------------
+
+const channelOptions = computed(() =>
+  notificationChannelOptions.value.map((option) => ({
+    value: option.value,
+    label: option.label,
+    disabledReason: option.disabled
+      ? (option.disabledTooltip ?? 'Not available.')
+      : undefined,
+  })),
+);
+const notifications = computed(() => [
+  {
+    key: 'evidence-digest',
+    group: 'Evidence',
+    legend: 'Evidence digest',
+    hint: evidenceDigestTooltipText.value,
+    model: evidenceDigestAlertChannels.value,
+    change: onEvidenceDigestChannelsChange,
+  },
+  {
+    key: 'task-available',
+    group: 'Tasks',
+    legend: 'Task available',
+    hint: taskAvailableTooltipText.value,
+    model: taskAvailableAlertChannels.value,
+    change: onTaskAvailableChannelsChange,
+  },
+  {
+    key: 'task-digest',
+    group: 'Tasks',
+    legend: 'Daily task digest',
+    hint: taskDailyDigestTooltipText.value,
+    model: taskDailyDigestAlertChannels.value,
+    change: onTaskDailyDigestChannelsChange,
+  },
+  {
+    key: 'risk-notifications',
+    group: 'Risks',
+    legend: 'Risk notifications',
+    hint: riskNotificationsTooltipText.value,
+    model: riskNotificationsAlertChannels.value,
+    change: onRiskNotificationsChannelsChange,
+  },
+]);
+const account = computed(() => [
+  { key: 'email', label: 'Email', value: user.value?.email },
+  {
+    key: 'name',
+    label: 'Name',
+    value:
+      `${user.value?.firstName ?? ''} ${user.value?.lastName ?? ''}`.trim(),
+  },
+  {
+    key: 'method',
+    label: 'Signs in with',
+    value: user.value?.authMethod || 'Password',
+  },
+]);
 </script>
+
+<template>
+  <Stack gap="6">
+    <PageHeader
+      title="Preferences"
+      description="Where your notifications go, and your account."
+    />
+    <DataState
+      v-if="loading || loadError"
+      :status="loading ? 'loading' : 'error'"
+      subject="your preferences"
+      :error-message="loadError ?? undefined"
+      skeleton="panel"
+      @retry="loadUserData"
+    />
+    <template v-else>
+      <Panel title="Notifications" :level="2">
+        <PanelSection
+          v-for="item in notifications"
+          :key="item.key"
+          :title="item.legend"
+          :description="item.hint"
+        >
+          <CheckboxGroup
+            :model-value="item.model"
+            :legend="`Send ${item.legend.toLowerCase()} by`"
+            :options="channelOptions"
+            @update:model-value="(channels) => item.change(channels as never)"
+          />
+        </PanelSection>
+        <InlineMessage v-if="updateError" tone="error" title="Not saved">
+          <p>{{ updateError }}</p>
+        </InlineMessage>
+        <InlineMessage v-if="updateSuccess" tone="success" title="Saved" />
+      </Panel>
+      <Panel title="Account" :level="2">
+        <DescriptionList :items="account" />
+        <LegacyPage>
+          <SlackAccountLinkSection @status-change="onSlackLinkStatusChange" />
+        </LegacyPage>
+      </Panel>
+    </template>
+  </Stack>
+</template>

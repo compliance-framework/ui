@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, type ComponentPublicInstance } from 'vue';
-import PreferencesView from '../PreferencesView.vue';
+import PreferencesView from '../PreferencesScreen.vue';
 
 // Mock the composables
 const mockAxios = {

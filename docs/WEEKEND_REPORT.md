@@ -303,3 +303,17 @@ page structurally migrated, say so and I'll switch.
   classic instances route.
 - **Gap (islands):** execution metrics, the step graph, the step list and the step panel are
   classic. Not in the axe checks for that reason.
+
+### Preferences (`/preferences`)
+
+- Each notification (evidence digest, task available, daily task digest, risk notifications) is
+  a panel section with a checkbox per channel (Email, Slack), saved on change as before.
+  **Decision:** the classic page hid each notification's state in a tooltip and the channels in
+  a multi-select dropdown; the state ("…are turned off") is now the section's visible
+  description, and the channels are visible checkboxes.
+- **Decision (design system):** `CheckboxGroup` options can take a `disabledReason`, shown
+  under the option (as `Checkbox` already did). Channels that aren't available say why, e.g.
+  "Slack alerts are unavailable because Slack notifications are disabled for this environment."
+- The account details are a description list. **Gap (island):** the Slack link section is
+  classic. The classic spec (25 cases) runs unchanged against the new screen.
+  `MultiSelectDropdown` was only used here and is deleted.
