@@ -215,7 +215,7 @@ const stubs = {
   IndexControlImplementation: { template: '<div />' },
   RiskIndicatorBadge: { template: '<span />' },
   ControlEvidenceCounter: { template: '<span />' },
-  StatementByComponent: { template: '<div />' },
+  ByComponentStatement: { template: '<div />' },
   ExportStatementDialog: {
     props: [
       'visible',

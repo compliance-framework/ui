@@ -29,15 +29,22 @@ import {
 import { useUIStore } from '@/stores/ui.ts';
 import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
-import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
+import {
+  decamelizeKeys,
+  useAuthenticatedInstance,
+  useDataApi,
+} from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { ACTIONS, RESOURCES } from '@/constants/permissions';
 import {
   LeveragedControlsKey,
   useLeveragedControls,
 } from '@/composables/useLeveragedControls';
-import ControlImplementationSuggestions from '@/views/control-implementations/partials/ControlImplementationSuggestions.vue';
+import ControlSuggestions from './ControlSuggestions.vue';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
+  ByComponent,
   Control,
   ControlImplementation,
   ImplementedRequirement,
@@ -50,7 +57,7 @@ import type {
 } from '@/types/ssp-leverage';
 import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
 import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
-import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
+import ByComponentStatement from './ByComponentStatement.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import {
@@ -441,6 +448,97 @@ function getStatementWorkItems(): Array<{
     }
   }
   return items;
+}
+
+// By-component statements in the drawer ---------------------------------------------------------
+// (The classic drawer rendered these without save or delete handlers, so its Edit and Delete did
+// nothing.)
+
+const { can } = usePermissions();
+const statementEditDenied = computed(() =>
+  can(RESOURCES.SSP, ACTIONS.UPDATE)
+    ? undefined
+    : "Your access doesn't include changing this security plan.",
+);
+
+/**
+ * Every component statement for the selected control: on the requirement itself, and on each of
+ * its statements (where most live). The classic drawer listed only the first kind, so it showed
+ * "Components (0)" for controls the tree counted as implemented.
+ */
+const drawerByComponents = computed(() => {
+  const requirement = selectedImplementedRequirement.value;
+  if (!requirement) return [];
+  return [
+    ...(requirement.byComponents ?? []).map((byComponent) => ({
+      byComponent,
+      statementId: undefined as string | undefined,
+    })),
+    ...(requirement.statements ?? []).flatMap((statement) =>
+      (statement.byComponents ?? []).map((byComponent) => ({
+        byComponent,
+        statementId: statement.uuid as string | undefined,
+      })),
+    ),
+  ];
+});
+
+function byComponentUrl(
+  byComponent: ByComponent,
+  statementId?: string,
+): string | undefined {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  const requirement = selectedImplementedRequirement.value;
+  if (!sspId || !requirement) return undefined;
+  const base = `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${requirement.uuid}`;
+  return statementId
+    ? `${base}/statements/${statementId}/by-components/${byComponent.uuid}`
+    : `${base}/by-components/${byComponent.uuid}`;
+}
+
+async function saveByComponent(byComponent: ByComponent, statementId?: string) {
+  const url = byComponentUrl(byComponent, statementId);
+  if (!url) return;
+  try {
+    await axios.put(url, byComponent, { transformRequest: [decamelizeKeys] });
+    await loadControlImplementations();
+    toast.add({
+      severity: 'success',
+      summary: 'Statement saved',
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: "The statement wasn't saved",
+      detail: await getErrorDetail(error, 'Try again.'),
+      life: 5000,
+    });
+  }
+}
+
+async function deleteByComponent(
+  byComponent: ByComponent,
+  statementId?: string,
+) {
+  const url = byComponentUrl(byComponent, statementId);
+  if (!url) return;
+  try {
+    await axios.delete(url);
+    await loadControlImplementations();
+    toast.add({
+      severity: 'success',
+      summary: 'Statement deleted',
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: "The statement wasn't deleted",
+      detail: await getErrorDetail(error, 'Try again.'),
+      life: 5000,
+    });
+  }
 }
 
 async function loadControlImplementations() {
@@ -1239,54 +1337,51 @@ provideControlTree({
     :title="drawerTitle"
     :description="selectedControlDescription"
   >
-    <LegacyPage>
-      <ControlImplementationSuggestions
+    <Stack gap="6">
+      <ControlSuggestions
         v-if="aiConfigStore.dashboardSuggestionsEnabled"
-        :control-id="selectedDrawerControlId"
         :ssp-id="systemStore.system.securityPlan?.uuid"
         :suggestions="selectedControlDashboardSuggestions"
         :result="selectedControlSuggestionResult"
         :loading="dashboardSuggestionStateLoading"
       />
-    </LegacyPage>
-    <Stack gap="4">
-      <Text variant="label"
-        >Components ({{
-          selectedImplementedRequirement?.byComponents?.length ?? 0
-        }})</Text
-      >
-      <LegacyPage
-        v-for="byComponent in selectedImplementedRequirement?.byComponents ||
-        []"
-        :key="byComponent.uuid"
-      >
-        <StatementByComponent
+      <Stack gap="4">
+        <Text variant="label"
+          >Components ({{ drawerByComponents.length }})</Text
+        >
+        <ByComponentStatement
+          v-for="{ byComponent, statementId } in drawerByComponents"
+          :key="byComponent.uuid"
           :by-component="byComponent"
           :control-id="selectedImplementedRequirement?.controlId"
+          :ssp-id="systemStore.system.securityPlan?.uuid"
           :ssp-risks="sspRisks || []"
           :risk-fetch-limit="RISK_FETCH_LIMIT"
+          :edit-denied-reason="statementEditDenied"
+          @save="(next) => saveByComponent(next, statementId)"
+          @delete="(next) => deleteByComponent(next, statementId)"
         />
-      </LegacyPage>
-      <LegacyPage>
-        <SharedResponsibilityPanel
-          v-if="selectedSspId && selectedDrawerControlId"
-          :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
-          :ssp-id="selectedSspId"
-          :control-id="selectedDrawerControlId"
-          @edit-provides="openProvidesEditor"
-          @imported="handleImported"
-        />
-        <ExportStatementDialog
-          v-if="selectedSspId && providesEditTarget"
-          v-model:visible="showProvidesEditDialog"
-          :ssp-id="selectedSspId"
-          :ssp-title="selectedSspTitle"
-          :control-id="providesEditTarget.controlId"
-          :statement-id="providesEditTarget.statementId"
-          :by-component-uuid="providesEditTarget.byComponentUuid"
-          @saved="handleProvidesSaved"
-        />
-      </LegacyPage>
+        <LegacyPage>
+          <SharedResponsibilityPanel
+            v-if="selectedSspId && selectedDrawerControlId"
+            :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
+            :ssp-id="selectedSspId"
+            :control-id="selectedDrawerControlId"
+            @edit-provides="openProvidesEditor"
+            @imported="handleImported"
+          />
+          <ExportStatementDialog
+            v-if="selectedSspId && providesEditTarget"
+            v-model:visible="showProvidesEditDialog"
+            :ssp-id="selectedSspId"
+            :ssp-title="selectedSspTitle"
+            :control-id="providesEditTarget.controlId"
+            :statement-id="providesEditTarget.statementId"
+            :by-component-uuid="providesEditTarget.byComponentUuid"
+            @saved="handleProvidesSaved"
+          />
+        </LegacyPage>
+      </Stack>
     </Stack>
   </Drawer>
 </template>

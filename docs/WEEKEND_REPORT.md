@@ -748,3 +748,18 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
     requirements with the classic forms as islands: about a day.
   - **C. Leave it as is** (current state): hidden, classic, working.
   My recommendation is **A** if no one uses those three capabilities, otherwise **B**.
+- **Implementation drawer: AI suggestions and component statements** are design-system
+  (`ControlSuggestions`, `ByComponentStatement`). Each component statement is a panel with its
+  status tag, open risks for the control (linking to the register), the markdown statement and
+  remarks, and an Edit/Delete menu. Edit happens in place, with design-system fields (the status
+  select uses a `none` sentinel, since the select can't hold an empty value), and delete goes
+  through the design-system confirm. **Found (fixed, affects `main`):**
+  1. The drawer's Edit and Delete never worked. The classic drawer rendered the statement
+     component with no save or delete handlers, so edits vanished silently. The screen now saves
+     and deletes through the API.
+  2. The drawer listed only requirement-level component statements, while nearly all live on
+     the requirement's statements, so it said "Components (0)" for controls the tree counts as
+     implemented. It now lists both, and saves each kind to its own endpoint.
+  Checked live on Payments Processing Platform (INT-CI): edit, save, revert. **Decision:** AI
+  suggestion reasoning is shown in full instead of clamped behind "Show more". **Gap (island):**
+  the shared-responsibility panel and blocks and the export dialog are still classic.

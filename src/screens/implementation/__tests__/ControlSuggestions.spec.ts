@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent } from 'vue';
-import ControlImplementationSuggestions from '../ControlImplementationSuggestions.vue';
+import { formatDateTime } from '@/ds/format';
+import ControlSuggestions from '../ControlSuggestions.vue';
 import type {
   ControlSuggestionResult,
   DashboardSuggestion,
@@ -32,22 +33,14 @@ function mountComponent(props: {
   result?: ControlSuggestionResult;
   loading?: boolean;
 }) {
-  return mount(ControlImplementationSuggestions, {
+  return mount(ControlSuggestions, {
     props: {
-      controlId: 'ac-1',
       sspId: 'ssp-1',
       suggestions: [],
       ...props,
     },
     global: {
       stubs: {
-        Chip: {
-          props: ['label'],
-          template: '<span>{{ label }}</span>',
-        },
-        Message: {
-          template: '<div data-test="message"><slot /></div>',
-        },
         RouterLink: defineComponent({
           name: 'RouterLink',
           props: ['to'],
@@ -58,10 +51,10 @@ function mountComponent(props: {
   });
 }
 
-describe('ControlImplementationSuggestions', () => {
+describe('ControlSuggestions', () => {
   it('renders a loading state while AI state is loading', () => {
     expect(mountComponent({ suggestions: [], loading: true }).text()).toContain(
-      'Loading AI evidence filter suggestions...',
+      'Loading AI evidence filter suggestions…',
     );
   });
 
@@ -97,7 +90,7 @@ describe('ControlImplementationSuggestions', () => {
     expect(wrapper.text()).toContain(
       'AI reviewed this control and found no matching evidence filter',
     );
-    expect(wrapper.text()).toContain(new Date(evaluatedAt).toLocaleString());
+    expect(wrapper.text()).toContain(formatDateTime(evaluatedAt));
   });
 
   it('renders subtle empty states for not evaluated and matched-without-pending controls', () => {

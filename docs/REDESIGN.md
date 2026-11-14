@@ -91,8 +91,8 @@ Replace each with a design-system version, then delete the classic component.
   subscribe wizard inside Leverage; the export offering forms and items and allowlist editors; the user and leveraged
   authorization forms; inside rebuilt sections, the draw.io editor, the component risks list and the
   evidence-filter drawer, and the new/edit component forms.
-- Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
-  `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
+- Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
+  `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
 - Record tabs still classic: assessment plan task details and new-task dialog; inside the
   rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
@@ -112,7 +112,8 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
-Implementation, Leverage, Inherited Capabilities and Export Offerings; toasts,
+Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
+AI suggestions and component statements; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos
