@@ -642,3 +642,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Found (fixed):** creating an observation without a Collected date failed with "Invalid time
   value" (classic bug). An empty Collected now means now (OSCAL requires it); an empty Expires is
   left out. Test data: observation "Weekend observation" on "Weekend test POA&M".
+- **POA&M Local definitions and Back matter tabs**: design-system. Local definitions show three
+  panels (components, inventory items, assessment assets) and remarks, with Add or Edit opening
+  the classic form in a dialog. Back matter resources are disclosures with their facts (document
+  IDs, citation, links, embedded file, properties) and an edit/delete menu; the classic details
+  component is deleted. **Decision:** `useApiQuery` gained `notFoundIsEmpty`, since these two
+  endpoints answer 404 while a plan has none; the classic back matter page showed that 404 as an
+  error. Every POA&M tab is now design-system; only the risk page under it keeps a classic frame.
+  **Found (API, not fixed):** adding the first back matter resource to a POA&M fails with a 500
+  (`POST .../back-matter/resources`, logged with no detail). The classic page uses the same form
+  and endpoint, so it fails there too.

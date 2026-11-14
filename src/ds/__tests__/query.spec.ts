@@ -53,6 +53,15 @@ describe('useApiQuery', () => {
     expect(statusFor({ error: { response: { status: 500 } } })).toBe('error');
   });
 
+  it('maps a 404 to empty only when the caller says nothing yet is a 404', () => {
+    const notFound = { error: { response: { status: 404 } } };
+    expect(statusFor(notFound)).toBe('error');
+    api.state = { ...api.state, ...notFound };
+    expect(
+      useApiQuery('/api/things', { notFoundIsEmpty: true }).status.value,
+    ).toBe('empty');
+  });
+
   it('treats a missing envelope as an error', () => {
     expect(statusFor({ data: undefined })).toBe('error');
   });

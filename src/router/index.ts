@@ -657,8 +657,7 @@ const authenticatedRoutes = [
       {
         path: 'local-definitions',
         name: 'plan-of-action-and-milestones-local-definitions',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesLocalDefinitionsView.vue'),
+        component: () => import('../screens/poam/PoamLocalDefinitionsTab.vue'),
       },
       {
         path: 'observations',
@@ -683,8 +682,7 @@ const authenticatedRoutes = [
       {
         path: 'back-matter',
         name: 'plan-of-action-and-milestones-back-matter',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesBackMatterView.vue'),
+        component: () => import('../screens/poam/PoamBackMatterTab.vue'),
       },
       {
         path: 'json',

@@ -21,7 +21,12 @@ export interface ApiQuery<T> {
  */
 export function useApiQuery<T>(
   url: string,
-  options: { isEmpty?: (data: T) => boolean; config?: AxiosRequestConfig } = {},
+  options: {
+    isEmpty?: (data: T) => boolean;
+    config?: AxiosRequestConfig;
+    /** For endpoints that answer 404 when there is nothing yet: shows the empty state. */
+    notFoundIsEmpty?: boolean;
+  } = {},
 ): ApiQuery<T> {
   const { data, error, isLoading, isFinished, execute } = useDataApi<T>(
     url,
@@ -31,9 +36,9 @@ export function useApiQuery<T>(
   const status = computed<QueryStatus>(() => {
     if (isLoading.value || !isFinished.value) return 'loading';
     if (error.value) {
-      return (error.value as AxiosError).response?.status === 403
-        ? 'forbidden'
-        : 'error';
+      const code = (error.value as AxiosError).response?.status;
+      if (code === 404 && options.notFoundIsEmpty) return 'empty';
+      return code === 403 ? 'forbidden' : 'error';
     }
     if (data.value === undefined) return 'error';
     return options.isEmpty?.(data.value) ? 'empty' : 'ready';

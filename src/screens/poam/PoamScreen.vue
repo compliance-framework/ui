@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A POA&M document (/plan-of-action-and-milestones/:id/...) with its sections as route tabs; the sections are classic islands until rebuilt. */
+/** A POA&M document (/plan-of-action-and-milestones/:id/...) with its sections as route tabs. */
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
@@ -97,13 +97,17 @@ const recordTabs = computed(() => {
     :description="planOfActionAndMilestones.metadata?.remarks"
     :tabs="recordTabs"
   >
-    <LegacyPage>
+    <RouterView v-slot="{ Component, route: tab }">
+      <!-- The risk page is still classic. -->
+      <LegacyPage
+        v-if="tab.name === 'plan-of-action-and-milestones-risk-detail'"
+      >
+        <component :is="Component" />
+      </LegacyPage>
       <!-- Keyed: the item, observation, risk and finding tabs are one component. -->
-      <RouterView v-slot="{ Component, route: tab }">
-        <KeepAlive>
-          <component :is="Component" :key="tab.name" />
-        </KeepAlive>
-      </RouterView>
-    </LegacyPage>
+      <KeepAlive v-else>
+        <component :is="Component" :key="tab.name" />
+      </KeepAlive>
+    </RouterView>
   </RecordTemplate>
 </template>
