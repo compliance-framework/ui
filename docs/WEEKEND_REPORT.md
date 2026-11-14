@@ -817,3 +817,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   has no islands now. Checked live: add a scope entry with the new fields, then remove it.
 - **User and group pages in the axe run** (with members and direct, inherited and configuration
   roles in the mocks), in every state and theme: they pass.
+- **Subject template page**: fully design-system, as a record with Edit (opens the template's
+  form on the list, as before) and panels for details, text templates, identity and selector
+  labels, label schema, props and links. "Back to list" is now the breadcrumb. The classic view
+  and its spec are replaced (spec ported). Checked live on "dependabot-repository".
