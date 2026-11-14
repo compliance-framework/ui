@@ -952,3 +952,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   by" as a Combobox of parties (the classic form wanted a raw party UUID), date authorized,
   remarks. **Decision:** the classic form's Properties and Links rows are dropped from this form
   (they are kept on save when editing). Checked live: add, then delete.
+- **Configure System → Components: the component form** is design-system (`SystemComponentForm`,
+  add and edit): optionally start from a component definition's component (its fields then show
+  read-only), type with completions, title, description, purpose, status and status remarks,
+  remarks, and protocols as a field list with nested port ranges. The classic forms remain only
+  for the classic per-control statement editor on Implementation. Checked live: add with a
+  protocol and port range, edit, delete, and the template path (fields fill and lock; cancelled).

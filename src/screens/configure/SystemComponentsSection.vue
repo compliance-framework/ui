@@ -2,8 +2,7 @@
 /**
  * Configure System → Components: the system's components, each opening to its description,
  * purpose, protocols and risks, with Dashboards (evidence filters), Edit, Download and Delete.
- * The risks list, the evidence filters drawer content and the create and edit forms are classic
- * islands. The script is the classic ComponentsPanel's.
+ * The risks list and the evidence filters drawer content are classic islands. The script is the classic ComponentsPanel's.
  */
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -22,8 +21,7 @@ import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 
-import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
-import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
+import SystemComponentForm from './SystemComponentForm.vue';
 import ComponentDashboardsView from '@/views/system/partials/ComponentDashboardsView.vue';
 import ComponentRisksList from '@/views/system/partials/ComponentRisksList.vue';
 
@@ -497,28 +495,25 @@ function componentActions(component: SystemComponent): MenuEntry[] {
       title="New component"
       size="l"
     >
-      <LegacyPage>
-        <SystemImplementationComponentCreateForm
-          :ssp-id="sspId"
-          @cancel="showCreateComponentModal = false"
-          @created="handleComponentCreated"
-        />
-      </LegacyPage>
+      <SystemComponentForm
+        v-if="showCreateComponentModal"
+        :ssp-id="sspId"
+        @cancel="showCreateComponentModal = false"
+        @created="handleComponentCreated"
+      />
     </Dialog>
     <Dialog
       v-model:open="showEditComponentModal"
       title="Edit component"
       size="l"
     >
-      <LegacyPage>
-        <SystemImplementationComponentEditForm
-          v-if="editingComponent"
-          :ssp-id="sspId"
-          :component="editingComponent!"
-          @cancel="showEditComponentModal = false"
-          @saved="handleComponentSaved"
-        />
-      </LegacyPage>
+      <SystemComponentForm
+        v-if="editingComponent"
+        :ssp-id="sspId"
+        :component="editingComponent!"
+        @cancel="showEditComponentModal = false"
+        @saved="handleComponentSaved"
+      />
     </Dialog>
   </Stack>
 </template>

@@ -90,7 +90,7 @@ Replace each with a design-system version, then delete the classic component.
 - Configure System: the hidden Control Implementation section (reachable by link); the
   subscribe wizard inside Leverage; the export offering forms and items and allowlist editors;
   inside rebuilt sections, the draw.io editor, the component risks list, the evidence-filter
-  drawer and the new/edit component forms.
+  drawer.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
