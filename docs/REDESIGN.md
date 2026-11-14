@@ -95,8 +95,7 @@ Replace each with a design-system version, then delete the classic component.
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
 - Record tabs still classic: inside the rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
-  POA&M risk page (classic risk detail); workflow step form and step graph; execution metrics, step graph, list
-  and panel on the run page; My tasks step panel.
+  POA&M risk page (classic risk detail); workflow step form and step graph; step graph and panel on the run page; My tasks step panel.
 - Component definitions: the new/edit component, capability and resource forms (in
   design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk templates,
@@ -110,7 +109,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; Inventory; Import (OSCAL and evidence filters); toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; Inventory; Import (OSCAL and evidence filters); toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

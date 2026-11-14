@@ -11,9 +11,9 @@ import {
   useStepExecutions,
 } from '@/composables/workflows';
 import type { StepExecution } from '@/types/workflows';
-import ExecutionMetrics from '@/views/workflow-executions/partials/ExecutionMetrics.vue';
 import ExecutionDAGView from '@/views/workflow-executions/partials/ExecutionDAGView.vue';
-import StepExecutionList from '@/views/workflow-executions/partials/StepExecutionList.vue';
+import RunStepsTable from './RunStepsTable.vue';
+import { formatDuration } from './runDuration';
 import StepExecutionPanel from '@/views/workflow-executions/partials/StepExecutionPanel.vue';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import { formatDateTime } from '@/ds/format';
@@ -161,6 +161,22 @@ const tiles = computed(() => {
       value: s.pendingSteps + s.blockedSteps,
     },
     { key: 'failed', label: 'Failed', value: s.failedSteps },
+    ...(executionMetrics.value?.executionId
+      ? [
+          {
+            key: 'duration',
+            label: 'Total time',
+            value: formatDuration(executionMetrics.value.totalDurationMinutes),
+          },
+          {
+            key: 'average',
+            label: 'Average step',
+            value: formatDuration(
+              executionMetrics.value.averageStepDurationMinutes,
+            ),
+          },
+        ]
+      : []),
   ];
 });
 const retryDenied = computed(() =>
@@ -242,9 +258,6 @@ const instanceCrumb = computed(() => ({
           <p>{{ execution.failureReason }}</p>
         </InlineMessage>
         <DescriptionList v-if="tiles.length" :items="tiles" />
-        <LegacyPage v-if="executionMetrics && executionMetrics.executionId">
-          <ExecutionMetrics :metrics="executionMetrics" />
-        </LegacyPage>
         <Stack v-if="!stepExecutions || stepExecutions.length === 0" gap="3">
           <Text
             >This run has no steps yet. The API creates them when the run
@@ -255,18 +268,19 @@ const instanceCrumb = computed(() => ({
             <Button icon="refresh" @click="loadExecution">Refresh</Button>
           </div>
         </Stack>
-        <LegacyPage v-else>
-          <ExecutionDAGView
+        <template v-else>
+          <LegacyPage>
+            <ExecutionDAGView
+              :steps="stepExecutions"
+              @step-click="handleStepClick"
+            />
+          </LegacyPage>
+          <RunStepsTable
             :steps="stepExecutions"
-            @step-click="handleStepClick"
+            :metrics="executionMetrics"
+            @open="handleStepClick"
           />
-          <StepExecutionList
-            :steps="stepExecutions"
-            :execution-status="execution.status"
-            @step-click="handleStepClick"
-            @refresh="loadExecution"
-          />
-        </LegacyPage>
+        </template>
       </Stack>
     </RecordTemplate>
   </Stack>

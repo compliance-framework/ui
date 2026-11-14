@@ -873,3 +873,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `useApiQuery` instead of the old fetch client. The classic group editor, control editor and
   dialog are deleted. Checked live on "Meridian Delivery Controls — Regulated Profile" (nothing
   saved).
+- **Workflow run page: steps and timings** are design-system. One steps table (in order: name
+  with failure, overdue or completion notes; status badge; responsible role; due; done; how
+  long it took from the run metrics; evidence count; Open for the step panel) replaces both the
+  classic step list and the metrics block. The run's total and average step times join the
+  existing facts. **Gap (island):** the step graph and the step panel (811 lines, with its
+  evidence form) stay classic. Checked live on the failed Quarterly Access Review run: table,
+  facts, Open.
