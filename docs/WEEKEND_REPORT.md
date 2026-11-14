@@ -770,3 +770,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   and all twelve Configure System sections): one h1 each, no page errors. Remaining API
   responses are known: a 404 for a system with no network-architecture diagram (handled as "Not
   described yet") and the known 500 for one component GET under Control Implementation.
+- **Assessment plan → Tasks**: now a RecordCollection (type tag, description, timing as "1 Jan
+  2026 to 31 Mar 2026" / "On …" / "Every …", remarks); opening a task loads its activities, each
+  a panel with its steps as an ordered list. The task forms are classic islands
+  (`RecordCollection` now also accepts `updated` from edit forms). Every assessment plan tab is
+  design-system, so the record has no classic frame. The classic task detail and modals are
+  deleted, along with four assessment-plan activity modals and forms that nothing used. Checked
+  live: create, open and rename a task. **Test data:** assessment plan "Weekend test AP" with
+  the task "Weekend scan (renamed)".

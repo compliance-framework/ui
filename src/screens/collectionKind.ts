@@ -3,7 +3,7 @@ import type { Component } from 'vue';
 /**
  * One collection inside a record (a POA&M's risks, an SSP's users...), as RecordCollection
  * renders it: how an entry reads (title, tags, facts) and its classic create and edit forms, which
- * take the record's id as a prop and emit `created` and `saved`.
+ * take the record's id as a prop and emit `created` and `saved` (or `updated`).
  */
 export interface CollectionEntry {
   uuid?: string;

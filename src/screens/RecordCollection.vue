@@ -4,7 +4,7 @@
  * with its tags and facts and a menu to edit, download or delete it. Callers add actions with
  * `extraActions`, content with the `details` slot (given the entry, once it is opened) and dialogs
  * with the `dialogs` slot, and are told of changes to entries through `saved`. The create and edit
- * forms are classic islands in design-system dialogs.
+ * forms are classic islands in design-system dialogs; edit forms may emit `saved` or `updated`.
  */
 import { computed, defineAsyncComponent, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -223,6 +223,7 @@ function actions(entry: CollectionEntry): MenuEntry[] {
           v-bind="{ ...formProps, [kind.editProp]: editing }"
           @cancel="editing = undefined"
           @saved="saved"
+          @updated="saved"
         />
       </LegacyPage>
     </Dialog>

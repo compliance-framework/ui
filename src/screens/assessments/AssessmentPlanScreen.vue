@@ -1,6 +1,5 @@
 <script setup lang="ts">
-/** An assessment plan (/assessment-plans/:id/...) with its sections as route tabs; the sections are classic islands until rebuilt. */
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+/** An assessment plan (/assessment-plans/:id/...) with its sections as route tabs. */
 import DataState from '@/ds/components/DataState/DataState.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
@@ -61,12 +60,10 @@ const recordTabs = computed(() => {
     :description="assessmentPlan.metadata?.remarks"
     :tabs="recordTabs"
   >
-    <LegacyPage>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
-    </LegacyPage>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </RecordTemplate>
 </template>
