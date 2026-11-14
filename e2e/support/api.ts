@@ -610,6 +610,65 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       }));
       return list(route, lists, { data: documents }, { data: [] });
     }
+    // A record of the redesigned OSCAL types, with every sub-collection its tabs read.
+    const oscalRecord = path.match(
+      /^\/api\/oscal\/(component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)\/([^/]+)(\/.*)?$/,
+    );
+    if (oscalRecord && method === 'GET') {
+      const [, kind, id] = oscalRecord;
+      const rest = oscalRecord[3] ?? '';
+      const document = {
+        uuid: id,
+        metadata: {
+          title: `Example ${kind}`,
+          version: '1.0',
+          'last-modified': '2026-11-01T00:00:00Z',
+          'oscal-version': '1.2.3',
+        },
+      };
+      if (rest === '' || rest === '/full')
+        return json(route, { data: document });
+      const entry = (name: string) => ({
+        uuid: `${name}-1`,
+        title: `Example ${name}`,
+        name: `Example ${name}`,
+        description: `An example ${name}.`,
+        type: 'example',
+        start: '2026-11-01T00:00:00Z',
+        collected: '2026-11-01T00:00:00Z',
+        methods: ['TEST'],
+        target: {
+          type: 'objective-id',
+          targetId: 'ac-1',
+          status: { state: 'satisfied' },
+        },
+      });
+      if (rest === '/back-matter')
+        return list(
+          route,
+          lists,
+          { data: { resources: [entry('resource')] } },
+          { data: { resources: [] } },
+        );
+      if (rest === '/local-definitions')
+        return list(
+          route,
+          lists,
+          { data: { components: [entry('component')], remarks: 'Example' } },
+          { data: {} },
+        );
+      if (/\/associated-activities$/.test(rest))
+        return list(route, lists, { data: [] }, { data: [] });
+      if (/^\/[a-z-]+$/.test(rest))
+        return list(
+          route,
+          lists,
+          { data: [entry(rest.slice(1))] },
+          { data: [] },
+        );
+      return json(route, { data: [] });
+    }
+
     if (path === '/api/oscal/system-security-plans' && method === 'GET') {
       return list(route, lists, { data: plans }, { data: [] });
     }
