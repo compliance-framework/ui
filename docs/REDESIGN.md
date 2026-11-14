@@ -94,7 +94,7 @@ Replace each with a design-system version, then delete the classic component.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
-- Record tabs still classic: inside the rebuilt POA&M tabs, the item details and milestones; the
+- Record tabs still classic: the
   POA&M risk page (classic risk detail); workflow step graph; step graph and panel on the run page; My tasks step panel.
 - Admin bodies under design-system headers (`embedded`): Agents, risk templates,
   Filter suggestions; the workflow import panel on Import; the subject template form (in a design-system dialog); system template form, Diagnostics sections, Compliance

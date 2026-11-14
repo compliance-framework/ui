@@ -1011,3 +1011,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   one Save. The classic attach dialog with its tabs, search and per-row attach/detach buttons is
   deleted. Checked live: link the observation to a new item, reload (the link is there), delete.
   Only the item details and milestones panel is still classic on the POA&M page.
+- **POA&M item details** are design-system (`PoamItemFacts`: description, remarks, properties,
+  links, origins, and the linked findings, observations and risks named from the plan, flagging
+  any not found). **The POA&M record is now design-system throughout** (every tab, form and
+  dialog); only the risk page opened from it is classic. Checked live.

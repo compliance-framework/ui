@@ -2,8 +2,8 @@
 /**
  * A POA&M record tab listing one collection of the plan: items, observations, risks or findings
  * (see poamCollections.ts; the kind is the route's last path segment), as a RecordCollection.
- * POA&M items also attach and detach findings, observations and risks, and show their details and
- * milestones; risks also open their own page. The item details are classic.
+ * POA&M items also link findings, observations and risks, and show their details and
+ * links; risks also open their own page.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -12,8 +12,7 @@ import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS } from '@/constants/permissions';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import PoamItemDetails from '@/components/poam/PoamItemDetails.vue';
+import PoamItemFacts from './PoamItemFacts.vue';
 import PoamItemLinksForm from './PoamItemLinksForm.vue';
 import RecordCollection from '../RecordCollection.vue';
 import type { CollectionEntry } from '../collectionKind';
@@ -71,9 +70,7 @@ function extraActions(entry: CollectionEntry): MenuEntry[] {
     :extra-actions="extraActions"
   >
     <template v-if="isItems" #details="{ entry }">
-      <LegacyPage>
-        <PoamItemDetails :item="entry as POAMItem" :poam-id="poamId" />
-      </LegacyPage>
+      <PoamItemFacts :item="entry as POAMItem" :poam-id="poamId" />
     </template>
     <template v-if="isItems" #dialogs="{ saved }">
       <Dialog

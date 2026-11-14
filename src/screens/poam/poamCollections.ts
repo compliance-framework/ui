@@ -30,7 +30,7 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
       ...count(item.relatedObservations?.length, 'observation'),
       ...count(item.relatedRisks?.length, 'risk'),
     ],
-    // The item details island shows its description and links.
+    // PoamItemFacts shows its description, links and linked entries.
     facts: () => [],
     createForm: () => import('./PoamItemForm.vue'),
     editForm: () => import('./PoamItemForm.vue'),
