@@ -87,18 +87,28 @@ Some migrated pages embed classic components (inside `LegacyPage`) for deep edit
 large enough to rebuild separately. They work and keep their tests; they still look classic.
 Replace each with a design-system version, then delete the classic component.
 
-- Configure System: every section's content (`SystemSecurityPlan*View`, `ComponentsPanel`) —
-  Overview, Characteristics, Authorization Boundary, Components, Scope, JSON, and the hidden
-  sections reachable by link.
+- Configure System: Characteristics, Authorization Boundary (diagrams), Components
+  (`ComponentsPanel`), Scope, and the hidden sections reachable by link (System Implementation,
+  Users, Leveraged Authorizations, Control Implementation, Export Offerings, Leverage, Inherited
+  Capabilities). Overview and JSON are rebuilt.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
-  The bulk "Apply all suggestions" confirmation is still PrimeVue's confirm dialog.
+- Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
+- Record tabs still classic: component definition Components, Capabilities, Back matter;
+  assessment plan task details and new-task dialog; assessment results Results; POA&M items,
+  Local definitions, Observations, Risks, Findings, Back matter; workflow instance Role
+  assignments (its assign dialog needs an async user picker); profile control-group editor and
+  catalog import dialog; workflow step form and step graph; execution metrics, step graph, list
+  and panel on the run page; My tasks step panel.
+- Admin bodies under design-system headers (`embedded`): Agents, risk and subject templates,
+  Import, Inventory, Build profile from props, Filter suggestions; also the user and group roles
+  and members panels, system template form/preview/instances, Diagnostics sections, Compliance
+  Map tree/graph, catalog control tree and dialogs, evidence filter form, Slack link section.
 
-- Record pages (workflow definition, workflow instance, profile, component definition, assessment
-  plan, POA&M, assessment results): every tab's content is the classic tab view, except the JSON
-  tabs (the five OSCAL ones share `DocumentJsonTab`; the workflow ones have their own) the
-  profile's Compliance tab (`ComplianceProgressView`, shared with This System > Compliance), and the
-  four OSCAL Overview tabs (`DocumentOverviewTab`).
+Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
+Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
+instance Overview and Runs, assessment plan Tasks list, Configure Overview and JSON; toasts,
+confirmations and the error dialog app-wide.
 
 ## To-dos
 
