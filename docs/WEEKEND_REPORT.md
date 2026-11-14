@@ -551,3 +551,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   design-system table of steps (name, description, role, evidence and dependency tags) with
   Edit and Delete in the row menu. Add and Edit open the step form (classic island) in a
   design-system drawer. The classic spec is ported.
+- **Workflow definition Controls tab**: fully design-system now. Linked controls are a table
+  (control ID and title, catalog by title rather than UUID), with Unlink in the row menu.
+  **Link control** is a design-system dialog with filterable catalog and control pickers.
+  **Found (classic bug, fixed here):** the classic picker listed only controls inside catalog
+  groups, so catalogs whose controls sit at the root (policies, procedures) offered none. It now
+  uses `useControlOptions`, like New control link.

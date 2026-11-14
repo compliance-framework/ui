@@ -121,7 +121,7 @@ const authenticatedRoutes = [
         path: 'controls',
         name: 'workflow-definition-controls',
         component: () =>
-          import('../views/workflows/WorkflowDefinitionControlsView.vue'),
+          import('../screens/workflows/WorkflowDefinitionControlsTab.vue'),
       },
       {
         path: 'json',
