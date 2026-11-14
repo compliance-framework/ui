@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import SystemSecurityPlanLeverageView from '../SystemSecurityPlanLeverageView.vue';
+import { defineComponent, h } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { TooltipProvider } from 'reka-ui';
+import SystemLeverageSection from '../SystemLeverageSection.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 
@@ -13,8 +16,9 @@ const { postMock, toastAddMock, permState, offeringsData } = vi.hoisted(() => ({
   offeringsData: { current: [] as CatalogOffering[] },
 }));
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { id: 'ssp-downstream-1' } }),
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRoute: () => ({ params: { systemId: 'system-1' } }),
 }));
 
 vi.mock('primevue/usetoast', () => ({
@@ -45,17 +49,21 @@ vi.mock('@/composables/axios', async () => {
   return {
     useDataApi: (url: string) => {
       fetchedUrls.push(url);
-      return { data: ref(offeringsData.current), isLoading: ref(false) };
+      return {
+        data: ref(offeringsData.current),
+        error: ref(undefined),
+        isLoading: ref(false),
+        isFinished: ref(true),
+        execute: vi.fn(() => Promise.resolve()),
+      };
     },
     useAuthenticatedInstance: () => ({ post: postMock }),
   };
 });
 
+// The wizard is classic; its PrimeVue pieces are stubbed. The section's own pieces are real.
 const stubs = {
-  Dialog: {
-    props: ['visible'],
-    template: '<div v-if="visible"><slot /></div>',
-  },
+  RouterLink: { template: '<a><slot /></a>' },
   PrimaryButton: {
     props: ['disabled'],
     emits: ['click'],
@@ -106,17 +114,32 @@ function makeOffering(
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
-  const button = wrapper.findAll('button').find((b) => b.text() === text);
+  // A disabled button also carries its reason, read out after its label.
+  const button = wrapper
+    .findAll('button')
+    .find((b) => b.text().startsWith(text));
   if (!button) throw new Error(`Button with text "${text}" not found`);
   return button;
 }
 
 function mountView() {
-  return mount(SystemSecurityPlanLeverageView, { global: { stubs } });
+  return mount(
+    defineComponent({
+      render: () =>
+        h(TooltipProvider, null, () =>
+          h(SystemLeverageSection, { sspId: 'ssp-downstream-1' }),
+        ),
+    }),
+    { global: { stubs }, attachTo: document.body },
+  );
 }
 
-describe('SystemSecurityPlanLeverageView', () => {
+/** The wizard renders in the dialog's portal, outside the wrapper. */
+const body = () => document.body;
+
+describe('SystemLeverageSection', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     permState.canSubscribe = true;
     permState.canUpdateSsp = true;
@@ -127,9 +150,7 @@ describe('SystemSecurityPlanLeverageView', () => {
 
   it('renders an empty state when there are no published offerings', () => {
     const wrapper = mountView();
-    expect(wrapper.text()).toContain(
-      'No published export offerings available yet.',
-    );
+    expect(wrapper.text()).toContain('No published export offerings yet');
   });
 
   it('renders an offering with title, version, and item summary', () => {
@@ -176,18 +197,25 @@ describe('SystemSecurityPlanLeverageView', () => {
 
     const wrapper = mountView();
     await findButton(wrapper, 'Subscribe').trigger('click');
+    await flushPromises();
 
-    const itemCheckbox = wrapper.find('input[type="checkbox"]');
-    await itemCheckbox.setValue(true);
-
-    const responsibilityCheckboxes = wrapper.findAll('input[type="checkbox"]');
-    await responsibilityCheckboxes[1].setValue(true);
+    const dialog = () => body().querySelector('[role="dialog"]')!;
+    const check = async (box: Element) => {
+      (box as HTMLInputElement).click();
+      await flushPromises();
+    };
+    await check(dialog().querySelector('input[type="checkbox"]')!);
+    await check(dialog().querySelectorAll('input[type="checkbox"]')[1]!);
 
     // No leveraged-authorization inputs anywhere: sharing is decoupled from an ATO.
-    expect(wrapper.findAll('input:not([type="checkbox"])')).toHaveLength(0);
-    expect(wrapper.text()).not.toContain('Party UUID');
+    expect(
+      dialog().querySelectorAll('input:not([type="checkbox"])'),
+    ).toHaveLength(0);
+    expect(dialog().textContent).not.toContain('Party UUID');
 
-    await wrapper.find('form').trigger('submit');
+    dialog()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await flushPromises();
 
     // The subscribe body carries no leveragedAuthorization — just the downstream and items.
@@ -207,39 +235,48 @@ describe('SystemSecurityPlanLeverageView', () => {
     offeringsData.current = [makeOffering()];
     const wrapper = mountView();
     await findButton(wrapper, 'Subscribe').trigger('click');
+    await flushPromises();
 
-    await wrapper.find('form').trigger('submit');
+    body()
+      .querySelector('[role="dialog"] form')!
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await flushPromises();
 
     expect(postMock).not.toHaveBeenCalled();
-    expect(wrapper.text()).toContain('Select at least one item to inherit.');
+    expect(body().textContent).toContain(
+      'Select at least one item to inherit.',
+    );
+    wrapper.unmount();
   });
 
-  it('hides Subscribe without ssp-export-offering:subscribe', () => {
+  it('disables Subscribe, saying why, without ssp-export-offering:subscribe', () => {
     permState.canSubscribe = false;
     offeringsData.current = [makeOffering()];
     const wrapper = mountView();
-    expect(wrapper.findAll('button').map((b) => b.text())).not.toContain(
-      'Subscribe',
-    );
+    const button = findButton(wrapper, 'Subscribe');
+    expect(button.attributes('aria-disabled')).toBe('true');
+    expect(body().textContent).toContain('subscribing to export offerings');
+    wrapper.unmount();
   });
 
-  it('hides Subscribe without ssp:update on the current SSP', () => {
+  it('disables Subscribe, saying why, without ssp:update on the current SSP', () => {
     permState.canUpdateSsp = false;
     offeringsData.current = [makeOffering()];
     const wrapper = mountView();
-    expect(wrapper.findAll('button').map((b) => b.text())).not.toContain(
-      'Subscribe',
-    );
+    const button = findButton(wrapper, 'Subscribe');
+    expect(button.attributes('aria-disabled')).toBe('true');
+    expect(body().textContent).toContain('changing this security plan');
+    wrapper.unmount();
   });
 
-  it('hides Subscribe when both permissions are denied', () => {
+  it('disables Subscribe, saying why, when both permissions are denied', () => {
     permState.canSubscribe = false;
     permState.canUpdateSsp = false;
     offeringsData.current = [makeOffering()];
     const wrapper = mountView();
-    expect(wrapper.findAll('button').map((b) => b.text())).not.toContain(
-      'Subscribe',
-    );
+    const button = findButton(wrapper, 'Subscribe');
+    expect(button.attributes('aria-disabled')).toBe('true');
+    expect(body().textContent).toContain('subscribing to export offerings');
+    wrapper.unmount();
   });
 });

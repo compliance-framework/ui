@@ -119,7 +119,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Leverage',
     tab: false,
     classic: 'leverage',
-    component: view('Leverage'),
+    component: () => import('@/screens/configure/SystemLeverageSection.vue'),
   },
   {
     suffix: 'inherited-capabilities',
@@ -127,7 +127,8 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Inherited Capabilities',
     tab: false,
     classic: 'inherited-capabilities',
-    component: view('InheritedCapabilities'),
+    component: () =>
+      import('@/screens/configure/SystemInheritedCapabilitiesSection.vue'),
   },
 ];
 

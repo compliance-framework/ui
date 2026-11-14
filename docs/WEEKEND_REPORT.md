@@ -710,3 +710,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   wrapper spec are deleted. **Found (fixed):** design-system "Links" facts (here, and on the
   component definition and POA&M back matter tabs) showed blank instead of "Not set" when there
   were none.
+- **Configure System → Leverage and Inherited Capabilities** (hidden sections): design-system.
+  Leverage is a table of published offerings (title and description, version, item summary)
+  with Subscribe; the subscribe wizard is a classic island in a design-system dialog. Inherited
+  Capabilities lists each inherited control as a disclosure with its offering and satisfaction
+  tags, a warning for drifted or revoked links (drift-risk link; Re-attest through a
+  design-system confirm) and outstanding responsibilities with posture badges. **Decisions:**
+  drifted and revoked capabilities start open so their warnings are seen. Subscribe and
+  Re-attest are shown disabled with a reason when you lack permission (the classic page hid
+  them), as the design system asks. The data rules are kept: only the flat offerings catalog and
+  the leveraged-controls projection are fetched, the latter with the posture-map stop path.
+  Both classic specs are ported (including the subscribe flow through the real wizard). **Gap:**
+  local-dev has no published offerings, so only the empty states were checked live; the specs
+  cover the populated ones.

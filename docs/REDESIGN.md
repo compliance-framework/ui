@@ -88,7 +88,7 @@ large enough to rebuild separately. They work and keep their tests; they still l
 Replace each with a design-system version, then delete the classic component.
 
 - Configure System: the hidden sections reachable by link (Control Implementation, Export
-  Offerings, Leverage, Inherited Capabilities); the user and leveraged
+  Offerings); the subscribe wizard inside Leverage; the user and leveraged
   authorization forms; inside rebuilt sections, the draw.io editor, the component risks list and the
   evidence-filter drawer, and the new/edit component forms.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
@@ -111,8 +111,8 @@ Controls, Compliance and Merge, workflow definition Overview, Steps (table) and 
 instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
-Results, workflow instance Roles, Configure System Users, Leveraged Authorizations and System
-Implementation; toasts,
+Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
+Implementation, Leverage and Inherited Capabilities; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos
