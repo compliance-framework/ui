@@ -821,3 +821,17 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   form on the list, as before) and panels for details, text templates, identity and selector
   labels, label schema, props and links. "Back to list" is now the breadcrumb. The classic view
   and its spec are replaced (spec ported). Checked live on "dependabot-repository".
+- **Inventory**: fully design-system list page. Sources (checkboxes) and asset type are filters
+  kept in the address (`?sources=…&type=…`), with chips and Clear filters; a table of item, asset
+  type, origin and source; and a menu per item: view details (drawer), edit, attach to
+  components, download JSON, delete (design-system confirm). The create, edit and attach forms
+  are classic islands. Added to the axe run. **Decisions:**
+  1. Edit, attach and delete are shown disabled with the reason for items not in this system's
+     plan (the classic page hid them).
+  2. The classic "Add to SSP" button on evidence and POA&M items only toasted "Feature coming
+     soon", so it's dropped.
+  3. Items are named by asset-id, then description, then their `name`/`app_name` prop, so
+     evidence items are no longer all blank.
+  **Found (fixed, design system):** `useApiQuery` showed an error for `{"data": null}`, which Go
+  APIs send for an empty list (here, filtering inventory by type). It now shows the empty state.
+  `useApiQuery` also accepts a reactive URL now, fetching again when it changes.

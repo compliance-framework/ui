@@ -642,6 +642,24 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       }));
       return list(route, lists, { data: documents }, { data: [] });
     }
+    if (path === '/api/oscal/inventory' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              uuid: 'inv-1',
+              description: 'Primary database',
+              source: 'Payments plan',
+              'source-id': SYSTEMS.scoped,
+              'source-type': 'ssp',
+              props: [{ name: 'asset-type', value: 'database' }],
+            },
+          ],
+        },
+        { data: null },
+      );
     // A record of the redesigned OSCAL types, with every sub-collection its tabs read.
     const oscalRecord = path.match(
       /^\/api\/oscal\/(component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)\/([^/]+)(\/.*)?$/,

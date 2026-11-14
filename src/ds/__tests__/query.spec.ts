@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useApiQuery } from '../query';
 
 const api = vi.hoisted(() => ({
@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
     error: unknown;
     isLoading: boolean;
     isFinished: boolean;
+    response?: unknown;
   },
   execute: vi.fn(() => Promise.resolve()),
 }));
@@ -18,6 +19,7 @@ vi.mock('@/composables/axios', () => ({
     error: ref(api.state.error),
     isLoading: ref(api.state.isLoading),
     isFinished: ref(api.state.isFinished),
+    response: ref(api.state.response),
     execute: api.execute,
   }),
 }));
@@ -66,6 +68,12 @@ describe('useApiQuery', () => {
     expect(statusFor({ data: undefined })).toBe('error');
   });
 
+  it('treats an enveloped null (an empty Go slice) as empty', () => {
+    expect(
+      statusFor({ data: undefined, response: { data: { data: null } } }),
+    ).toBe('empty');
+  });
+
   it('retries by re-executing the request', () => {
     api.state = {
       data: [1],
@@ -74,6 +82,17 @@ describe('useApiQuery', () => {
       isFinished: true,
     };
     useApiQuery<number[]>('/api/things').retry();
-    expect(api.execute).toHaveBeenCalled();
+    expect(api.execute).toHaveBeenCalledWith('/api/things');
+  });
+
+  it('fetches a reactive url again when it changes, and retries the current one', async () => {
+    api.execute.mockClear();
+    const url = ref('/api/things?type=a');
+    const query = useApiQuery<number[]>(url);
+    url.value = '/api/things?type=b';
+    await nextTick();
+    expect(api.execute).toHaveBeenCalledWith('/api/things?type=b');
+    query.retry();
+    expect(api.execute).toHaveBeenLastCalledWith('/api/things?type=b');
   });
 });

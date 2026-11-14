@@ -1,4 +1,11 @@
-import { computed, type ComputedRef, type Ref } from 'vue';
+import {
+  computed,
+  toValue,
+  watch,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+  type Ref,
+} from 'vue';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { useDataApi } from '@/composables/axios';
 
@@ -17,10 +24,11 @@ export interface ApiQuery<T> {
 /**
  * Reads an enveloped API endpoint through `useDataApi` and maps the request onto a QueryStatus,
  * so screens pass `status` straight to DataState. A 403 is forbidden; any other failure is an
- * error the user can retry.
+ * error the user can retry. A reactive `url` is fetched again whenever it changes, e.g. with the
+ * filters in the address.
  */
 export function useApiQuery<T>(
-  url: string,
+  url: MaybeRefOrGetter<string>,
   options: {
     isEmpty?: (data: T) => boolean;
     config?: AxiosRequestConfig;
@@ -28,10 +36,13 @@ export function useApiQuery<T>(
     notFoundIsEmpty?: boolean;
   } = {},
 ): ApiQuery<T> {
-  const { data, error, isLoading, isFinished, execute } = useDataApi<T>(
-    url,
-    options.config,
-  );
+  const { data, error, isLoading, isFinished, execute, response } =
+    useDataApi<T>(toValue(url), options.config);
+  if (typeof url !== 'string')
+    watch(
+      () => toValue(url),
+      (next) => void execute(next).catch(() => undefined),
+    );
 
   const status = computed<QueryStatus>(() => {
     if (isLoading.value || !isFinished.value) return 'loading';
@@ -40,12 +51,16 @@ export function useApiQuery<T>(
       if (code === 404 && options.notFoundIsEmpty) return 'empty';
       return code === 403 ? 'forbidden' : 'error';
     }
-    if (data.value === undefined) return 'error';
+    if (data.value === undefined) {
+      // Go APIs send `{"data": null}` for an empty list: nothing, not a broken response.
+      const body = response.value?.data as { data?: unknown } | undefined;
+      return body && 'data' in body && body.data === null ? 'empty' : 'error';
+    }
     return options.isEmpty?.(data.value) ? 'empty' : 'ready';
   });
 
   function retry(): void {
-    void execute().catch(() => undefined);
+    void execute(toValue(url)).catch(() => undefined);
   }
 
   return { status, data, retry };

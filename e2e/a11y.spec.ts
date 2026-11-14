@@ -41,6 +41,7 @@ const routes = [
   '/plan-of-action-and-milestones/create',
   '/about',
   '/profiles/build-props',
+  '/inventory',
   '/users/u1',
   '/admin/groups/g1',
   ...['', '/components', '/capabilities', '/back-matter'].map(
