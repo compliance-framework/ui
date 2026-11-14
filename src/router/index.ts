@@ -517,13 +517,13 @@ const authenticatedRoutes = [
         path: 'components',
         name: 'component-definition-components',
         component: () =>
-          import('../views/component-definitions/ComponentDefinitionComponentsView.vue'),
+          import('../screens/component-definitions/ComponentDefinitionComponentsTab.vue'),
       },
       {
         path: 'capabilities',
         name: 'component-definition-capabilities',
         component: () =>
-          import('../views/component-definitions/ComponentDefinitionCapabilitiesView.vue'),
+          import('../screens/component-definitions/ComponentDefinitionCapabilitiesTab.vue'),
       },
       {
         path: 'back-matter',

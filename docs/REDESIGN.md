@@ -87,19 +87,20 @@ Some migrated pages embed classic components (inside `LegacyPage`) for deep edit
 large enough to rebuild separately. They work and keep their tests; they still look classic.
 Replace each with a design-system version, then delete the classic component.
 
-- Configure System: Characteristics, Authorization Boundary (diagrams), Components
-  (`ComponentsPanel`), Scope, and the hidden sections reachable by link (System Implementation,
-  Users, Leveraged Authorizations, Control Implementation, Export Offerings, Leverage, Inherited
-  Capabilities). Overview and JSON are rebuilt.
+- Configure System: the hidden sections reachable by link (System Implementation, Users,
+  Leveraged Authorizations, Control Implementation, Export Offerings, Leverage, Inherited
+  Capabilities); inside rebuilt sections, the draw.io editor, the component risks list and the
+  evidence-filter drawer, and the new/edit component forms.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
-- Record tabs still classic: component definition Components, Capabilities, Back matter;
-  assessment plan task details and new-task dialog; assessment results Results; POA&M items,
+- Record tabs still classic: assessment plan task details and new-task dialog; assessment results Results; POA&M items,
   Local definitions, Observations, Risks, Findings, Back matter; workflow instance Role
   assignments (its assign dialog needs an async user picker); profile control-group editor and
   catalog import dialog; workflow step form and step graph; execution metrics, step graph, list
   and panel on the run page; My tasks step panel.
+- Component definitions: the new/edit component, capability and resource forms (in
+  design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk and subject templates,
   Import, Inventory, Build profile from props, Filter suggestions; also the user and group roles
   and members panels, system template form/preview/instances, Diagnostics sections, Compliance
@@ -107,7 +108,9 @@ Replace each with a design-system version, then delete the classic component.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
-instance Overview and Runs, assessment plan Tasks list, Configure Overview and JSON; toasts,
+instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
+(Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
+definition Components, Capabilities and Back matter; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

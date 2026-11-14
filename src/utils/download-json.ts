@@ -18,3 +18,16 @@ export function downloadJson(filename: string, data: object): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// Offers text the API sent as-is (fetched with `responseType: 'text'`) as a JSON file.
+export function downloadText(filename: string, text: string): void {
+  const blob = new Blob([text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

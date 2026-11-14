@@ -621,3 +621,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   open, and delete through the confirm. The classic DiagramsView and its spec are ported and
   deleted. **All six visible Configure System tabs are now design-system**; the hidden sections
   are still classic.
+- **Component definition Components and Capabilities tabs**: design-system disclosures with
+  facts, control implementations (an item list with requirement counts) and an actions menu
+  (edit; download JSON for components). Capabilities now name incorporated components by title
+  instead of bare UUIDs. **Decision:** the per-component JSON download fetches as text, so the
+  file keeps the API's own keys, replacing a raw `fetch` that bypassed the API client (new
+  `downloadText` helper beside `downloadJson`). **Gap (island):** the new/edit forms are classic,
+  inside design-system dialogs; the classic modal wrappers and display components are deleted.
+  Every component definition tab is now design-system, so the record no longer has a classic
+  frame. Checked live on "k8s components". **Gap:** record-page tabs are still not in the axe
+  e2e run (true of every record page so far).
