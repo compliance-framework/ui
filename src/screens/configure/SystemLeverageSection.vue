@@ -106,7 +106,7 @@ const subscribeOpen = computed({
       >
         <template #cell-title="{ row: r }">
           <Stack gap="1">
-            <Text as="span" variant="label">{{ r.title }}</Text>
+            <Text as="span">{{ r.title }}</Text>
             <Text v-if="r.description" as="span" variant="secondary">{{
               r.description
             }}</Text>

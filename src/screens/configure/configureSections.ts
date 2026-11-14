@@ -111,7 +111,8 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Export Offerings',
     tab: false,
     classic: 'export-offerings',
-    component: view('ExportOfferings'),
+    component: () =>
+      import('@/screens/configure/SystemExportOfferingsSection.vue'),
   },
   {
     suffix: 'leverage',

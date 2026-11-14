@@ -723,3 +723,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Both classic specs are ported (including the subscribe flow through the real wizard). **Gap:**
   local-dev has no published offerings, so only the empty states were checked live; the specs
   cover the populated ones.
+- **Configure System → Export Offerings** (hidden section): design-system table (offering and
+  description, status, version, items, published date) with a menu per offering: edit, manage
+  items, allowed downstream systems, publish or republish, deprecate, revoke. Deprecate and
+  revoke go through the design-system confirm. The create and edit forms and the items and
+  allowlist editors are classic islands in design-system dialogs. The classic panel's
+  stale-SSP guards are no longer needed: Configure sections remount on a system switch. Both
+  classic specs are ported (create, edit, publish, status changes, permissions). Checked live:
+  create, manage items, publish, revoke. **Gap (island):** inside the items editor, Escape
+  doesn't close the dialog when focus is in its classic select, which handles the key itself.
+  **Test data:** three draft-or-revoked "Weekend offering"s on Payments Processing Platform
+  (offerings can't be deleted).
