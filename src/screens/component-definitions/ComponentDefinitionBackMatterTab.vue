@@ -74,7 +74,7 @@ const facts = (resource: BackMatterResource) => [
         :level="2"
       >
         <DescriptionList :items="facts(resource)" layout="stacked">
-          <template #value-links>
+          <template v-if="resource.rlinks?.length" #value-links>
             <Stack gap="1">
               <TextLink
                 v-for="link in resource.rlinks"

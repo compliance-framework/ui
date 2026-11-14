@@ -684,3 +684,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   privileges as one fact; authorizations are tagged with their authorization date and keep the
   link to Inherited capabilities. The classic panels are deleted. Checked live on Payments
   Processing Platform: create and delete a user.
+- **Configure System → System Implementation** (hidden section): design-system, with no islands.
+  A panel shows remarks, properties and links; a Contents panel shows user and component counts
+  linking to their sections; Edit opens a design-system dialog (remarks, plus properties and links
+  as field lists). Checked live: save, reload, revert. The classic editor view, overview form and
+  wrapper spec are deleted. **Found (fixed):** design-system "Links" facts (here, and on the
+  component definition and POA&M back matter tabs) showed blank instead of "Not set" when there
+  were none.

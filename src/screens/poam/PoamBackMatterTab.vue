@@ -190,7 +190,7 @@ const actions = (resource: BackMatterResource): MenuEntry[] => [
               />
             </Cluster>
             <DescriptionList :items="facts(resource)" layout="stacked">
-              <template #value-links>
+              <template v-if="resource.rlinks?.length" #value-links>
                 <Stack gap="1">
                   <TextLink
                     v-for="link in resource.rlinks"

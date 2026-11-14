@@ -77,7 +77,8 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'System Implementation',
     tab: false,
     classic: 'implementation',
-    component: view('SystemImplementationEditor'),
+    component: () =>
+      import('@/screens/configure/SystemImplementationSection.vue'),
   },
   {
     suffix: 'users',
