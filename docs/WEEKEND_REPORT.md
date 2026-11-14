@@ -848,3 +848,4 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   3. Edit for a template without an ID is disabled with the reason instead of erroring on
      click.
   The classic spec is split into list and form specs. Checked live: list, edit and save.
+- **Subject templates list and page in the axe run** (every state and theme): pass.

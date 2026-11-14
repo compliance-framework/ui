@@ -42,6 +42,8 @@ const routes = [
   '/about',
   '/profiles/build-props',
   '/inventory',
+  '/admin/subject-templates',
+  '/admin/subject-templates/st-1',
   '/users/u1',
   '/admin/groups/g1',
   ...['', '/components', '/capabilities', '/back-matter'].map(

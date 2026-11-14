@@ -277,6 +277,36 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       );
     }
     if (path === '/api/admin/risk-templates') return json(route, { data: [] });
+    if (path === '/api/admin/subject-templates' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'st-1',
+              name: 'github-organization',
+              type: 'component',
+              'source-mode': 'runtime-derived',
+              'updated-at': '2026-09-09T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/admin/subject-templates/st-1')
+      return json(route, {
+        data: {
+          id: 'st-1',
+          name: 'github-organization',
+          type: 'component',
+          'source-mode': 'runtime-derived',
+          'title-template': '{{ .organization }}',
+          'identity-label-keys': ['organization'],
+          'selector-labels': [{ key: '_plugin', value: 'github' }],
+          'label-schema': [{ key: 'organization', description: 'GitHub org' }],
+        },
+      });
     if (path === '/api/workflows/definitions') {
       const definitions = {
         data: [
