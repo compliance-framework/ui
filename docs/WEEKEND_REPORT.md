@@ -78,7 +78,7 @@ page below.
 
 **A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
 Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
-Configure sweep on Sunday and fixed in `getIdFromRoute`; worth a second look at the other hidden
+Configure sweep and fixed in `getIdFromRoute`; worth a second look at the other hidden
 sections.
 
 **Options for you to choose from (next phase)**
