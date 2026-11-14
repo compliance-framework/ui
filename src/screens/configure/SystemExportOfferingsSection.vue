@@ -2,8 +2,8 @@
 /**
  * Configure System → Export Offerings (reached by link): the offerings this system publishes for
  * others to inherit from, with their status, version and items, and a menu to edit, manage
- * items, set the allowed downstream systems, publish, deprecate or revoke. The items and allowlist
- * editors are classic islands in design-system dialogs.
+ * items, set the allowed downstream systems, publish, deprecate or revoke. The items editor is a
+ * classic island in a design-system dialog.
  */
 import { computed, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -32,7 +32,7 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import ExportOfferingForm from './ExportOfferingForm.vue';
 import ExportOfferingItemsDialog from '@/components/system-security-plans/ExportOfferingItemsDialog.vue';
-import ExportOfferingAllowlistDialog from '@/components/system-security-plans/ExportOfferingAllowlistDialog.vue';
+import OfferingAllowlist from './OfferingAllowlist.vue';
 
 const props = defineProps<{ sspId: string }>();
 
@@ -327,13 +327,11 @@ function actions(offering: SSPExportOffering): MenuEntry[] {
       :title="`Systems allowed to subscribe to ${allowlisting?.title ?? 'the offering'}`"
       size="l"
     >
-      <LegacyPage>
-        <ExportOfferingAllowlistDialog
-          v-if="allowlisting"
-          :ssp-id="sspId"
-          :offering-id="allowlisting.id"
-        />
-      </LegacyPage>
+      <OfferingAllowlist
+        v-if="allowlisting"
+        :ssp-id="sspId"
+        :offering-id="allowlisting.id"
+      />
     </Dialog>
     <ConfirmDialog
       v-model:open="changeOpen"

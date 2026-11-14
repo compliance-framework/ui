@@ -1015,3 +1015,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   links, origins, and the linked findings, observations and risks named from the plan, flagging
   any not found). **The POA&M record is now design-system throughout** (every tab, form and
   dialog); only the risk page opened from it is classic. Checked live.
+- **Export offering allowlist** is design-system (`OfferingAllowlist`: allowed systems by title
+  with a named Remove, a Combobox of other systems, never the offering's own, and Allow). It keeps
+  the classic rule that "any system may subscribe" is only said about a list that actually
+  loaded. Permission-gated actions are disabled with the reason. The classic spec is ported.
+  Checked live: allow a system, then remove it.
