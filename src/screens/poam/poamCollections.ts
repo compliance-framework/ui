@@ -1,38 +1,15 @@
-import type { Component } from 'vue';
 import type { Finding, Observation, POAMItem, Risk } from '@/oscal';
 import { RESOURCES } from '@/constants/permissions';
 import { formatDate, plural } from '@/ds/format';
+import type { CollectionKind } from '../collectionKind';
 
 /**
  * The POA&M record tabs that list one collection of the plan (items, observations, risks,
- * findings), shared by PoamCollectionTab. Each kind names its API path, how an entry reads
- * (title, tags, facts) and its classic create and edit forms, which emit `created` and `saved`.
+ * findings), as PoamCollectionTab renders them through RecordCollection. `path` is the API path
+ * under the plan and the tab's route path.
  */
-export interface PoamEntry {
-  uuid?: string;
-  title?: string;
-  description?: string;
-}
-
-interface Fact {
-  key: string;
-  label: string;
-  value?: string;
-}
-
-export interface PoamCollection {
-  /** API path under the plan, and the tab's route path. */
+export interface PoamCollection extends CollectionKind {
   path: string;
-  noun: string;
-  plural: string;
-  resource: string;
-  emptyBody: string;
-  /** The entry prop the edit form takes. */
-  editProp: string;
-  tags: (entry: never) => string[];
-  facts: (entry: never) => Fact[];
-  createForm: () => Promise<Component>;
-  editForm: () => Promise<Component>;
 }
 
 const count = (n: number | undefined, noun: string) =>

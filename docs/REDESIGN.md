@@ -87,9 +87,9 @@ Some migrated pages embed classic components (inside `LegacyPage`) for deep edit
 large enough to rebuild separately. They work and keep their tests; they still look classic.
 Replace each with a design-system version, then delete the classic component.
 
-- Configure System: the hidden sections reachable by link (System Implementation, Users,
-  Leveraged Authorizations, Control Implementation, Export Offerings, Leverage, Inherited
-  Capabilities); inside rebuilt sections, the draw.io editor, the component risks list and the
+- Configure System: the hidden sections reachable by link (System Implementation, Control
+  Implementation, Export Offerings, Leverage, Inherited Capabilities); the user and leveraged
+  authorization forms; inside rebuilt sections, the draw.io editor, the component risks list and the
   evidence-filter drawer, and the new/edit component forms.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
@@ -111,7 +111,7 @@ Controls, Compliance and Merge, workflow definition Overview, Steps (table) and 
 instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
-Results, workflow instance Roles; toasts,
+Results, workflow instance Roles, Configure System Users and Leveraged Authorizations; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

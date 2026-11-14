@@ -85,7 +85,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Users',
     tab: false,
     classic: 'users',
-    component: view('Users'),
+    component: () => import('@/screens/configure/SystemUsersSection.vue'),
   },
   {
     suffix: 'authorizations',
@@ -93,7 +93,8 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Leveraged Authorizations',
     tab: false,
     classic: 'authorizations',
-    component: view('Authorizations'),
+    component: () =>
+      import('@/screens/configure/SystemAuthorizationsSection.vue'),
   },
   {
     suffix: 'control-implementation',

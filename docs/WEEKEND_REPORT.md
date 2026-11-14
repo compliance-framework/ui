@@ -673,3 +673,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   background or max height). Its element is the inner node of a popper wrapper, which doesn't
   get Vue's scope attribute. That rule is now in an unscoped style block; this also fixes the
   Combobox on New control link and workflow definition Controls.
+- **Shared `RecordCollection`** (`src/screens/RecordCollection.vue`, kinds typed in
+  `collectionKind.ts`): the list-of-entries-in-a-record pattern (New; each entry a disclosure
+  with tags, facts and an edit/download/delete menu; classic forms in design-system dialogs;
+  design-system delete confirm). POA&M items, observations, risks and findings now use it, with
+  slots for the item details and attach dialog. **Decision:** new collection screens should be a
+  kind config plus this component, not another copy.
+- **Configure System → Users and Leveraged Authorizations** (hidden sections, reached by link):
+  now RecordCollections. Users are titled "Title (short name)", with role tags and their
+  privileges as one fact; authorizations are tagged with their authorization date and keep the
+  link to Inherited capabilities. The classic panels are deleted. Checked live on Payments
+  Processing Platform: create and delete a user.
