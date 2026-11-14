@@ -805,8 +805,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Axe:** Build a profile from props is added to the e2e axe run and passes. Import isn't
   added: its classic workflow import panel fails colour contrast (`.py-0` text). **Gap
   (island).**
-- **Record pages are now in the axe run:** every tab of the component definition (except
-  JSON/Overview, already covered by type), assessment plan, assessment results and POA&M
-  records (16 routes), in all four data states and both themes, backed by one generic e2e mock
+- **Record pages are now in the axe run:** the Overview and every other tab except JSON of
+  the component definition, assessment plan, assessment results and POA&M records (16 routes), in all four data states and both themes, backed by one generic e2e mock
   for those records' sub-collections. All pass. This closes the "record tabs not in axe" gap for
   these four record types; profile, workflow and evidence-style records are unchanged.
