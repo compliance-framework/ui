@@ -2,8 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import type { SystemSecurityPlan } from '@/oscal';
-import SuggestionsView from '@/views/dashboard/SuggestionsView.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import FilterSuggestions from './FilterSuggestions.vue';
 import { useApiQuery } from '@/ds/query';
 import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';
 import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
@@ -11,7 +10,7 @@ import Stack from '@/ds/components/layout/Stack.vue';
 
 /**
  * Evidence filter suggestions for a system (/dashboards/suggestions/:sspId): AI-suggested filters
- * to review and accept. The body and its actions are the classic view (a legacy island).
+ * to review and accept.
  */
 const route = useRoute();
 const plan = useApiQuery<SystemSecurityPlan>(
@@ -30,8 +29,6 @@ const description = computed(() =>
       :crumbs="[{ label: 'Evidence filters', to: { name: 'dashboards' } }]"
     />
     <PageHeader title="Filter suggestions" :description="description" />
-    <LegacyPage>
-      <SuggestionsView embedded />
-    </LegacyPage>
+    <FilterSuggestions />
   </Stack>
 </template>

@@ -1,195 +1,11 @@
-<template>
-  <Dialog
-    v-model:visible="modelVisible"
-    modal
-    header="Generate suggestions"
-    size="lg"
-  >
-    <div class="flex flex-col gap-5">
-      <div>
-        <label class="inline-block pb-2">Controls</label>
-        <MultiSelect
-          v-model="selectedControls"
-          :options="controls"
-          optionLabel="label"
-          optionValue="value"
-          display="chip"
-          filter
-          class="w-full"
-          placeholder="All controls"
-        >
-          <template #option="{ option }">
-            <div class="flex flex-col gap-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="font-medium">
-                  {{
-                    option.controlId && option.title
-                      ? `${option.controlId} - ${option.title}`
-                      : option.label
-                  }}
-                </span>
-                <Chip
-                  v-for="profileTitle in option.profileTitles ?? []"
-                  :key="profileTitle"
-                  :label="profileTitle"
-                />
-              </div>
-              <span
-                v-if="option.catalogTitle"
-                class="text-xs text-gray-500 dark:text-slate-400"
-              >
-                {{ option.catalogTitle }}
-              </span>
-            </div>
-          </template>
-        </MultiSelect>
-      </div>
-
-      <div>
-        <label class="inline-block pb-2">Evidence to analyze</label>
-        <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
-          Restrict which evidence feeds the suggestions with label conditions
-          (all conditions must match). Leave empty to consider all evidence.
-        </p>
-        <LabelConditionBuilder
-          v-model="conditions"
-          :ssp-id="sspId"
-          :keys="keyNames"
-          add-label="Add condition"
-          testid="evidence-condition"
-        />
-      </div>
-
-      <label class="flex items-center gap-2">
-        <Checkbox v-model="supersedePending" binary />
-        <span>Replace pending suggestions in this scope</span>
-      </label>
-
-      <div
-        class="flex flex-col gap-4 border-t border-gray-200 pt-4 dark:border-slate-700"
-      >
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-200">
-          Suggestion constraints
-        </h3>
-        <div>
-          <label class="inline-block pb-2">Scope preset</label>
-          <Select
-            v-model="scopePreset"
-            :options="scopePresetOptions"
-            optionLabel="label"
-            optionValue="value"
-            class="w-full"
-            data-testid="scope-preset"
-          />
-        </div>
-
-        <div>
-          <label class="inline-block pb-2">Required labels</label>
-          <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
-            Only suggest filters that include these labels. Leave the value
-            blank to require the key with any value.
-          </p>
-          <LabelConditionBuilder
-            v-model="mandatoryRows"
-            :ssp-id="sspId"
-            :keys="keyNames"
-            add-label="Add required label"
-            value-placeholder="value (any if blank)"
-            testid="required-label"
-          />
-        </div>
-
-        <div>
-          <label class="inline-block pb-2">Excluded labels</label>
-          <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
-            Never include these labels in suggested filters. Leave the value
-            blank to exclude the key with any value.
-          </p>
-          <LabelConditionBuilder
-            v-model="excludedRows"
-            :ssp-id="sspId"
-            :keys="keyNames"
-            add-label="Add excluded label"
-            value-placeholder="value (any if blank)"
-            testid="excluded-label"
-          />
-        </div>
-      </div>
-
-      <Message
-        v-if="scopeError"
-        severity="error"
-        variant="outlined"
-        data-testid="scope-ceiling"
-      >
-        {{ scopeError }}
-      </Message>
-      <Message
-        v-else-if="previewLoading || !preview"
-        severity="info"
-        variant="outlined"
-      >
-        Loading suggestion estimate.
-      </Message>
-      <Message
-        v-else-if="requiresLargeRunConfirm"
-        severity="warn"
-        variant="outlined"
-        data-testid="scope-warning"
-      >
-        This will make {{ preview.plannedCalls }} AI calls covering
-        {{ preview.controlCount }} controls x {{ preview.labelSetCount }}
-        label-sets. These run as queued background jobs and may take a while and
-        incur API costs.
-      </Message>
-      <Message v-else severity="info" variant="outlined">
-        {{ preview.plannedCalls }} AI calls covering
-        {{ preview.controlCount }} controls x {{ preview.labelSetCount }}
-        label-sets.
-      </Message>
-
-      <label
-        v-if="requiresLargeRunConfirm"
-        class="flex items-center gap-2"
-        data-testid="scope-confirm-large"
-      >
-        <Checkbox v-model="largeRunConfirmed" binary />
-        <span>Confirm this larger generation run</span>
-      </label>
-    </div>
-
-    <template #footer>
-      <SecondaryButton @click="modelVisible = false">Cancel</SecondaryButton>
-      <PrimaryButton
-        :disabled="
-          !canGenerate ||
-          generating ||
-          !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE)
-        "
-        v-tooltip.top="{
-          value: permissionTooltip(
-            RESOURCES.DASHBOARD_SUGGESTION,
-            ACTIONS.CREATE,
-          ),
-          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE),
-        }"
-        @click="submit"
-        data-testid="scope-generate"
-      >
-        Generate
-      </PrimaryButton>
-    </template>
-  </Dialog>
-</template>
-
 <script setup lang="ts">
+/**
+ * What to generate suggestions for: the controls (all by default), the evidence to analyse (label
+ * conditions), whether to replace pending suggestions, and constraints (a preset, required and
+ * excluded labels). It previews the AI calls the scope would make and asks to confirm a large
+ * run. Emits `generate` with the request. The script is the classic dialog's.
+ */
 import { computed, onUnmounted, ref, watch } from 'vue';
-import Checkbox from 'primevue/checkbox';
-import Chip from '@/volt/Chip.vue';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
-import Select from '@/volt/Select.vue';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import type {
   DashboardSuggestionConstraints,
@@ -197,18 +13,33 @@ import type {
   DashboardSuggestionLabelKey,
   GenerateDashboardSuggestionsPayload,
   LabelSelector,
-} from './dashboard-suggestions';
+} from '@/views/dashboard/partials/dashboard-suggestions';
 import {
   buildLabelFilter,
   buildPreviewDashboardSuggestionsEndpoint,
   type LabelConditionRow,
-} from './dashboard-suggestions';
-import LabelConditionBuilder from './LabelConditionBuilder.vue';
+} from '@/views/dashboard/partials/dashboard-suggestions';
+import Button from '@/ds/components/Button/Button.vue';
+import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
+import Combobox from '@/ds/components/Combobox/Combobox.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import LabelConditionFields from '@/screens/configure/LabelConditionFields.vue';
 import type { DataResponse } from '@/stores/types';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
-const { can, permissionTooltip } = usePermissions();
+const { can } = usePermissions();
+const createDenied = computed(() =>
+  can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE)
+    ? undefined
+    : "Your access doesn't include generating suggestions.",
+);
 
 interface ControlOption {
   label: string;
@@ -229,7 +60,6 @@ const scopePresetOptions: { label: string; value: ScopePreset }[] = [
 ];
 
 const props = defineProps<{
-  visible: boolean;
   sspId: string;
   controls: ControlOption[];
   labelKeys: DashboardSuggestionLabelKey[];
@@ -238,7 +68,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'update:visible': [visible: boolean];
+  cancel: [];
   'scope-change': [];
   generate: [payload: GenerateDashboardSuggestionsPayload];
 }>();
@@ -258,10 +88,8 @@ const axios = useAuthenticatedInstance();
 let previewTimer: ReturnType<typeof setTimeout> | undefined;
 let latestPreviewRequestId = 0;
 
-const modelVisible = computed({
-  get: () => props.visible,
-  set: (visible: boolean) => emit('update:visible', visible),
-});
+// Mounted only while its dialog is open.
+const modelVisible = computed(() => true);
 
 const requiresLargeRunConfirm = computed(
   () => (preview.value?.plannedCalls ?? 0) > warningThreshold,
@@ -286,6 +114,38 @@ watch(
   },
   { immediate: true },
 );
+
+// "All controls", or a chosen few: a list with Remove and a picker for one more.
+const allControls = computed({
+  get: () => selectedControls.value.length === props.controls.length,
+  set: (all: boolean) =>
+    (selectedControls.value = all
+      ? props.controls.map((control) => control.value)
+      : []),
+});
+const controlLabel = (value: string) => {
+  const option = props.controls.find((control) => control.value === value);
+  if (!option) return value;
+  const name =
+    option.controlId && option.title
+      ? `${option.controlId} - ${option.title}`
+      : option.label;
+  return option.catalogTitle ? `${name} (${option.catalogTitle})` : name;
+};
+const controlChoices = computed(() =>
+  props.controls
+    .filter((control) => !selectedControls.value.includes(control.value))
+    .map((control) => ({
+      value: control.value,
+      label: controlLabel(control.value),
+    })),
+);
+const controlToAdd = ref('');
+watch(controlToAdd, (value) => {
+  if (!value) return;
+  selectedControls.value = [...selectedControls.value, value];
+  controlToAdd.value = '';
+});
 
 watch(
   [selectedControls, conditions, scopePreset, mandatoryRows, excludedRows],
@@ -446,3 +306,129 @@ async function fetchPreview(requestId: number) {
   }
 }
 </script>
+
+<template>
+  <form novalidate @submit.prevent="submit">
+    <Stack gap="5">
+      <Stack gap="2">
+        <Checkbox
+          v-model="allControls"
+          label="All controls"
+          :description="`The ${controls.length} controls this system implements.`"
+        />
+        <template v-if="!allControls">
+          <Stack v-if="selectedControls.length" gap="1" as="ul">
+            <li v-for="value in selectedControls" :key="value">
+              <Cluster justify="between" gap="2">
+                <Text as="span">{{ controlLabel(value) }}</Text>
+                <IconButton
+                  icon="close"
+                  :label="`Remove ${value}`"
+                  @click="
+                    selectedControls = selectedControls.filter(
+                      (v) => v !== value,
+                    )
+                  "
+                />
+              </Cluster>
+            </li>
+          </Stack>
+          <FormField label="Add a control">
+            <Combobox
+              v-model="controlToAdd"
+              :options="controlChoices"
+              placeholder="Control ID or title"
+            />
+          </FormField>
+        </template>
+      </Stack>
+      <LabelConditionFields
+        v-model="conditions"
+        :ssp-id="sspId"
+        :keys="keyNames"
+        legend="Evidence to analyse"
+        add-label="Add condition"
+      />
+      <Text variant="caption"
+        >Every condition must match. Leave it empty to consider all
+        evidence.</Text
+      >
+      <Checkbox
+        v-model="supersedePending"
+        label="Replace pending suggestions in this scope"
+      />
+      <FormField label="Suggest">
+        <Select v-model="scopePreset" :options="scopePresetOptions" />
+      </FormField>
+      <LabelConditionFields
+        v-model="mandatoryRows"
+        :ssp-id="sspId"
+        :keys="keyNames"
+        legend="Required labels"
+        add-label="Add required label"
+      />
+      <LabelConditionFields
+        v-model="excludedRows"
+        :ssp-id="sspId"
+        :keys="keyNames"
+        legend="Excluded labels"
+        add-label="Add excluded label"
+      />
+      <Text variant="caption"
+        >Suggested filters always include the required labels and never the
+        excluded ones. Leave a value blank to mean any value.</Text
+      >
+      <InlineMessage
+        v-if="scopeError"
+        tone="error"
+        title="Can't generate for this scope"
+        data-testid="scope-ceiling"
+        ><p>{{ scopeError }}</p></InlineMessage
+      >
+      <Text v-else-if="previewLoading || !preview" variant="caption"
+        >Estimating the AI calls…</Text
+      >
+      <InlineMessage
+        v-else-if="requiresLargeRunConfirm"
+        tone="warning"
+        title="A large run"
+        data-testid="scope-warning"
+        ><p>
+          This makes {{ preview.plannedCalls }} AI calls, covering
+          {{ preview.controlCount }} controls × {{ preview.labelSetCount }}
+          label sets. They run as queued background jobs, may take a while and
+          cost money.
+        </p></InlineMessage
+      >
+      <Text v-else
+        >{{ preview.plannedCalls }} AI calls, covering
+        {{ preview.controlCount }} controls × {{ preview.labelSetCount }} label
+        sets.</Text
+      >
+      <Checkbox
+        v-if="requiresLargeRunConfirm"
+        v-model="largeRunConfirmed"
+        label="Confirm this larger run"
+        data-testid="scope-confirm-large"
+      />
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
+          type="submit"
+          :loading="generating"
+          :disabled-reason="
+            createDenied ??
+            (canGenerate
+              ? undefined
+              : requiresLargeRunConfirm && !largeRunConfirmed
+                ? 'Confirm the larger run first.'
+                : 'Wait for an estimate of a scope with controls.')
+          "
+          data-testid="scope-generate"
+          >Generate</Button
+        >
+      </Cluster>
+    </Stack>
+  </form>
+</template>

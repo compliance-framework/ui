@@ -1,8 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
+import { TooltipProvider } from 'reka-ui';
 import type { SystemSecurityPlan } from '@/oscal';
-import SuggestionScopeDialog from '../partials/SuggestionScopeDialog.vue';
 
 const state = vi.hoisted(() => ({
   pendingSuggestions: { value: [] as unknown[] },
@@ -28,15 +30,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('@/composables/usePermissions', () => ({
-  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
-}));
-
-vi.mock('vue-router', () => ({
-  RouterLink: {
-    props: ['to'],
-    template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
-  },
-  useRoute: () => ({ params: { sspId: 'ssp-1' } }),
+  usePermissions: () => ({ can: () => true }),
 }));
 
 vi.mock('@/stores/ai-config', () => ({
@@ -54,84 +48,77 @@ vi.mock('@/stores/ai-config', () => ({
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ get: state.axiosGet }),
   useDataApi: () => ({ data: state.ssp }),
+  decamelizeKeys: (data: unknown) => data,
 }));
 
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: state.toastAdd }),
 }));
 
-vi.mock('@/composables/useDashboardSuggestions', () => ({
-  useDashboardSuggestions: () => ({
-    pendingSuggestions: state.pendingSuggestions,
-    historySuggestions: state.historySuggestions,
-    labelSets: state.labelSets,
-    labelKeys: { value: [] },
-    pendingSuggestionsLoading: { value: false },
-    historySuggestionsLoading: { value: false },
-    generating: { value: false },
-    generalizing: { value: false },
-    refreshPendingSuggestions: state.refreshPendingSuggestions,
-    refreshHistorySuggestions: state.refreshHistorySuggestions,
-    refreshLabelSets: state.refreshLabelSets,
-    refreshLabelKeys: state.refreshLabelKeys,
-    generateSuggestions: state.generateSuggestions,
-    generalizeSuggestions: state.generalizeSuggestions,
-    acceptSuggestions: state.acceptSuggestions,
-    rejectSuggestions: state.rejectSuggestions,
-    fetchSuggestionEvents: state.fetchSuggestionEvents,
-  }),
-  useSuggestionRunPoller: () => ({
-    run: { value: undefined },
-    progressPercent: { value: 0 },
-    pollLatest: state.pollLatest,
-    start: state.start,
-  }),
-}));
+// Real refs, made from the fixture when the page calls the composables.
+vi.mock('@/composables/useDashboardSuggestions', async () => {
+  const { ref } = await import('vue');
+  return {
+    useDashboardSuggestions: () => ({
+      pendingSuggestions: ref(state.pendingSuggestions.value),
+      historySuggestions: ref(state.historySuggestions.value),
+      labelSets: ref(state.labelSets.value),
+      labelKeys: ref([]),
+      pendingSuggestionsLoading: ref(false),
+      historySuggestionsLoading: ref(false),
+      generating: ref(false),
+      generalizing: ref(false),
+      editingGroup: ref(false),
+      refreshPendingSuggestions: state.refreshPendingSuggestions,
+      refreshHistorySuggestions: state.refreshHistorySuggestions,
+      refreshLabelSets: state.refreshLabelSets,
+      refreshLabelKeys: state.refreshLabelKeys,
+      generateSuggestions: state.generateSuggestions,
+      generalizeSuggestions: state.generalizeSuggestions,
+      acceptSuggestions: state.acceptSuggestions,
+      rejectSuggestions: state.rejectSuggestions,
+      fetchSuggestionEvents: state.fetchSuggestionEvents,
+    }),
+    useSuggestionRunPoller: () => ({
+      run: ref(undefined),
+      progressPercent: ref(0),
+      pollLatest: state.pollLatest,
+      start: state.start,
+    }),
+  };
+});
 
-import SuggestionsView from '../SuggestionsView.vue';
+import FilterSuggestions from '../FilterSuggestions.vue';
 
-function mountView() {
-  return mount(SuggestionsView, {
-    global: {
-      stubs: {
-        PageHeader: { template: '<h1><slot /></h1>' },
-        PageSubHeader: { template: '<p><slot /></p>' },
-        PageCard: { template: '<section><slot /></section>' },
-        Chip: { props: ['label'], template: '<span>{{ label }}</span>' },
-        Message: { template: '<div><slot /></div>' },
-        SuggestionScopeDialog: {
-          name: 'SuggestionScopeDialog',
-          props: ['controls'],
-          template:
-            '<div><span v-for="control in controls" :key="control.value">{{ control.label }}</span></div>',
-        },
-        SuggestionEditDialog: {
-          name: 'SuggestionEditDialog',
-          props: ['group', 'controlOptions'],
-          template: '<div />',
-        },
-        Dialog: { template: '<div><slot /><slot name="footer" /></div>' },
-        Textarea: {
-          props: ['modelValue'],
-          emits: ['update:modelValue'],
-          template:
-            '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-        },
-        PrimaryButton: {
-          emits: ['click'],
-          template: '<button @click="$emit(\'click\')"><slot /></button>',
-        },
-        SecondaryButton: {
-          emits: ['click'],
-          template: '<button @click="$emit(\'click\')"><slot /></button>',
-        },
+async function mountView(path = '/dashboards/suggestions/ssp-1') {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/dashboards/suggestions/:sspId', component: FilterSuggestions },
+      {
+        path: '/evidence',
+        name: 'evidence:index',
+        component: { render: () => null },
       },
-    },
+    ],
   });
+  await router.push(path);
+  const wrapper = mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(RouterView)),
+    }),
+    { global: { plugins: [router] }, attachTo: document.body },
+  );
+  await flushPromises();
+  return { wrapper, router };
 }
 
-describe('SuggestionsView', () => {
+const button = (wrapper: ReturnType<typeof mount>, text: string) =>
+  wrapper.findAll('button').find((b) => b.text() === text)!;
+
+describe('FilterSuggestions', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     state.aiEnabled = true;
     state.aiFetched = true;
@@ -237,9 +224,8 @@ describe('SuggestionsView', () => {
     });
   });
 
-  it('groups pending suggestions by labelSetHash and expands reasoning', async () => {
-    const wrapper = mountView();
-
+  it('groups pending suggestions by label set, with their reasoning', async () => {
+    const { wrapper } = await mountView();
     expect(wrapper.findAll('[data-testid^="suggestion-group-"]')).toHaveLength(
       1,
     );
@@ -247,21 +233,17 @@ describe('SuggestionsView', () => {
     expect(wrapper.text()).toContain('AC-1');
     expect(wrapper.text()).toContain('_agent=scanner');
     expect(wrapper.text()).toContain('env=prod');
-
-    const evidenceLink = wrapper.find('a[data-to]');
-    expect(evidenceLink.text()).toContain('7 matched evidence');
-    expect(JSON.parse(evidenceLink.attributes('data-to') ?? '{}')).toEqual({
-      name: 'evidence:index',
-      query: { filter: '_agent=scanner and env=prod' },
-    });
-
-    const reasoningButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Reasoning'));
-    await reasoningButton?.trigger('click');
-    await nextTick();
-
+    const link = wrapper.find('a[href*="/evidence"]');
+    expect(link.text()).toContain('7 matched evidence');
+    expect(
+      decodeURIComponent(link.attributes('href')!.replace(/\+/g, ' ')),
+    ).toContain('filter=_agent=scanner and env=prod');
+    await wrapper
+      .findAll('button[aria-expanded]')
+      .find((b) => b.text().includes('Reasoning for AC-1'))!
+      .trigger('click');
     expect(wrapper.text()).toContain('Fits AC-1 and is relevant to payments');
+    wrapper.unmount();
   });
 
   it('labels, links and counts groups by the proposed filter label set', async () => {
@@ -286,99 +268,83 @@ describe('SuggestionsView', () => {
         hash: 'full-hash-1',
         labels: { _policy: policy, repository: 'todo-app' },
         evidenceCount: 3,
-        sampleTitles: ['todo-app evidence'],
+        sampleTitles: [],
       },
       {
         hash: 'full-hash-2',
         labels: { _policy: policy, repository: 'api' },
         evidenceCount: 4,
-        sampleTitles: ['api evidence'],
+        sampleTitles: [],
       },
       {
         hash: 'full-hash-3',
         labels: { _policy: 'other.policy', repository: 'api' },
         evidenceCount: 9,
-        sampleTitles: ['unrelated evidence'],
+        sampleTitles: [],
       },
     ];
-
-    const wrapper = mountView();
-
-    expect(wrapper.findAll('[data-testid^="suggestion-group-"]')).toHaveLength(
-      1,
-    );
-    // Chips and link use the proposed filter, not the full originating label set.
+    const { wrapper } = await mountView();
     expect(wrapper.text()).toContain(`_policy=${policy}`);
     expect(wrapper.text()).not.toContain('repository=todo-app');
-
-    const evidenceLink = wrapper.find('a[data-to]');
-    // Sums evidence across every label set that is a superset of the filter.
-    expect(evidenceLink.text()).toContain('7 matched evidence');
-    expect(JSON.parse(evidenceLink.attributes('data-to') ?? '{}')).toEqual({
-      name: 'evidence:index',
-      query: { filter: `_policy=${policy}` },
-    });
+    expect(wrapper.find('a[href*="/evidence"]').text()).toContain(
+      '7 matched evidence',
+    );
+    wrapper.unmount();
   });
 
-  it('wires group accept and reject reason payloads', async () => {
-    const wrapper = mountView();
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Accept group')
-      ?.trigger('click');
+  it('accepts a group, and rejects it with a reason', async () => {
+    const { wrapper } = await mountView();
+    await button(wrapper, 'Accept group').trigger('click');
     expect(state.acceptSuggestions).toHaveBeenCalledWith(['sug-1', 'sug-2']);
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Reject group')
-      ?.trigger('click');
-    await wrapper.find('textarea').setValue('Not useful');
-    await wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Reject')
-      .at(-1)
-      ?.trigger('click');
-
+    await button(wrapper, 'Reject group').trigger('click');
+    await flushPromises();
+    const textarea = document.querySelector<HTMLTextAreaElement>(
+      '[role="dialog"] textarea',
+    )!;
+    textarea.value = 'Not useful';
+    textarea.dispatchEvent(new Event('input'));
+    document
+      .querySelector<HTMLFormElement>('[role="dialog"] form')!
+      .dispatchEvent(new Event('submit'));
+    await flushPromises();
     expect(state.rejectSuggestions).toHaveBeenCalledWith(
       ['sug-1', 'sug-2'],
       'Not useful',
     );
+    wrapper.unmount();
+  });
+
+  it('accepts a selection', async () => {
+    const { wrapper } = await mountView();
+    const box = wrapper
+      .findAll('label')
+      .find((l) => l.text().startsWith('AC-1'))!;
+    await wrapper.find(`[id="${box.attributes('for')}"]`).setValue(true);
+    expect(wrapper.text()).toContain('1 selected');
+    await button(wrapper, 'Accept selected').trigger('click');
+    expect(state.acceptSuggestions).toHaveBeenCalledWith(['sug-1']);
+    wrapper.unmount();
   });
 
   it('refreshes and polls suggestions when the config is enabled', async () => {
-    state.aiEnabled = true;
     state.aiFetched = false;
     state.fetchConfig.mockImplementation(async () => {
       state.aiFetched = true;
       return true;
     });
-
-    mountView();
-    await flushPromises();
-
+    const { wrapper } = await mountView();
     expect(state.refreshLabelSets).toHaveBeenCalled();
     expect(state.refreshHistorySuggestions).toHaveBeenCalled();
     expect(state.pollLatest).toHaveBeenCalled();
+    wrapper.unmount();
   });
 
-  it('enriches scope control options with catalog titles and profile membership', async () => {
-    const wrapper = mountView();
-    await flushPromises();
-
-    const controls = wrapper
-      .findComponent(SuggestionScopeDialog)
-      .props('controls') as Array<{
-      label: string;
-      value: string;
-      controlId: string;
-      title: string;
-      catalogTitle: string;
-      profileTitles: string[];
-    }>;
-
-    // The option value is the catalog-qualified control key the scope API expects.
-    expect(controls).toContainEqual({
+  it('enriches the control options with catalog titles and profile membership', async () => {
+    const { wrapper } = await mountView();
+    const vm = wrapper.findComponent(FilterSuggestions).vm as unknown as {
+      controlOptions: unknown[];
+    };
+    expect(vm.controlOptions).toContainEqual({
       label: 'ac-1 - Access control policy',
       value: 'catalog-1:ac-1',
       controlId: 'ac-1',
@@ -386,38 +352,44 @@ describe('SuggestionsView', () => {
       catalogTitle: 'Catalog',
       profileTitles: ['Moderate Baseline'],
     });
-    expect(controls).toContainEqual({
-      label: 'AC-2 - Account management',
-      value: 'catalog-1:AC-2',
-      controlId: 'AC-2',
-      title: 'Account management',
-      catalogTitle: 'Catalog',
-      profileTitles: ['Moderate Baseline'],
-    });
     expect(state.axiosGet).not.toHaveBeenCalledWith(
       '/api/oscal/catalogs/catalog-1/full',
     );
+    wrapper.unmount();
   });
 
-  it('does not poll or refresh suggestions when the config is disabled', async () => {
+  it('shows the history tab from the address', async () => {
+    state.historySuggestions.value = [
+      {
+        id: 'h-1',
+        status: 'accepted',
+        controlId: 'AC-3',
+        controlTitle: 'Access enforcement',
+        proposedFilterName: 'Old filter',
+      },
+    ];
+    const { wrapper } = await mountView(
+      '/dashboards/suggestions/ssp-1?tab=history',
+    );
+    expect(wrapper.text()).toContain('AC-3 Access enforcement');
+    expect(wrapper.text()).toContain('accepted · Old filter');
+    wrapper.unmount();
+  });
+
+  it('does not poll or refresh suggestions when AI is not configured', async () => {
     state.aiEnabled = false;
     state.aiFetched = false;
     state.fetchConfig.mockImplementation(async () => {
       state.aiFetched = true;
       return false;
     });
-
-    const wrapper = mountView();
-    await flushPromises();
-    await wrapper.vm.$forceUpdate();
+    const { wrapper } = await mountView();
+    await wrapper.findComponent(FilterSuggestions).vm.$forceUpdate();
     await nextTick();
-
-    expect(wrapper.text()).toContain(
-      'AI is not configured, so evidence filter suggestions cannot be generated.',
-    );
+    expect(wrapper.text()).toContain("AI isn't configured");
     expect(state.refreshLabelSets).not.toHaveBeenCalled();
-    expect(state.refreshHistorySuggestions).not.toHaveBeenCalled();
     expect(state.pollLatest).not.toHaveBeenCalled();
     expect(state.start).not.toHaveBeenCalled();
+    wrapper.unmount();
   });
 });

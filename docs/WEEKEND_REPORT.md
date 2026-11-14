@@ -29,7 +29,7 @@ without a redesigned page around it. Pages fall into three kinds:
   section, the diagram editor, the component risks list and evidence-filter drawer), catalog
   page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
   page, Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
-- **Design-system header over a classic body**: Filter suggestions, Diagnostics sections.
+- **Design-system header over a classic body**: Diagnostics sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
@@ -1117,3 +1117,19 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Checked live: the required-field checks, create with a threat ID and remediation, view,
   duplicate, delete the copy, edit, delete (nothing left behind). Risk templates are in the axe
   run.
+- **Filter suggestions** are design-system (`FilterSuggestions` under the existing header, with
+  `SuggestionScopeForm` and `SuggestionGroupForm` in design-system dialogs), transplanted with the
+  classic scripts, so grouping, the estimate of AI calls, large-run confirmation, catalog-qualified
+  control keys and the edit payload are unchanged. Pending and History are tabs in the address
+  (`?tab=history`). Each pending group is a panel with Edit, Accept group and Reject group; each
+  suggestion has a checkbox (with confidence), Accept, Reject and a Reasoning disclosure; label
+  changes show as added and removed tags. **Decisions:** the controls multi-select in Generate is
+  now "All controls" (on by default) or a chosen list with a picker, like the evidence filter
+  form; label conditions use the design-system `LabelConditionFields` from Configure → Scope;
+  the edit form's controls are checkboxes to keep, plus a picker to add. Generate and Save are
+  disabled with the reason (no estimate yet, confirm the large run, keep a label and a control).
+  The classic page, both dialogs and the classic condition builder are deleted; their specs are
+  ported (the pure `dashboard-suggestions.ts` and its spec stay). Checked live: the page, both
+  tabs and the Generate form with its estimate (not run: it calls the AI provider). **Gap:**
+  local-dev has no pending suggestions, so groups, accept, reject and edit were checked only by
+  the specs.
