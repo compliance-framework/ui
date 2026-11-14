@@ -7,7 +7,7 @@ import CodeBlock from '@/ds/components/CodeBlock/CodeBlock.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 
 /**
- * The JSON tab of an OSCAL record page: the whole document as OSCAL JSON (kebab-case keys), to
+ * The JSON tab of an OSCAL record page (and Configure System's JSON section): the whole document as OSCAL JSON (kebab-case keys), to
  * read, copy or download (the code block does both). One tab serves every document type; the route picks the endpoint.
  */
 // Record frames pass their own props to every tab (e.g. assessment results); this tab doesn't use them.
@@ -27,6 +27,11 @@ const SOURCES: Record<string, { endpoint: string; noun: string }> = {
     endpoint: '/api/oscal/assessment-results',
     noun: 'assessment-results',
   },
+  // Configure System's JSON section (the route is /systems/:systemId/configure/json).
+  'system-configure-json': {
+    endpoint: '/api/oscal/system-security-plans',
+    noun: 'ssp',
+  },
   'plan-of-action-and-milestones-json': {
     endpoint: '/api/oscal/plan-of-action-and-milestones',
     noun: 'poam',
@@ -35,7 +40,7 @@ const SOURCES: Record<string, { endpoint: string; noun: string }> = {
 
 const route = useRoute();
 const source = SOURCES[String(route.name)]!;
-const id = String(route.params.id);
+const id = String(route.params.id ?? route.params.systemId);
 const doc = useApiQuery<Record<string, unknown>>(
   `${source.endpoint}/${id}/full`,
 );

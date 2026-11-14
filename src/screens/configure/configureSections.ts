@@ -69,7 +69,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'JSON',
     tab: true,
     classic: 'json',
-    component: view('JSON'),
+    component: () => import('@/screens/documents/DocumentJsonTab.vue'),
   },
   {
     suffix: 'implementation',

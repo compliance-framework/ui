@@ -565,3 +565,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Found (classic bug, fixed here):** user lookups (`useUserSearch().loadUsersByIds`) sent every
   assignee reference to `GET /api/users/:id`, including role and group names such as `it-iam`
   (a 400 each, e.g. on a workflow instance's Role assignments tab). It now looks up only UUIDs.
+- **Configure System → JSON** now uses the shared `DocumentJsonTab` (the system's security plan
+  as OSCAL JSON in the design-system code block); the classic SSP JSON view is deleted.
