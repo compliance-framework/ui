@@ -87,9 +87,10 @@ Some migrated pages embed classic components (inside `LegacyPage`) for deep edit
 large enough to rebuild separately. They work and keep their tests; they still look classic.
 Replace each with a design-system version, then delete the classic component.
 
-- Configure System: the hidden sections reachable by link (Control Implementation); the
-  subscribe wizard inside Leverage; the export offering forms and items and allowlist editors;  inside rebuilt sections, the draw.io editor, the component risks list and the
-  evidence-filter drawer, and the new/edit component forms.
+- Configure System: the hidden Control Implementation section (reachable by link); the
+  subscribe wizard inside Leverage; the export offering forms and items and allowlist editors;
+  inside rebuilt sections, the draw.io editor, the component risks list, the evidence-filter
+  drawer and the new/edit component forms.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
