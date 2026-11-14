@@ -461,6 +461,43 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         },
         { data: [] },
       );
+    if (path === '/api/admin/ssp-templates/tpl-1')
+      return json(route, {
+        data: {
+          id: 'tpl-1',
+          name: 'Applications by _app',
+          enabled: true,
+          keys: ['_app'],
+          filter: null,
+          'scope-labels': [['repo']],
+          'min-streams': 2,
+          'title-template': 'SSP for {{ ._app }}',
+          props: null,
+          'profile-ids': [],
+          'created-at': '2026-10-19T10:00:00Z',
+          'updated-at': '2026-10-19T10:00:00Z',
+        },
+      });
+    if (path === '/api/admin/ssp-templates/tpl-1/ssps')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              'key-values': { _app: 'payments' },
+              'ssp-id': SYSTEMS.scoped,
+              title: 'SSP for payments',
+              'created-at': '2026-10-19T10:00:00Z',
+              'last-seen-at': '2026-10-19T10:00:00Z',
+              stale: false,
+              'last-error': null,
+              'skipped-entries': 0,
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/workflows/instances' && method === 'GET')
       return list(
         route,

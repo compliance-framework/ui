@@ -892,3 +892,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   or skip; groups below the minimum streams; invalid key values; failures as an inline error).
   Only the edit form is still classic on that page. Spec ported; not checked live (no
   templates in local-dev).
+- **System template page in the axe run** (mocked template and created systems, every state and
+  theme): passes. This also gives the preview and created-systems panels a rendered check.
