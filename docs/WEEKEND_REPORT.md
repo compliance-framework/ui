@@ -531,3 +531,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the API, then deleted), the assessment plan record page was checked in a browser for the first
   time: Overview, Tasks and JSON all work. (The API rejects a plan without a version; the new
   form always sends one.)
+- **Decision:** the assessment results **Import AP** tab duplicated the edit form (which edits
+  the import-AP reference and remarks), so it's removed and its URL opens the edit form. Its
+  prefill check moved to the shared form's spec. The assessment results record now has
+  Overview, Results and JSON.

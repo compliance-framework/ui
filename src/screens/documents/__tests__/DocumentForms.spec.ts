@@ -274,6 +274,13 @@ describe('DocumentForms', () => {
     expect(api.get).toHaveBeenCalledWith(
       '/api/oscal/assessment-results/ar-1/full',
     );
+    // The form is prefilled with the stored import-ap reference.
+    expect(
+      (
+        wrapper.find('input[placeholder="#assessment-plan-uuid"]')
+          .element as HTMLInputElement
+      ).value,
+    ).toBe('#ap-1');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     expect(api.put).toHaveBeenCalledWith(

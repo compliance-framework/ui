@@ -751,11 +751,11 @@ const authenticatedRoutes = [
         name: 'assessment-results-overview',
         component: () => import('../screens/documents/DocumentOverviewTab.vue'),
       },
+      // The Import AP tab duplicated the edit form; old links open the form.
       {
         path: 'import-ap',
         name: 'assessment-results-import-ap',
-        component: () =>
-          import('../views/assessment-results/AssessmentResultsImportApView.vue'),
+        redirect: { name: 'assessment-results-edit' },
       },
       {
         path: 'results',

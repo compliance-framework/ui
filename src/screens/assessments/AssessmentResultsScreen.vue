@@ -69,10 +69,6 @@ const recordTabs = computed(() => {
       to: { name: 'assessment-results-overview', params: { id } },
     },
     {
-      label: 'Import AP',
-      to: { name: 'assessment-results-import-ap', params: { id } },
-    },
-    {
       label: 'Results',
       to: { name: 'assessment-results-results', params: { id } },
     },
