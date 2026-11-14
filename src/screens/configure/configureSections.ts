@@ -53,8 +53,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Components',
     tab: true,
     classic: 'components',
-    component: () =>
-      import('@/components/system-security-plans/ComponentsPanel.vue'),
+    component: () => import('@/screens/configure/SystemComponentsSection.vue'),
   },
   {
     suffix: 'scope',

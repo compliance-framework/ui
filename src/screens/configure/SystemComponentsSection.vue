@@ -1,224 +1,26 @@
-<template>
-  <div>
-    <div class="flex justify-between items-center mb-6">
-      <TooltipTitle
-        text="System Components"
-        tooltip-key="system.components"
-        underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
-      />
-      <PrimaryButton
-        @click="showCreateComponentModal = true"
-        :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
-        v-tooltip.top="{
-          value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
-          disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
-        }"
-      >
-        <i class="pi pi-plus mr-2"></i>
-        Create Component
-      </PrimaryButton>
-    </div>
-
-    <div class="space-y-4">
-      <div
-        v-if="!components?.length"
-        class="text-center py-8 text-gray-500 dark:text-slate-400"
-      >
-        No components defined. Create your first component to get started.
-      </div>
-
-      <Panel
-        v-for="component in components"
-        :key="component.uuid"
-        toggleable
-        :collapsed="componentPanelCollapsed(component.uuid)"
-        @update:collapsed="setComponentPanelCollapsed(component.uuid, $event)"
-      >
-        <template #header>
-          <div class="flex items-center gap-2 py-2">
-            <span class="font-medium">{{ component.title }}</span>
-            <span
-              class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs"
-            >
-              {{ component.type }}
-            </span>
-            <span
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-              :class="{
-                'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200':
-                  component.status?.state === 'operational',
-                'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200':
-                  component.status?.state !== 'operational',
-              }"
-            >
-              {{ component.status?.state || 'unknown' }}
-            </span>
-            <span
-              v-if="openComponentRiskCount(component) > 0"
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200"
-            >
-              {{ openComponentRiskLabel(component) }}
-            </span>
-          </div>
-        </template>
-        <div class="py-3 px-4 flex justify-end items-center">
-          <div class="flex gap-2">
-            <TertiaryButton
-              v-if="filterComponentLinkingEnabled"
-              @click.stop="openDashboardDrawer(component)"
-            >
-              Dashboards
-            </TertiaryButton>
-            <TertiaryButton
-              @click.stop="editComponent(component)"
-              :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
-              v-tooltip.top="{
-                value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
-                disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
-              }"
-            >
-              Edit
-            </TertiaryButton>
-            <TertiaryButton @click.stop="downloadComponentJSON(component)">
-              JSON
-            </TertiaryButton>
-            <TertiaryButton
-              :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
-              v-tooltip.top="{
-                value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
-                disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
-              }"
-              @click.stop="
-                confirmDeleteDialog(() => deleteComponent(component), {
-                  itemName: component.title,
-                  itemType: 'component',
-                })
-              "
-              class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
-            >
-              Delete
-            </TertiaryButton>
-          </div>
-        </div>
-        <div
-          class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
-        >
-          <p class="text-sm text-gray-600 dark:text-slate-400 mb-3">
-            {{ component.description }}
-          </p>
-
-          <div v-if="component.purpose" class="mb-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
-              >Purpose:</span
-            >
-            <span class="text-sm text-gray-600 dark:text-slate-400 ml-2">{{
-              component.purpose
-            }}</span>
-          </div>
-
-          <div v-if="component.protocols?.length" class="space-y-2">
-            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
-              >Protocols:</span
-            >
-            <div
-              v-for="protocol in component.protocols"
-              :key="protocol.uuid"
-              class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600"
-            >
-              <div class="font-medium text-sm">
-                {{ protocol.title }}
-              </div>
-              <div class="text-xs text-gray-600 dark:text-slate-400 mt-1">
-                {{ protocol.name }}
-              </div>
-              <div
-                v-if="protocol.portRanges?.length"
-                class="text-xs text-blue-600 dark:text-blue-400 mt-1"
-              >
-                <span
-                  v-for="range in protocol.portRanges"
-                  :key="range.transport"
-                  class="mr-3"
-                >
-                  {{ range.transport }}: {{ range.start }}-{{ range.end }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <ComponentRisksList
-            v-if="!componentPanelCollapsed(component.uuid)"
-            :ssp-id="sspId"
-            :component="component"
-            :risks="risks || []"
-            :users="users || []"
-            :loading-risks="loadingRisks"
-            @risks-updated="refreshRisksAndUsers"
-          />
-        </div>
-      </Panel>
-    </div>
-
-    <!-- Component Dashboard Drawer -->
-    <Drawer
-      v-if="filterComponentLinkingEnabled"
-      v-model:visible="dashboardDrawerOpen"
-      header="Evidence Filters"
-      position="right"
-      class="w-full! md:w-1/2! lg:w-3/5!"
-    >
-      <ComponentDashboardsView
-        v-if="selectedComponent"
-        :ssp-id="sspId"
-        :component="selectedComponent"
-      />
-    </Drawer>
-
-    <!-- Component Create Modal -->
-    <Dialog
-      v-model:visible="showCreateComponentModal"
-      modal
-      header="Create System Component"
-      :draggable="false"
-      class="w-full max-w-2xl"
-    >
-      <SystemImplementationComponentCreateForm
-        :ssp-id="sspId"
-        @cancel="showCreateComponentModal = false"
-        @created="handleComponentCreated"
-      />
-    </Dialog>
-
-    <!-- Component Edit Modal -->
-    <Dialog
-      v-model:visible="showEditComponentModal"
-      modal
-      header="Edit System Component"
-      :draggable="false"
-      class="w-full max-w-2xl"
-    >
-      <SystemImplementationComponentEditForm
-        v-if="editingComponent"
-        :ssp-id="sspId"
-        :component="editingComponent!"
-        @cancel="showEditComponentModal = false"
-        @saved="handleComponentSaved"
-      />
-    </Dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
-import TooltipTitle from '@/components/TooltipTitle.vue';
+/**
+ * Configure System → Components: the system's components, each opening to its description,
+ * purpose, protocols and risks, with Dashboards (evidence filters), Edit, Download and Delete.
+ * The risks list, the evidence filters drawer content and the create and edit forms are classic
+ * islands. The script is the classic ComponentsPanel's.
+ */
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { downloadJson } from '@/utils/download-json';
-import Dialog from '@/volt/Dialog.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
-import Drawer from '@/volt/Drawer.vue';
-import Panel from '@/volt/Panel.vue';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
+import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
+import Tag from '@/ds/components/Tag/Tag.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
@@ -248,7 +50,11 @@ const emit = defineEmits<{ count: [number] }>();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const { can, permissionTooltip } = usePermissions();
+const { can } = usePermissions();
+const denied = (action: string, verb: string) =>
+  can(RESOURCES.SSP, action)
+    ? undefined
+    : `Your access doesn't include ${verb} this system's components.`;
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const configStore = useConfigStore();
 const filterComponentLinkingEnabled = computed(
@@ -561,4 +367,158 @@ const deleteComponent = async (component: SystemComponent) => {
     });
   }
 };
+
+// Design-system view ---------------------------------------------------------------------------
+
+function componentFacts(component: SystemComponent) {
+  return [
+    { key: 'description', label: 'Description', value: component.description },
+    { key: 'purpose', label: 'Purpose', value: component.purpose },
+    {
+      key: 'protocols',
+      label: 'Protocols',
+      value: (component.protocols ?? [])
+        .map((p) =>
+          [
+            p.title || p.name,
+            ...(p.portRanges ?? []).map(
+              (r) => `${r.transport} ${r.start}–${r.end}`,
+            ),
+          ].join(' · '),
+        )
+        .join('; '),
+    },
+  ];
+}
+function componentActions(component: SystemComponent): MenuEntry[] {
+  return [
+    ...(filterComponentLinkingEnabled.value
+      ? [
+          {
+            label: 'Evidence filters',
+            icon: 'filter' as const,
+            onSelect: () => openDashboardDrawer(component),
+          },
+        ]
+      : []),
+    {
+      label: 'Edit',
+      icon: 'edit',
+      disabledReason: denied(ACTIONS.UPDATE, 'changing'),
+      onSelect: () => void editComponent(component),
+    },
+    {
+      label: 'Download source (JSON)',
+      icon: 'download',
+      onSelect: () => void downloadComponentJSON(component),
+    },
+    {
+      label: 'Delete component',
+      icon: 'delete',
+      tone: 'danger',
+      disabledReason: denied(ACTIONS.DELETE, 'deleting'),
+      onSelect: () =>
+        confirmDeleteDialog(() => deleteComponent(component), {
+          itemName: component.title,
+          itemType: 'component',
+        }),
+    },
+  ];
+}
 </script>
+
+<template>
+  <Stack gap="5">
+    <div>
+      <Button
+        variant="primary"
+        icon="add"
+        :disabled-reason="denied(ACTIONS.CREATE, 'adding')"
+        @click="showCreateComponentModal = true"
+        >New component</Button
+      >
+    </div>
+    <Text v-if="!components?.length"
+      >No components yet. Components are the parts of the system, such as
+      services, clusters or databases.</Text
+    >
+    <Disclosure
+      v-for="component in components"
+      :key="component.uuid"
+      :label="component.title"
+      :open="!componentPanelCollapsed(component.uuid)"
+      @update:open="(open) => setComponentPanelCollapsed(component.uuid, !open)"
+    >
+      <Stack gap="4">
+        <Cluster justify="between" gap="2">
+          <Cluster gap="1">
+            <Tag :label="component.type" />
+            <Tag :label="component.status?.state || 'unknown'" />
+            <Tag
+              v-if="openComponentRiskCount(component) > 0"
+              :label="openComponentRiskLabel(component)"
+            />
+          </Cluster>
+          <Menu
+            :label="`Actions for ${component.title}`"
+            :items="componentActions(component)"
+          />
+        </Cluster>
+        <DescriptionList :items="componentFacts(component)" layout="stacked" />
+        <LegacyPage v-if="!componentPanelCollapsed(component.uuid)">
+          <ComponentRisksList
+            :ssp-id="sspId"
+            :component="component"
+            :risks="risks || []"
+            :users="users || []"
+            :loading-risks="loadingRisks"
+            @risks-updated="refreshRisksAndUsers"
+          />
+        </LegacyPage>
+      </Stack>
+    </Disclosure>
+
+    <Drawer
+      v-if="filterComponentLinkingEnabled"
+      v-model:open="dashboardDrawerOpen"
+      title="Evidence filters"
+      :description="selectedComponent?.title"
+    >
+      <LegacyPage>
+        <ComponentDashboardsView
+          v-if="selectedComponent"
+          :ssp-id="sspId"
+          :component="selectedComponent"
+        />
+      </LegacyPage>
+    </Drawer>
+    <Dialog
+      v-model:open="showCreateComponentModal"
+      title="New component"
+      size="l"
+    >
+      <LegacyPage>
+        <SystemImplementationComponentCreateForm
+          :ssp-id="sspId"
+          @cancel="showCreateComponentModal = false"
+          @created="handleComponentCreated"
+        />
+      </LegacyPage>
+    </Dialog>
+    <Dialog
+      v-model:open="showEditComponentModal"
+      title="Edit component"
+      size="l"
+    >
+      <LegacyPage>
+        <SystemImplementationComponentEditForm
+          v-if="editingComponent"
+          :ssp-id="sspId"
+          :component="editingComponent!"
+          @cancel="showEditComponentModal = false"
+          @saved="handleComponentSaved"
+        />
+      </LegacyPage>
+    </Dialog>
+  </Stack>
+</template>

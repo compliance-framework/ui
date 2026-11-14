@@ -608,3 +608,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   through the design-system confirm host). **Gap (island):** the label builder is classic. The
   classic `ScopePanel` and its spec are ported and deleted; unavailable actions now say why
   instead of being plain disabled.
+- **Configure System → Components**: each component is a design-system disclosure with type,
+  status and open-risk tags, a row menu (Evidence filters when that feature is on, Edit,
+  Download source, Delete), and its description, purpose and protocols as a description list.
+  Edit and New component open the classic forms (islands) in design-system dialogs; the
+  evidence-filters drawer (still deep-linkable) is a design-system drawer. **Gap (island):**
+  each component's risk list is classic. `ComponentsPanel` is deleted.
