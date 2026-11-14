@@ -780,8 +780,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   (`RecordCollection` now also accepts `updated` from edit forms). Every assessment plan tab is
   design-system, so the record has no classic frame. The classic task detail and modals are
   deleted, along with four assessment-plan activity modals and forms that nothing used. Checked
-  live: create, open and rename a task. **Test data:** assessment plan "Weekend test AP" with
-  the task "Weekend scan (renamed)".
+  live: create, open and edit a task. **Test data:** assessment plan "Weekend test AP" with
+  the task "Weekend scan" (my check script put "Weekend scan (renamed)" in its Type field).
 - **User and group pages: members and roles** are design-system. Group members are a table
   (name, email, native or synced from SSO) with Add member (a filterable picker over the user
   directory, leaving out existing members) and Remove; SSO-synced memberships are shown with
