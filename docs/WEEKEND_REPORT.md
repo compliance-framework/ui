@@ -960,3 +960,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   protocol and port range, edit, delete, and the template path (fields fill and lock; cancelled).
 - **Export offering form** is design-system (`ExportOfferingForm`, add and edit: title and
   description). Checked live: edit a description, which survives a reload.
+- **Inventory: the edit form** is design-system (description and remarks; keeps the item's
+  other fields). The create form (choose the destination: plan, POA&M, assessment plan or
+  results) and the attach editor stay classic. Checked live: create (classic), edit, view
+  details, delete.

@@ -38,7 +38,7 @@ import Text from '@/ds/components/Text/Text.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import InventoryItemCreateForm from '@/components/inventory/InventoryItemCreateForm.vue';
-import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
+import InventoryItemEditForm from './InventoryItemEditForm.vue';
 import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
 
 interface Item extends InventoryItem {
@@ -396,16 +396,14 @@ function actions(item: Item): MenuEntry[] {
       />
     </LegacyPage>
   </Dialog>
-  <Dialog v-model:open="editOpen" title="Edit inventory item" size="l">
-    <LegacyPage>
-      <SystemImplementationInventoryItemEditForm
-        v-if="editing"
-        :ssp-id="editing.sourceId || sspId!"
-        :inventory-item="editing"
-        @cancel="editing = undefined"
-        @saved="done(() => (editing = undefined), 'Item saved')"
-      />
-    </LegacyPage>
+  <Dialog v-model:open="editOpen" title="Edit inventory item">
+    <InventoryItemEditForm
+      v-if="editing"
+      :ssp-id="editing.sourceId || sspId!"
+      :inventory-item="editing"
+      @cancel="editing = undefined"
+      @saved="done(() => (editing = undefined), 'Item saved')"
+    />
   </Dialog>
   <Dialog v-model:open="attachOpen" title="Attach to components" size="l">
     <LegacyPage>
