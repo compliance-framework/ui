@@ -34,8 +34,11 @@ without a redesigned page around it. Pages fall into three kinds:
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
-globally any more). The second live sweep (89 routes, including every record tab and Configure
-section) is clean apart from known API errors. The e2e axe run now also covers the OSCAL record
+globally any more). The third live sweep (97 routes, including every record tab and Configure
+section) is clean apart from known API errors. Most record forms are design-system now too (task,
+POA&M item, observation, finding, capability, component, back matter, system user, leveraged
+authorization, system component, export offering, inventory edit, workflow step), each written
+as one add-and-edit form. The e2e axe run now also covers the OSCAL record
 tabs, the Configure System sections, the user and group pages, Inventory, Build a profile, the
 catalog page, subject templates and the system template page.
 
@@ -981,3 +984,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Decision:** the classic form's free-text Status (open, in progress, …) is replaced by the
   OSCAL result, since that is what a finding's target records. **Found (fixed):** see the summary.
   Checked live: add with a linked observation, reload, delete.
+- **Third live sweep (97 routes**, adding the assessment plan record, Inventory, Build a profile,
+  Import and subject templates): one h1 each, no page errors; only the known API responses.
