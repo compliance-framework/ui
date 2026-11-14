@@ -28,7 +28,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Overview',
     tab: true,
     classic: 'overview',
-    component: view('Overview'),
+    component: () => import('@/screens/configure/SystemOverviewSection.vue'),
   },
   {
     suffix: 'characteristics',

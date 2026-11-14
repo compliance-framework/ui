@@ -567,3 +567,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   (a 400 each, e.g. on a workflow instance's Role assignments tab). It now looks up only UUIDs.
 - **Configure System → JSON** now uses the shared `DocumentJsonTab` (the system's security plan
   as OSCAL JSON in the design-system code block); the classic SSP JSON view is deleted.
+- **Configure System → Overview** is rebuilt: details, the system's profiles (the same
+  save-as-you-tick `ProfilesField` as Implementation, replacing the classic multi-select),
+  counts of users, components, inventory and leveraged authorizations, and a characteristics
+  summary. **Decision:** its Download JSON button is dropped, since the JSON section copies and
+  downloads. The classic view's profile-binding cases now test `useSspProfileBindings` directly
+  (it had no spec of its own).
