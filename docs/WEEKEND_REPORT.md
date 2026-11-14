@@ -1005,3 +1005,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   delete. **Found (API, harmless):** the edit form's "refresh before save" GETs
   `/plan-of-action-and-milestones/:id/risks/:riskId`, which answers 404; the form falls back to
   the risk it was given, as before.
+- **POA&M item links** ("Link findings, observations, risks", replacing "Attach or detach") are a
+  design-system form: the plan's findings, observations and risks as three checkbox groups
+  (with status or methods as each option's description), the item's current links checked, and
+  one Save. The classic attach dialog with its tabs, search and per-row attach/detach buttons is
+  deleted. Checked live: link the observation to a new item, reload (the link is there), delete.
+  Only the item details and milestones panel is still classic on the POA&M page.

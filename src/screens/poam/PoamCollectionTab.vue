@@ -3,7 +3,7 @@
  * A POA&M record tab listing one collection of the plan: items, observations, risks or findings
  * (see poamCollections.ts; the kind is the route's last path segment), as a RecordCollection.
  * POA&M items also attach and detach findings, observations and risks, and show their details and
- * milestones; risks also open their own page. The attach dialog and item details are classic.
+ * milestones; risks also open their own page. The item details are classic.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -14,7 +14,7 @@ import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue';
-import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue';
+import PoamItemLinksForm from './PoamItemLinksForm.vue';
 import RecordCollection from '../RecordCollection.vue';
 import type { CollectionEntry } from '../collectionKind';
 import { POAM_COLLECTIONS } from './poamCollections';
@@ -50,7 +50,7 @@ function extraActions(entry: CollectionEntry): MenuEntry[] {
   if (isItems)
     return [
       {
-        label: 'Attach or detach',
+        label: 'Link findings, observations, risks',
         icon: 'link',
         disabledReason: can(kind.resource, ACTIONS.UPDATE)
           ? undefined
@@ -78,23 +78,20 @@ function extraActions(entry: CollectionEntry): MenuEntry[] {
     <template v-if="isItems" #dialogs="{ saved }">
       <Dialog
         v-model:open="attachOpen"
-        title="Attach or detach findings, observations and risks"
-        size="l"
+        :title="`Findings, observations and risks behind ${attaching?.title ?? 'the item'}`"
       >
-        <LegacyPage>
-          <PoamItemAttachModal
-            v-if="attaching"
-            :poam-id="poamId"
-            :item="attaching"
-            @cancel="attaching = undefined"
-            @saved="
-              (item: POAMItem) => {
-                saved(item);
-                attaching = undefined;
-              }
-            "
-          />
-        </LegacyPage>
+        <PoamItemLinksForm
+          v-if="attaching"
+          :poam-id="poamId"
+          :item="attaching"
+          @cancel="attaching = undefined"
+          @saved="
+            (item: POAMItem) => {
+              saved(item);
+              attaching = undefined;
+            }
+          "
+        />
       </Dialog>
     </template>
   </RecordCollection>
