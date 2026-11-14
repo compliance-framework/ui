@@ -55,7 +55,7 @@ function mountComponent() {
       global: {
         stubs: {
           StepDAGVisualization: { template: '<div></div>' },
-          StepDefinitionForm: { template: '<div></div>' },
+          StepForm: { template: '<div></div>' },
         },
       },
     },

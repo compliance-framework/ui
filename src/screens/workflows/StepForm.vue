@@ -1,192 +1,9 @@
-<template>
-  <form @submit.prevent="handleSubmit" class="space-y-6">
-    <!-- Name -->
-    <div>
-      <Label for="step-name" required>Step Name</Label>
-      <InputText
-        id="step-name"
-        v-model="form.name"
-        placeholder="Enter step name"
-        class="w-full"
-        :invalid="!!errors.name"
-      />
-      <small v-if="errors.name" class="text-red-500">{{ errors.name }}</small>
-    </div>
-
-    <!-- Description -->
-    <div>
-      <Label for="step-description">Description</Label>
-      <Textarea
-        id="step-description"
-        v-model="form.description"
-        placeholder="Describe what this step involves..."
-        rows="3"
-        class="w-full"
-      />
-    </div>
-
-    <!-- Responsible Role -->
-    <div>
-      <Label for="step-role">Responsible Role</Label>
-      <InputText
-        id="step-role"
-        v-model="form.responsibleRole"
-        placeholder="e.g., Security Officer, System Admin"
-        class="w-full"
-      />
-      <small class="text-gray-500 dark:text-slate-400">
-        The role responsible for completing this step
-      </small>
-    </div>
-
-    <!-- Order -->
-    <div>
-      <Label for="step-order">Display Order</Label>
-      <input
-        id="step-order"
-        v-model.number="form.order"
-        type="number"
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-      <small class="text-gray-500 dark:text-slate-400">
-        Order in which this step appears in the list
-      </small>
-    </div>
-
-    <!-- Grace Period -->
-    <div>
-      <Label for="step-grace-period">Grace Period (Days)</Label>
-      <input
-        id="step-grace-period"
-        v-model="gracePeriodDaysInput"
-        type="number"
-        min="0"
-        placeholder="7"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        :class="{ 'border-red-500': !!errors.gracePeriodDays }"
-      />
-      <small class="text-gray-500 dark:text-slate-400">
-        Number of days after due date before this step is marked as overdue
-      </small>
-      <small v-if="errors.gracePeriodDays" class="text-red-500 block">
-        {{ errors.gracePeriodDays }}
-      </small>
-    </div>
-
-    <!-- Evidence Required -->
-    <div class="flex items-center gap-3">
-      <input
-        id="step-evidence"
-        type="checkbox"
-        v-model="form.evidenceRequiredEnabled"
-        class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-      />
-      <Label for="step-evidence" class="mb-0">Evidence Required</Label>
-    </div>
-
-    <!-- Evidence Types (if evidence required) -->
-    <div v-if="form.evidenceRequiredEnabled" class="space-y-3">
-      <div class="flex items-center justify-between">
-        <Label>Evidence Requirements</Label>
-        <SecondaryButton
-          type="button"
-          size="small"
-          @click="
-            form.evidenceItems.push({
-              type: 'document',
-              description: '',
-              required: true,
-            })
-          "
-        >
-          <i class="pi pi-plus mr-1"></i>
-          Add Evidence
-        </SecondaryButton>
-      </div>
-
-      <div
-        v-for="(item, index) in form.evidenceItems"
-        :key="index"
-        class="p-3 border border-gray-200 dark:border-slate-600 rounded-lg space-y-3"
-      >
-        <div class="flex items-center gap-2">
-          <Select
-            v-model="item.type"
-            :options="evidenceTypeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select type"
-            class="w-40"
-          />
-          <div class="flex items-center gap-2 ml-auto">
-            <input
-              :id="'required-' + index"
-              v-model="item.required"
-              type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <Label :for="'required-' + index" class="mb-0 text-sm"
-              >Required</Label
-            >
-          </div>
-          <SecondaryButton
-            v-if="form.evidenceItems.length > 1"
-            type="button"
-            size="small"
-            severity="danger"
-            @click="form.evidenceItems.splice(index, 1)"
-          >
-            <i class="pi pi-trash mr-1"></i>
-            Remove
-          </SecondaryButton>
-        </div>
-        <InputText
-          v-model="item.description"
-          placeholder="Description (e.g., 'Security assessment report')"
-          class="w-full"
-        />
-      </div>
-    </div>
-
-    <!-- Dependencies -->
-    <div v-if="otherSteps.length > 0">
-      <Label for="step-dependencies">Dependencies</Label>
-      <MultiSelect
-        id="step-dependencies"
-        v-model="form.dependsOn"
-        :options="otherSteps"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Select steps that must complete first"
-        class="w-full"
-      />
-      <small class="text-gray-500 dark:text-slate-400">
-        This step will be blocked until all dependencies are completed
-      </small>
-    </div>
-
-    <!-- Error Message -->
-    <Message v-if="errorMessage" severity="error">
-      {{ errorMessage }}
-    </Message>
-
-    <!-- Actions -->
-    <div
-      class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-    >
-      <SecondaryButton type="button" @click="emit('cancel')">
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton type="submit" :disabled="isSubmitting">
-        <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        {{ props.step ? 'Update Step' : 'Create Step' }}
-      </PrimaryButton>
-    </div>
-  </form>
-</template>
-
 <script setup lang="ts">
+/**
+ * Add or edit a workflow step, in the Steps tab's drawer: name, description, responsible role,
+ * order, grace period, the evidence it requires and the steps it depends on. The script is the
+ * classic form's; the fields are the design system's.
+ */
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowStepDefinitions } from '@/composables/workflows';
 import type {
@@ -202,14 +19,18 @@ import {
   parseEvidenceRequired,
   toGracePeriodInputValue,
 } from '@/utils/workflows';
-import Label from '@/volt/Label.vue';
-import InputText from '@/volt/InputText.vue';
-import Textarea from '@/volt/Textarea.vue';
-import Select from '@/volt/Select.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import FieldList from '@/ds/components/FieldList/FieldList.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Grid from '@/ds/components/layout/Grid.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 
 const props = defineProps<{
   workflowDefinitionId: string;
@@ -414,6 +235,106 @@ async function handleSubmit() {
   }
 }
 
+// The design-system fields hold text; the form keeps numbers.
+const orderInput = computed({
+  get: () => String(form.order ?? ''),
+  set: (value: string) => (form.order = Number(value) || 0),
+});
+const gracePeriodText = computed({
+  get: () => String(gracePeriodDaysInput.value ?? ''),
+  set: (value: string) => (gracePeriodDaysInput.value = value as never),
+});
+const dependencyOptions = computed(() =>
+  otherSteps.value.map((s) => ({ value: s.id, label: s.name })),
+);
+/** Roles other steps use, offered as completions. */
+const roleOptions = computed(() => [
+  ...new Set(
+    props.availableSteps
+      .map((s) => s.responsibleRole?.trim())
+      .filter((role): role is string => Boolean(role)),
+  ),
+]);
+const newEvidenceItem = (): EvidenceItem => ({
+  type: 'document',
+  description: '',
+  required: true,
+});
+
 // Initialize form when step prop changes
 watch(() => props.step, initForm, { immediate: true });
 </script>
+
+<template>
+  <form novalidate @submit.prevent="handleSubmit">
+    <Stack gap="4">
+      <FormField label="Name" required :error="errors.name">
+        <TextInput v-model="form.name" />
+      </FormField>
+      <FormField label="Description">
+        <Textarea v-model="form.description" :rows="3" />
+      </FormField>
+      <FormField
+        label="Responsible role"
+        hint="The role whose holder does this step, e.g. IAM Administrator."
+      >
+        <TextInput v-model="form.responsibleRole" :options="roleOptions" />
+      </FormField>
+      <Grid min="sm" gap="4">
+        <FormField label="Order">
+          <TextInput v-model="orderInput" type="number" />
+        </FormField>
+        <FormField
+          label="Grace period (days)"
+          hint="Empty uses the workflow's default."
+          :error="errors.gracePeriodDays"
+        >
+          <TextInput v-model="gracePeriodText" />
+        </FormField>
+      </Grid>
+      <Checkbox
+        v-model="form.evidenceRequiredEnabled"
+        label="Evidence required"
+      />
+      <FieldList
+        v-if="form.evidenceRequiredEnabled"
+        v-model="form.evidenceItems"
+        legend="Evidence requirements"
+        item-label="requirement"
+        add-label="Add requirement"
+        empty-text="No requirements yet."
+        :new-item="newEvidenceItem"
+      >
+        <template #item="{ item }">
+          <Stack gap="2">
+            <Grid min="sm" gap="2">
+              <FormField label="Type">
+                <Select v-model="item.type" :options="evidenceTypeOptions" />
+              </FormField>
+              <FormField label="Description">
+                <TextInput v-model="item.description" />
+              </FormField>
+            </Grid>
+            <Checkbox v-model="item.required" label="Required" />
+          </Stack>
+        </template>
+      </FieldList>
+      <CheckboxGroup
+        v-if="dependencyOptions.length"
+        v-model="form.dependsOn"
+        legend="Depends on"
+        hint="This step starts once these are done."
+        :options="dependencyOptions"
+      />
+      <InlineMessage v-if="errorMessage" tone="error" title="Not saved">
+        <p>{{ errorMessage }}</p>
+      </InlineMessage>
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button variant="primary" type="submit" :loading="isSubmitting">{{
+          step ? 'Save step' : 'Add step'
+        }}</Button>
+      </Cluster>
+    </Stack>
+  </form>
+</template>

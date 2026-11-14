@@ -10,7 +10,7 @@ import { useWorkflowStepDefinitions } from '@/composables/workflows';
 import { hasEvidenceRequirement } from '@/utils/workflows';
 import type { StepDefinition } from '@/types/workflows';
 import StepDAGVisualization from '@/views/workflows/partials/StepDAGVisualization.vue';
-import StepDefinitionForm from '@/views/workflows/partials/StepDefinitionForm.vue';
+import StepForm from './StepForm.vue';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import { plural } from '@/ds/format';
 import Button from '@/ds/components/Button/Button.vue';
@@ -168,15 +168,13 @@ function stepActions(step: StepDefinition): MenuEntry[] {
       v-model:open="formOpen"
       :title="editingStep ? 'Edit step' : 'Add step'"
     >
-      <LegacyPage>
-        <StepDefinitionForm
-          :step="editingStep ?? undefined"
-          :workflow-definition-id="store.definition.id"
-          :available-steps="store.steps"
-          @saved="handleStepSaved"
-          @cancel="closeForm"
-        />
-      </LegacyPage>
+      <StepForm
+        :step="editingStep ?? undefined"
+        :workflow-definition-id="store.definition.id"
+        :available-steps="store.steps"
+        @saved="handleStepSaved"
+        @cancel="closeForm"
+      />
     </Drawer>
   </Stack>
 </template>

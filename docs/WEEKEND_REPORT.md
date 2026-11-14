@@ -895,3 +895,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   templates in local-dev).
 - **System template page in the axe run** (mocked template and created systems, every state and
   theme): passes. This also gives the preview and created-systems panels a rendered check.
+- **Workflow definition → Steps: the step form** (Add/Edit step drawer) is design-system: name,
+  description, responsible role (completing roles other steps use), order, grace period,
+  "Evidence required" with requirements as a field list (type, description, required), and
+  "Depends on" as checkboxes of the other steps. The script is the classic form's, unchanged.
+  **Decision:** dependencies are a checkbox group rather than a multi-select (workflows have a
+  handful of steps, and the design system has no multi-select). Checked live: opening and
+  cancelling the drawer (nothing saved). Only the step graph is still classic on that tab.
