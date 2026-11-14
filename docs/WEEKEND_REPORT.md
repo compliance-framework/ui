@@ -547,3 +547,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   radio group, combine as a checkbox and method select. **Found (API):**
   `GET /api/oscal/profiles/:id/merge` returns 500 for the local-dev profiles; the tab now shows
   an error with Try again, where the classic one stayed blank.
+- **Workflow definition Steps tab**: Add step, the step graph (classic island), and a
+  design-system table of steps (name, description, role, evidence and dependency tags) with
+  Edit and Delete in the row menu. Add and Edit open the step form (classic island) in a
+  design-system drawer. The classic spec is ported.

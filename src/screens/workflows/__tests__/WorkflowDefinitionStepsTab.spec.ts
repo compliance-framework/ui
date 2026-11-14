@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import WorkflowDefinitionStepsView from '../WorkflowDefinitionStepsView.vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h } from 'vue';
+import { TooltipProvider } from 'reka-ui';
+import WorkflowDefinitionStepsView from '../WorkflowDefinitionStepsTab.vue';
 import type { StepDefinition, WorkflowDefinition } from '@/types/workflows';
 
 vi.mock('@/composables/usePermissions', () => ({
@@ -42,28 +45,31 @@ vi.mock('@/utils/workflows', () => ({
 }));
 
 function mountComponent() {
-  return mount(WorkflowDefinitionStepsView, {
-    global: {
-      stubs: {
-        PrimaryButton: { template: '<button><slot /></button>' },
-        SecondaryButton: { template: '<button><slot /></button>' },
-        Badge: { template: '<span><slot /></span>' },
-        Drawer: { template: '<div><slot /></div>' },
-        StepDAGVisualization: { template: '<div></div>' },
-        StepDefinitionForm: { template: '<div></div>' },
+  setActivePinia(createPinia());
+  return mount(
+    defineComponent({
+      render: () =>
+        h(TooltipProvider, null, () => h(WorkflowDefinitionStepsView)),
+    }),
+    {
+      global: {
+        stubs: {
+          StepDAGVisualization: { template: '<div></div>' },
+          StepDefinitionForm: { template: '<div></div>' },
+        },
       },
     },
-  });
+  );
 }
 
-describe('WorkflowDefinitionStepsView step order marker', () => {
+describe('WorkflowDefinitionStepsTab step order marker', () => {
   // BCH-1154: step cards prepend #<order> before the name, which is noisy and not useful
   it('does not render the #<order> prefix in step card headers', () => {
     const wrapper = mountComponent();
 
-    // The step header should contain the name and no order marker
-    const header = wrapper.find('h4');
-    expect(header.text()).toContain('Review Access');
-    expect(header.text()).not.toContain('#3');
+    // The step's row shows its name and no order marker
+    const row = wrapper.find('tbody tr');
+    expect(row.text()).toContain('Review Access');
+    expect(row.text()).not.toContain('#3');
   });
 });
