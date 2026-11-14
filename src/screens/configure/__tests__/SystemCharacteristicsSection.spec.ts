@@ -1,8 +1,9 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import type { SystemCharacteristics } from '@/oscal';
-import SystemSecurityPlanCharacteristicsView from '@/views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue';
+import SystemSecurityPlanCharacteristicsView from '../SystemCharacteristicsSection.vue';
 
 const characteristics = ref<SystemCharacteristics>({
   systemName: 'Original System',
@@ -50,18 +51,12 @@ vi.mock('@/composables/usePermissions', () => ({
 }));
 
 const stubs = {
-  TooltipTitle: {
-    props: ['text'],
-    template: '<h1>{{ text }}</h1>',
-  },
-  SecondaryButton: {
-    template:
-      '<button type="button" @click="$emit(\'click\')"><slot /></button>',
-  },
   Dialog: {
-    props: ['visible'],
-    template: '<div v-if="visible"><slot /></div>',
+    name: 'Dialog',
+    props: ['open'],
+    template: '<div v-if="open"><slot /></div>',
   },
+  Tooltip: { template: '<slot />' },
   SystemCharacteristicsForm: {
     name: 'SystemCharacteristicsForm',
     emits: ['updated'],
@@ -69,8 +64,9 @@ const stubs = {
   },
 };
 
-describe('SystemSecurityPlanCharacteristicsView', () => {
+describe('SystemCharacteristicsSection', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     characteristics.value = {
       systemName: 'Original System',
@@ -87,7 +83,10 @@ describe('SystemSecurityPlanCharacteristicsView', () => {
       wrapper.findComponent({ name: 'SystemCharacteristicsForm' }).exists(),
     ).toBe(false);
 
-    await wrapper.get('button').trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Edit'))!
+      .trigger('click');
 
     const form = wrapper.findComponent({ name: 'SystemCharacteristicsForm' });
     expect(form.exists()).toBe(true);
@@ -110,7 +109,10 @@ describe('SystemSecurityPlanCharacteristicsView', () => {
       global: { stubs },
     });
 
-    await wrapper.get('button').trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Edit'))!
+      .trigger('click');
 
     const form = wrapper.findComponent({ name: 'SystemCharacteristicsForm' });
     expect(form.exists()).toBe(true);

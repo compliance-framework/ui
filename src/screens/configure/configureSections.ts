@@ -36,7 +36,8 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Characteristics',
     tab: true,
     classic: 'characteristics',
-    component: view('Characteristics'),
+    component: () =>
+      import('@/screens/configure/SystemCharacteristicsSection.vue'),
   },
   {
     suffix: 'boundary',

@@ -576,3 +576,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Component definition Back matter tab**: each resource as a panel (description, remarks,
   citation, links, UUID), with Add resource always available. The classic tab only offered it
   while the list was empty. The new-resource dialog stays a classic island.
+- **Configure System → Characteristics**: the metric cards (sensitivity, authorization,
+  diagrams, completeness) are a description list; system information is a panel with Edit; the
+  network architecture, authorization boundary and data flow are panels ("Not described yet"
+  when absent). Edit opens the classic characteristics form (island) in a design-system dialog.
+  The script and spec are the classic page's, ported.
