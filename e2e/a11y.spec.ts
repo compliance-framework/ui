@@ -40,6 +40,7 @@ const routes = [
   '/assessment-results/create',
   '/plan-of-action-and-milestones/create',
   '/about',
+  '/profiles/build-props',
   '/preferences',
   '/profiles',
   '/component-definitions',

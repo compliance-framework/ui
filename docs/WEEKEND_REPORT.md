@@ -802,3 +802,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   body; the classic page showed only "Failed to import", so you couldn't tell why. The results
   now show. Uploads go through the API client instead of raw axios. Checked live with two
   invalid files (nothing created).
+- **Axe:** Build a profile from props is added to the e2e axe run and passes. Import isn't
+  added: its classic workflow import panel fails colour contrast (`.py-0` text). **Gap
+  (island).**
