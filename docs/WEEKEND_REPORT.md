@@ -602,3 +602,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Found (API):** on Control Implementation,
   `GET /system-security-plans/:id/system-implementation/components/:componentId` returns 500
   for one of the Payments system's components.
+- **Configure System → Scope**: the automatic-filters checkbox, scope entries and exceptions
+  as design-system tables (labels as tags joined by AND, origin, created), with Remove from
+  scope and Delete exception in the row menus; Add entry below. Remove still confirms (now
+  through the design-system confirm host). **Gap (island):** the label builder is classic. The
+  classic `ScopePanel` and its spec are ported and deleted; unavailable actions now say why
+  instead of being plain disabled.

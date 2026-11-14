@@ -1,6 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ScopePanel from '../ScopePanel.vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h } from 'vue';
+import { TooltipProvider } from 'reka-ui';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuAction } from '@/ds/components/Menu/menuEntries';
+import ScopePanel from '../SystemScopeSection.vue';
 
 const state = vi.hoisted(() => ({
   get: vi.fn(),
@@ -83,24 +88,41 @@ function mockGet(currentScope: unknown = scope) {
 }
 
 function mountPanel() {
-  return mount(ScopePanel, {
-    props: { sspId: 'ssp-1' },
-    global: {
-      directives: { tooltip: {} },
-      stubs: {
-        LabelConditionBuilder: {
-          name: 'LabelConditionBuilder',
-          props: ['modelValue', 'sspId', 'keys', 'ignoreScope'],
-          emits: ['update:modelValue'],
-          template: '<div data-testid="builder" />',
+  const root = mount(
+    defineComponent({
+      render: () =>
+        h(TooltipProvider, null, () => h(ScopePanel, { sspId: 'ssp-1' })),
+    }),
+    {
+      global: {
+        stubs: {
+          LabelConditionBuilder: {
+            name: 'LabelConditionBuilder',
+            props: ['modelValue', 'sspId', 'keys', 'ignoreScope'],
+            emits: ['update:modelValue'],
+            template: '<div data-testid="builder" />',
+          },
         },
       },
     },
-  });
+  );
+  return root;
 }
 
-describe('ScopePanel', () => {
+/** The row menus: entries first, then exceptions. */
+function action(wrapper: ReturnType<typeof mountPanel>, label: string) {
+  for (const menu of wrapper.findAllComponents(Menu)) {
+    const item = (menu.props('items') as MenuAction[]).find(
+      (i) => i.label === label,
+    );
+    if (item) return item;
+  }
+  throw new Error(`No menu item ${label}`);
+}
+
+describe('SystemScopeSection', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     state.can.mockReturnValue(true);
     mockGet();
@@ -118,8 +140,9 @@ describe('ScopePanel', () => {
     expect(entries[0].text()).toContain('aws_account=111');
     expect(entries[0].text()).toContain('AND');
     expect(entries[0].text()).toContain('region=eu-west-1');
-    expect(entries[0].text()).toContain('Manual');
-    expect(entries[1].text()).toContain('Template');
+    const row = (i: number) => entries[i]!.element.closest('tr')!.textContent;
+    expect(row(0)).toContain('Manual');
+    expect(row(1)).toContain('Template');
     expect(wrapper.findAll('[data-testid="scope-exception"]')).toHaveLength(1);
   });
 
@@ -183,7 +206,7 @@ describe('ScopePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    await wrapper.find('[data-testid="scope-remove-entry"]').trigger('click');
+    action(wrapper, 'Remove from scope').onSelect!();
     expect(state.confirmRequire).toHaveBeenCalledTimes(1);
     const options = state.confirmRequire.mock.calls[0][0];
     expect(options.message).toContain('templates will not learn it again');
@@ -209,7 +232,7 @@ describe('ScopePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    await wrapper.find('[data-testid="scope-remove-entry"]').trigger('click');
+    action(wrapper, 'Remove from scope').onSelect!();
     await state.confirmRequire.mock.calls[0][0].accept();
     await flushPromises();
 
@@ -225,9 +248,7 @@ describe('ScopePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    await wrapper
-      .find('[data-testid="scope-delete-exception"]')
-      .trigger('click');
+    action(wrapper, 'Delete exception').onSelect!();
     await flushPromises();
 
     expect(state.delete).toHaveBeenCalledWith(
@@ -239,7 +260,7 @@ describe('ScopePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    const toggle = wrapper.find('[data-testid="scope-auto-filters"]');
+    const toggle = wrapper.find('[data-testid="scope-auto-filters"] input');
     expect((toggle.element as HTMLInputElement).checked).toBe(false);
 
     await toggle.setValue(true);
@@ -257,19 +278,18 @@ describe('ScopePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(
-      wrapper.find('[data-testid="scope-auto-filters"]').attributes('disabled'),
-    ).toBeDefined();
-    expect(
-      wrapper.find('[data-testid="scope-add-entry"]').attributes('disabled'),
-    ).toBeDefined();
-    expect(
-      wrapper.find('[data-testid="scope-remove-entry"]').attributes('disabled'),
-    ).toBeDefined();
+    // Unavailable controls stay focusable and say why (aria-disabled), as everywhere.
     expect(
       wrapper
-        .find('[data-testid="scope-delete-exception"]')
-        .attributes('disabled'),
-    ).toBeDefined();
+        .find('[data-testid="scope-auto-filters"] input')
+        .attributes('aria-disabled'),
+    ).toBe('true');
+    expect(
+      wrapper
+        .find('[data-testid="scope-add-entry"]')
+        .attributes('aria-disabled'),
+    ).toBe('true');
+    expect(action(wrapper, 'Remove from scope').disabledReason).toBeDefined();
+    expect(action(wrapper, 'Delete exception').disabledReason).toBeDefined();
   });
 });

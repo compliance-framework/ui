@@ -62,7 +62,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Scope',
     tab: true,
     classic: 'scope',
-    component: view('Scope'),
+    component: () => import('@/screens/configure/SystemScopeSection.vue'),
   },
   {
     suffix: 'json',
