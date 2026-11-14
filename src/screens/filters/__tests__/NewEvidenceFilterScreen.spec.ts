@@ -5,7 +5,6 @@ import CreateFormView from '../NewEvidenceFilterScreen.vue';
 const state = vi.hoisted(() => ({
   query: {} as Record<string, string>,
   push: vi.fn(),
-  execute: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
@@ -13,20 +12,17 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: state.push }),
 }));
 
-vi.mock('@/composables/axios', () => ({
-  useDataApi: () => ({ execute: state.execute }),
-  decamelizeKeys: vi.fn(),
-}));
+vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 function mountView() {
   return mount(CreateFormView, {
     global: {
       stubs: {
         Breadcrumbs: { template: '<nav />' },
-        FilterForm: {
-          name: 'FilterForm',
+        EvidenceFilterForm: {
+          name: 'EvidenceFilterForm',
           props: ['initialFilter', 'initialSspId'],
-          emits: ['submit'],
+          emits: ['saved'],
           template: '<form />',
         },
       },
@@ -48,17 +44,16 @@ describe('NewEvidenceFilterScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state.query = {};
-    state.execute.mockResolvedValue({});
   });
 
   it('pre-selects the SSP given in the URL and returns to the scoped evidence page', async () => {
     state.query = { filter: 'team=pay', sspId: 'ssp-1' };
     const wrapper = mountView();
-    const form = wrapper.findComponent({ name: 'FilterForm' });
+    const form = wrapper.findComponent({ name: 'EvidenceFilterForm' });
     expect(form.props('initialFilter')).toBe('team=pay');
     expect(form.props('initialSspId')).toBe('ssp-1');
 
-    form.vm.$emit('submit', payload);
+    form.vm.$emit('saved', payload);
     await flushPromises();
 
     expect(state.push).toHaveBeenCalledWith(
@@ -68,10 +63,10 @@ describe('NewEvidenceFilterScreen', () => {
 
   it('returns to the global evidence page without an SSP in the URL', async () => {
     const wrapper = mountView();
-    const form = wrapper.findComponent({ name: 'FilterForm' });
+    const form = wrapper.findComponent({ name: 'EvidenceFilterForm' });
     expect(form.props('initialSspId')).toBeNull();
 
-    form.vm.$emit('submit', { ...payload, sspId: null });
+    form.vm.$emit('saved', { ...payload, sspId: null });
     await flushPromises();
 
     expect(state.push).toHaveBeenCalledWith(

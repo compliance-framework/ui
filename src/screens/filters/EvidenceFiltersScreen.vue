@@ -9,7 +9,7 @@ import { serializeFilter } from '@/parsers/labelfilter';
 import type { Dashboard } from '@/stores/filters';
 import { usePermissionsStore } from '@/stores/permissions';
 import { getErrorDetail } from '@/utils/httpErrors';
-import FilterEditModal from '@/views/dashboard/partials/FilterEditModal.vue';
+import EvidenceFilterEditDialog from './EvidenceFilterEditDialog.vue';
 import { plural } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
@@ -36,7 +36,7 @@ import FilterTrend from './FilterTrend.vue';
 /**
  * Evidence filters (List template): saved evidence searches, each scoped to a system or global and
  * linked to controls and components. Search, scope, control and component live in the URL. A row
- * opens its evidence; its trend opens in a drawer. The edit form is the classic dialog (an island).
+ * opens its evidence; its trend opens in a drawer.
  */
 const route = useRoute();
 const router = useRouter();
@@ -400,7 +400,7 @@ function rowActions(row: Row): MenuEntry[] {
     </Stack>
   </Drawer>
 
-  <FilterEditModal
+  <EvidenceFilterEditDialog
     v-model:visible="editOpen"
     :dashboard="editing"
     @saved="filters.retry"

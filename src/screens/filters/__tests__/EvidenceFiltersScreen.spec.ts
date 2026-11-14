@@ -26,9 +26,9 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ delete: state.remove, post: state.post }),
 }));
 vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
-vi.mock('@/views/dashboard/partials/FilterEditModal.vue', () => ({
+vi.mock('@/screens/filters/EvidenceFilterEditDialog.vue', () => ({
   default: {
-    name: 'FilterEditModal',
+    name: 'EvidenceFilterEditDialog',
     props: ['visible', 'dashboard'],
     template: '<div />',
   },
@@ -152,7 +152,7 @@ describe('EvidenceFiltersScreen', () => {
       .props('items') as MenuAction[];
     items.find((i) => i.label === 'Edit')!.onSelect!();
     await flushPromises();
-    const modal = wrapper.findComponent({ name: 'FilterEditModal' });
+    const modal = wrapper.findComponent({ name: 'EvidenceFilterEditDialog' });
     expect(modal.props('visible')).toBe(true);
     expect(modal.props('dashboard')).toMatchObject({ id: 'f2' });
   });

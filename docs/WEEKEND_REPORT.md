@@ -22,13 +22,13 @@ without a redesigned page around it. Pages fall into three kinds:
   items; evidence filters list; control links (list and create); control evidence; My tasks;
   Inventory; Build a profile from props; subject templates (list and page); the profile page;
   the component definition, POA&M and assessment plan records (every tab, form and dialog);
-  Preferences; About; and every signed-out page.
+  Preferences (with the Slack link); the system template page; New evidence filter (and the
+  edit dialog); Import; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section, the diagram editor and some forms), catalog page (add/edit modals), workflow run
-  (step graph and panel), system template page (edit form), Compliance Map, Diagnostics, risk
-  page, New evidence filter, Import (workflow import panel). On the assessment results and workflow instance pages, every tab is
-  design-system too.
+  section, the diagram editor, the component risks list and evidence-filter drawer), catalog
+  page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
+  page. On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Agents, risk templates, Filter suggestions,
   Diagnostics sections.
 
@@ -114,6 +114,9 @@ page below.
 - On Implementation, the control drawer's Edit and Delete for a component statement never saved
   (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
   the requirement's statements, which is nearly all of them (classic UI; both fixed here).
+- The evidence filter form couldn't link a control that has enhancements (e.g. AC-2, only
+  AC-2(1) and so on), an invalid filter expression made Submit do nothing (only logged), and a
+  failed create on New evidence filter was only logged (classic UI; all fixed in the new form).
 
 **A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
 Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
@@ -139,7 +142,9 @@ bang.
 `weekend.test2@example.com` (renamed "Weekend2 Tester"), a component definition "Weekend
 test CD", a profile "Weekend version probe" (the API can't delete those), a POA&M "Weekend test
 POA&M" with an observation "Weekend observation", and assessment results "Weekend test AR"
-with one result. The seed `it-ops` role assignment on "Annual DR Exercise — Customer Portal"
+with one result. Later: on Payments Processing Platform, three "Weekend offering" export
+offerings and two "Weekend inventory item"s; a global evidence filter "Weekend filter" linked to
+INT-CI. The seed `it-ops` role assignment on "Annual DR Exercise — Customer Portal"
 was removed and re-created (same values, new ID). Every other record I created was deleted again.
 
 **How to look:** `VITE_API_PROXY=http://localhost:8080 npm run dev`, sign in, and click
@@ -1072,3 +1077,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   live: create (asset type kept), attach to a component, both confirmed through the API.
   **Test data:** two "Weekend inventory item"s on Payments Processing Platform, one attached to a
   component.
+- **Evidence filter form** is design-system (`EvidenceFilterForm`, on New evidence filter and in
+  the list's edit dialog), transplanted with the classic script, which keeps the scope-following
+  rules (follow a system's scope, the effective filter, refusing to save until a failed scope read
+  is retried). It now saves the filter itself, so failures show in the form. **Decisions:** the
+  grouped multi-selects of controls and components became a list of what's linked (each with a
+  named Remove) and a Combobox to link one more, as on the export offering allowlist; "controls or
+  components, not both" is said as text where the other picker would be, instead of a disabled
+  picker. "Global" reads "Global (every system)". **Found (fixed):** a control with
+  enhancements couldn't be linked, only its enhancements; an invalid filter made Submit do nothing;
+  a failed create was only logged. The classic spec is ported (and the enhancement case added).
+  Checked live: the name and filter checks, create with a linked control (back on Evidence), then
+  edit and save from the list. Local-dev has filter component linking off, so the component
+  picker wasn't seen live.

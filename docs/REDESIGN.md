@@ -97,7 +97,7 @@ Replace each with a design-system version, then delete the classic component.
   POA&M risk page (classic risk detail); workflow step graph; step graph and panel on the run page; My tasks step panel.
 - Admin bodies under design-system headers (`embedded`): Agents, risk templates,
   Filter suggestions; Diagnostics sections, Compliance
-  Map tree/graph, catalog add/edit modals, evidence filter form.
+  Map tree/graph, catalog add/edit modals.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
@@ -106,7 +106,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities, steps and the task form); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the workflow step form; the system template's preview and created-systems table; Inventory; Import (OSCAL and evidence filters); the export offering items editor and the subscribe form; the Slack link section on Preferences; the subject template form and preview; the system template form; the workflow import panel; the inventory create and relationships forms; toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities, steps and the task form); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the workflow step form; the system template's preview and created-systems table; Inventory; Import (OSCAL and evidence filters); the export offering items editor and the subscribe form; the Slack link section on Preferences; the subject template form and preview; the system template form; the workflow import panel; the inventory create and relationships forms; the evidence filter form; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

@@ -1,50 +1,39 @@
 <script setup lang="ts">
 /**
- * New evidence filter (/dashboards/create): the page frame is the design system's; the form is
- * the classic filter form (a legacy island). Saving returns to the evidence it searches. The script
- * is the classic page's.
+ * New evidence filter (/dashboards/create): the filter form, prefilled from `?filter=` and, when
+ * saved from This System > Evidence, `?sspId=`. Saving returns to the evidence it searches.
  */
+import { useRoute, useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import type { DashboardCreate } from '@/stores/filters.ts';
+import { serializeFilter } from '@/parsers/labelfilter.ts';
 import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';
 import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import FilterForm from '@/views/dashboard/partials/FilterForm.vue';
-import type { DashboardCreate } from '@/stores/filters.ts';
-import { serializeFilter } from '@/parsers/labelfilter.ts';
-import { useDataApi } from '@/composables/axios';
+import EvidenceFilterForm from './EvidenceFilterForm.vue';
 
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
-const initialFilter = ref<string>((route.query['filter'] as string) ?? '');
-// Set when the search was saved from This System > Evidence: pre-select that SSP and
-// go back to that page afterwards.
+const initialFilter = (route.query['filter'] as string) ?? '';
+// Set when the search was saved from This System > Evidence: pre-select that system and go back
+// to that page afterwards.
 const initialSspId =
   typeof route.query['sspId'] === 'string' ? route.query['sspId'] : null;
 
-const { execute: createDashboard } = useDataApi<DashboardCreate>(
-  '/api/filters',
-  {
-    method: 'POST',
-    // /api/filters is a camelCase API: no decamelizeKeys, or followSspScope and sspId
-    // would go out kebab-cased.
-  },
-  { immediate: false },
-);
-
-async function submit(payload: DashboardCreate) {
-  try {
-    await createDashboard({ data: payload });
-    return router.push({
-      name: initialSspId ? 'system:evidence' : 'evidence:index',
-      query: { filter: serializeFilter(payload.filter) },
-    });
-  } catch (error) {
-    console.error(error);
-  }
+function saved(payload: DashboardCreate) {
+  toast.add({
+    severity: 'success',
+    summary: 'Filter created',
+    detail: `${payload.name} was saved.`,
+    life: 3000,
+  });
+  return router.push({
+    name: initialSspId ? 'system:evidence' : 'evidence:index',
+    query: { filter: serializeFilter(payload.filter) },
+  });
 }
 </script>
 
@@ -58,13 +47,11 @@ async function submit(payload: DashboardCreate) {
       description="Save a search so its evidence can be linked to controls and components."
     />
     <Panel>
-      <LegacyPage>
-        <FilterForm
-          :initial-filter="initialFilter"
-          :initial-ssp-id="initialSspId"
-          @submit="submit"
-        />
-      </LegacyPage>
+      <EvidenceFilterForm
+        :initial-filter="initialFilter"
+        :initial-ssp-id="initialSspId"
+        @saved="saved"
+      />
     </Panel>
   </Stack>
 </template>
