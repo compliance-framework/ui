@@ -24,6 +24,14 @@
           </div>
         </template>
       </V2PageHeader>
+      <!-- Arriving from a page that needs an active SSP, e.g. Active System
+           with none set: SET on a row continues to that page. -->
+      <V2InlineAlert
+        v-if="nextTargetPath && !activePlanUuid"
+        class="mt-4"
+        title="Choose an active system"
+        message="That page works on the active System Security Plan. Select SET on a plan below to make it active and continue."
+      />
     </template>
 
     <template #error-actions>
@@ -189,6 +197,7 @@ import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system.ts';
 import V2ListPageTemplate from '@/components/v2/patterns/V2ListPageTemplate.vue';
 import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
+import V2InlineAlert from '@/components/v2/primitives/V2InlineAlert.vue';
 
 const toast = useToast();
 const route = useRoute();

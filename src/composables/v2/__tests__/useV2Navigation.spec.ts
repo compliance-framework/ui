@@ -12,6 +12,10 @@ const can = vi.fn(
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can }),
 }));
+const systemStore = vi.hoisted(() => ({
+  system: { securityPlan: { uuid: 'ssp-active' } },
+}));
+vi.mock('@/stores/system', () => ({ useSystemStore: () => systemStore }));
 
 // Every nav target plus the detail routes used below.
 const Empty = defineComponent({ render: () => h('div') });
@@ -36,6 +40,7 @@ async function setup(path: string) {
       })),
       { path: '/workflow-definitions/:id', component: Empty },
       { path: '/system-security-plans/:id', component: Empty },
+      { path: '/system-security-plans/:id/compliance', component: Empty },
     ],
   });
   await router.push(path);
@@ -91,5 +96,12 @@ describe('useV2Navigation', () => {
     const active = nav.navItems.value.filter((item) => nav.isActive(item));
 
     expect(active.map((item) => item.label)).toEqual(['Manage Systems']);
+  });
+
+  it("highlights only Active System on the active SSP's pages", async () => {
+    const nav = await setup('/system-security-plans/ssp-active/compliance');
+    const active = nav.navItems.value.filter((item) => nav.isActive(item));
+
+    expect(active.map((item) => item.label)).toEqual(['Active System']);
   });
 });

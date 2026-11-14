@@ -62,11 +62,42 @@ describe('V2 route overlay', () => {
     expect(app?.meta.uiVersion).toBeUndefined();
   });
 
-  it('mounts the V2 parent on /system', () => {
+  it('redirects every /system child', () => {
     const system = router.getRoutes().find((r) => r.name === 'system');
-    expect(system?.components?.default).toBe(
-      V2_ROUTE_OVERRIDES.system!.component,
-    );
+    const children = (system?.children ?? []).map((child) => child.name);
+
+    expect(children.length).toBeGreaterThan(0);
+    for (const name of children) {
+      const record = router.getRoutes().find((r) => r.name === name);
+      expect(record?.redirect, String(name)).toBeTypeOf('function');
+    }
+  });
+
+  it('fails loudly when main adds an unmapped /system child', () => {
+    const names = [
+      ...Object.keys(V2_ROUTE_OVERRIDES),
+      ...Object.keys(V2_COMPONENT_SWAPS),
+    ].filter((name) => name !== 'app' && name !== 'system');
+    const bare = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/',
+          name: 'app',
+          component: {},
+          children: [
+            ...names.map((name) => ({ path: name, name, component: {} })),
+            {
+              path: 'system',
+              name: 'system',
+              component: {},
+              children: [{ path: 'new', name: 'system:new', component: {} }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(() => applyV2Routes(bare)).toThrow(/system:new/);
   });
 
   it('fails loudly when main renames a targeted route', () => {

@@ -13,6 +13,7 @@ import GuestV2Layout from '@/views/layouts/GuestV2Layout.vue';
 import AppShell from '@/views/layouts/AppShell.vue';
 import router from './index';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { useSystemStore } from '@/stores/system';
 import {
   dispatchUIMigrationStatusEvent,
   getMatchedUIVersions,
@@ -38,6 +39,26 @@ const toImplementationSection =
     query: { ...to.query, section },
   });
 
+// `/system/*` showed the active SSP a second time, in a second visual system.
+// Each of its routes now redirects to the same section of the active SSP's V2
+// detail page (owner decision 2026-10-11, backlog M1-10). Without an active
+// SSP it goes to the library, whose `next` query returns here once one is set.
+// `applyV2Routes` throws if main adds a /system child that isn't mapped here.
+
+const toActiveSsp =
+  (name: string, section?: string): RouteRecordNormalized['redirect'] =>
+  (to) => {
+    const sspId = useSystemStore().system.securityPlan?.uuid;
+    if (!sspId) {
+      return { name: 'system-security-plans', query: { next: to.fullPath } };
+    }
+    return {
+      name,
+      params: { id: sspId },
+      query: section ? { ...to.query, section } : to.query,
+    };
+  };
+
 // Keyed by route name. Every entry is tagged `uiVersion: 'v2'`; entries without
 // a component keep main's view (V1 inside the V2 shell, see route-inventory.md).
 export const V2_ROUTE_OVERRIDES: Record<string, V2RouteOverride> = {
@@ -52,25 +73,45 @@ export const V2_ROUTE_OVERRIDES: Record<string, V2RouteOverride> = {
     component: () => import('../views/controls-v2/ControlsWorkspaceView.vue'),
   },
 
-  system: {
-    component: () => import('../views/system-v2/SystemV2View.vue'),
+  // Navigating by the parent's name skips its '' child, so it redirects too.
+  system: { redirect: toActiveSsp('system-security-plan-overview') },
+  'system:overview': { redirect: toActiveSsp('system-security-plan-overview') },
+  'system:characteristics': {
+    redirect: toActiveSsp('system-security-plan-characteristics'),
   },
-  'system:overview': {
-    component: () => import('../views/system-v2/SystemOverviewView.vue'),
+  'system:implementation': {
+    redirect: toActiveSsp('system-security-plan-implementation'),
   },
-  'system:characteristics': {},
-  'system:implementation': {},
-  'system:users': {},
-  'system:components': {},
-  'system-component-dashboards': {},
-  'system:authorizations': {},
-  'system:control-implementation': {},
-  'system:export-offerings': {},
-  'system:leverage': {},
-  'system:inherited-capabilities': {},
-  'system:risks': {},
-  'system:compliance': {},
-  'system:json': {},
+  'system:users': {
+    redirect: toActiveSsp('system-security-plan-implementation', 'users'),
+  },
+  'system:components': {
+    redirect: toActiveSsp('system-security-plan-implementation', 'components'),
+  },
+  'system-component-dashboards': {
+    redirect: toActiveSsp('system-security-plan-implementation', 'components'),
+  },
+  'system:authorizations': {
+    redirect: toActiveSsp(
+      'system-security-plan-implementation',
+      'authorizations',
+    ),
+  },
+  'system:control-implementation': {
+    redirect: toActiveSsp('system-security-plan-control-implementation'),
+  },
+  'system:export-offerings': {
+    redirect: toActiveSsp('system-security-plan-export-offerings'),
+  },
+  'system:leverage': { redirect: toActiveSsp('system-security-plan-leverage') },
+  'system:inherited-capabilities': {
+    redirect: toActiveSsp('system-security-plan-inherited-capabilities'),
+  },
+  'system:risks': { redirect: toActiveSsp('system-security-plan-risks') },
+  'system:compliance': {
+    redirect: toActiveSsp('system-security-plan-compliance'),
+  },
+  'system:json': { redirect: toActiveSsp('system-security-plan-json') },
 
   'system-security-plans': {
     component: () =>
@@ -201,6 +242,15 @@ export function applyV2Routes(target: Router): void {
   if (missing.length > 0) {
     throw new Error(
       `[ui-v2] Route overlay targets routes missing from src/router/index.ts: ${missing.join(', ')}`,
+    );
+  }
+
+  const unmappedSystemRoutes = (records.get('system')?.children ?? [])
+    .map((child) => String(child.name))
+    .filter((name) => !V2_ROUTE_OVERRIDES[name]?.redirect);
+  if (unmappedSystemRoutes.length > 0) {
+    throw new Error(
+      `[ui-v2] /system routes without an active-SSP redirect: ${unmappedSystemRoutes.join(', ')}`,
     );
   }
 

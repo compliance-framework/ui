@@ -117,12 +117,17 @@
     {
       "id": "system-overview",
       "v1": ["src/views/system/OverviewView.vue"],
-      "v2": ["src/views/system-v2/SystemOverviewView.vue"]
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanOverviewView.vue"
+      ]
     },
     {
       "id": "system-parent",
       "v1": ["src/views/SystemView.vue"],
-      "v2": ["src/views/system-v2/SystemV2View.vue"]
+      "v2": [
+        "src/router/v2.ts",
+        "src/views/system-security-plans-v2/SystemSecurityPlanEditorView.vue"
+      ]
     },
     {
       "id": "dashboards-list",

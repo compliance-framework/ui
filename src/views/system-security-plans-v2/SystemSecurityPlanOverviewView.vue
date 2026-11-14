@@ -24,10 +24,19 @@
     <section
       class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
     >
-      <div class="flex items-center">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
           COMPLIANCE PREVIEW
         </h2>
+        <RouterLink
+          :to="{
+            name: 'system-security-plan-compliance',
+            params: { id: sspId },
+          }"
+          class="ui-v2-label text-[var(--ui-v2-info)] transition-colors hover:text-[var(--ui-v2-primary)]"
+        >
+          OPEN FULL COMPLIANCE VIEW
+        </RouterLink>
       </div>
 
       <div class="mt-3 flex items-center">
@@ -181,6 +190,19 @@
       <h2 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
         SYSTEM CHARACTERISTICS SUMMARY
       </h2>
+      <!-- Plan-level remarks, shown on main's overview metadata card (M1-12). -->
+      <div v-if="planRemarks" class="mt-3 space-y-0.5">
+        <p
+          class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+        >
+          PLAN REMARKS
+        </p>
+        <p
+          class="ui-v2-nav text-[11px] font-semibold whitespace-pre-line text-[var(--ui-v2-muted-foreground)] normal-case"
+        >
+          {{ planRemarks }}
+        </p>
+      </div>
 
       <div class="mt-3 grid gap-4 md:grid-cols-2">
         <div class="space-y-2">
@@ -261,6 +283,7 @@ import { computed, inject, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type {
   InventoryItem,
+  Metadata,
   LeveragedAuthorization,
   SystemCharacteristics,
   SystemComponent,
@@ -276,6 +299,13 @@ import {
 
 const route = useRoute();
 const sspId = computed(() => String(route.params.id || ''));
+
+const { data: planMetadata, execute: loadPlanMetadata } = useDataApi<Metadata>(
+  null,
+  null,
+  { immediate: false },
+);
+const planRemarks = computed(() => planMetadata.value?.remarks?.trim() || '');
 
 const { data: systemCharacteristics, execute: loadSystemCharacteristics } =
   useDataApi<SystemCharacteristics>(null, null, {
@@ -324,6 +354,7 @@ watch(
   sspId,
   async (id) => {
     if (!id) {
+      planMetadata.value = undefined;
       systemCharacteristics.value = undefined;
       users.value = undefined;
       components.value = undefined;
@@ -333,6 +364,7 @@ watch(
     }
 
     await Promise.allSettled([
+      loadPlanMetadata(`/api/oscal/system-security-plans/${id}/metadata`),
       loadSystemCharacteristics(
         `/api/oscal/system-security-plans/${id}/system-characteristics`,
       ),
