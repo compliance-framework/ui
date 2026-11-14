@@ -7,13 +7,12 @@
 import { computed, ref, toRef, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import LabelConditionBuilder from '@/views/dashboard/partials/LabelConditionBuilder.vue';
+import LabelConditionFields from './LabelConditionFields.vue';
 import {
   buildDashboardSuggestionLabelKeysEndpoint,
   type DashboardSuggestionLabelKey,
   type LabelConditionRow,
 } from '@/views/dashboard/partials/dashboard-suggestions';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import { formatDate as formatDay, plural } from '@/ds/format';
 import Button from '@/ds/components/Button/Button.vue';
 import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
@@ -252,16 +251,13 @@ function exceptionActions(exception: ScopeException): MenuEntry[] {
           <Text variant="caption"
             >Evidence must have all of these labels to match the entry.</Text
           >
-          <LegacyPage>
-            <LabelConditionBuilder
-              v-model="newEntry"
-              :ssp-id="sspId"
-              :keys="labelKeys"
-              :ignore-scope="true"
-              add-label="Add label"
-              testid="scope-new-label"
-            />
-          </LegacyPage>
+          <LabelConditionFields
+            v-model="newEntry"
+            :ssp-id="sspId"
+            :keys="labelKeys"
+            :ignore-scope="true"
+            legend="Labels for the new entry"
+          />
           <div>
             <Button
               variant="primary"

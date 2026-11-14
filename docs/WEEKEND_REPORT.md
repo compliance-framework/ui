@@ -809,3 +809,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the component definition, assessment plan, assessment results and POA&M records (16 routes), in all four data states and both themes, backed by one generic e2e mock
   for those records' sub-collections. All pass. This closes the "record tabs not in axe" gap for
   these four record types; profile, workflow and evidence-style records are unchanged.
+- **Configure System sections in the axe run:** characteristics, components, scope, system
+  implementation, users, authorizations, export offerings, leverage and inherited capabilities,
+  in every state and theme. Scope failed at first: its classic label-condition builder had
+  unnamed PrimeVue dropdown buttons. It is replaced by a design-system `LabelConditionFields`
+  (field list of label and value, completing label names and server-searched values), so Scope
+  has no islands now. Checked live: add a scope entry with the new fields, then remove it.

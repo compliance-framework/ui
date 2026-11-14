@@ -67,6 +67,17 @@ const routes = [
   `/systems/${SYSTEMS.scoped}/risks`,
   `/systems/${SYSTEMS.scoped}/risks/register`,
   `/systems/${SYSTEMS.unscoped}/evidence`,
+  ...[
+    'characteristics',
+    'components',
+    'scope',
+    'system-implementation',
+    'users',
+    'authorizations',
+    'export-offerings',
+    'leverage',
+    'inherited-capabilities',
+  ].map((section) => `/systems/${SYSTEMS.scoped}/configure/${section}`),
   `/systems/${SYSTEMS.missing}/evidence`,
 ];
 const record = `/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}`;

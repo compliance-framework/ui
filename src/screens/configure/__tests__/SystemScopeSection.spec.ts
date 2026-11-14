@@ -96,8 +96,8 @@ function mountPanel() {
     {
       global: {
         stubs: {
-          LabelConditionBuilder: {
-            name: 'LabelConditionBuilder',
+          LabelConditionFields: {
+            name: 'LabelConditionFields',
             props: ['modelValue', 'sspId', 'keys', 'ignoreScope'],
             emits: ['update:modelValue'],
             template: '<div data-testid="builder" />',
@@ -154,7 +154,7 @@ describe('SystemScopeSection', () => {
       '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions/label-keys',
       { params: { ignoreScope: true } },
     );
-    const builder = wrapper.findComponent({ name: 'LabelConditionBuilder' });
+    const builder = wrapper.findComponent({ name: 'LabelConditionFields' });
     expect(builder.props('keys')).toEqual(['repo', 'env']);
     expect(builder.props('ignoreScope')).toBe(true);
   });
@@ -186,7 +186,7 @@ describe('SystemScopeSection', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    const builder = wrapper.findComponent({ name: 'LabelConditionBuilder' });
+    const builder = wrapper.findComponent({ name: 'LabelConditionFields' });
     builder.vm.$emit('update:modelValue', [
       { key: ' repo ', value: ' b ' },
       { key: 'env', value: '' },
