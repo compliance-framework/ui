@@ -21,9 +21,13 @@ without a redesigned page around it. Pages fall into three kinds:
   users, groups, parties and roles; system templates list; POA&M items; evidence filters list;
   control links (list and create); control evidence; My tasks; Preferences; About; and every
   signed-out page.
-- **Design-system page with classic islands inside**: Implementation, Configure System, the
-  seven record pages (their tabs), catalog page, user and group pages, workflow run, Compliance
-  Map, Diagnostics, risk page, system template record, New evidence filter.
+- **Design-system page with classic islands inside**: Implementation, Configure System (its
+  hidden Control Implementation, Export Offerings, Leverage and Inherited Capabilities sections,
+  plus forms inside rebuilt sections), profile, assessment plan and catalog pages, user and group
+  pages, workflow run, Compliance Map, Diagnostics, risk page, system template record, New
+  evidence filter. On the component definition, POA&M, assessment results and workflow pages,
+  every tab is now design-system; only some create/edit forms and the POA&M item details are
+  still classic, inside design-system dialogs.
 - **Design-system header over a classic body**: Agents, risk and subject templates, Import,
   Inventory, Build a profile from props, Filter suggestions.
 
@@ -31,8 +35,9 @@ App-wide pieces are design-system too: **toasts, confirmations and the error dia
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
 globally any more). Rebuilt record tabs and sections include every JSON tab, the four OSCAL Overview tabs, the
 profile's Controls, Compliance and Merge, the whole workflow definition record, workflow instance
-Overview and Runs, assessment plan Tasks, component definition Back matter, and Configure
-System's Overview, Characteristics and JSON. A live sweep of every page (66 routes plus every
+Overview, Roles and Runs, assessment plan Tasks, every component definition, POA&M and
+assessment results tab, and Configure System's six visible tabs plus Users, Leveraged
+Authorizations and System Implementation. A live sweep of every page (66 routes plus every
 Configure section) is clean apart from API errors listed below.
 
 The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
@@ -55,6 +60,12 @@ page below.
    design-system dialogs (sign-in, password reset, cancel a run, all new forms).
 7. Header-only migration for the big admin pages (`embedded` prop), so their large specs run
    unchanged; their primary actions are still classic buttons in the body.
+8. A shared `RecordCollection` for "entries inside a record" (POA&M items, observations, risks,
+   findings; SSP users and leveraged authorizations), configured per kind like the document
+   forms.
+9. Assigning workflow roles is per role (menu, then a filterable person picker) instead of one
+   dialog for every role. Assessment results lost their View and Edit buttons, which led to
+   routes that never existed.
 
 **Bugs found that probably affect `main` too** (worth tickets)
 
@@ -75,6 +86,11 @@ page below.
   here).
 - The global PrimeVue toast fails axe colour contrast; the classic `FilterForm` has unlabelled
   inputs.
+- Creating a POA&M observation without a Collected date failed with "Invalid time value"
+  (classic form; fixed here). Adding the first back matter resource to a POA&M returns 500 (API).
+  The POA&M back matter and local definitions endpoints answer 404 when empty, and the classic
+  back matter page showed that as an error.
+- Assessment results' classic View/Edit result buttons linked to routes that never existed.
 
 **A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
 Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
@@ -98,7 +114,10 @@ bang.
 
 **Test data I created in local-dev:** a group "Weekend test group", a user
 `weekend.test2@example.com` (renamed "Weekend2 Tester"), a component definition "Weekend
-test CD", and a profile "Weekend version probe" (the API can't delete those). Every other record I created was deleted again.
+test CD", a profile "Weekend version probe" (the API can't delete those), a POA&M "Weekend test
+POA&M" with an observation "Weekend observation", and assessment results "Weekend test AR"
+with one result. The seed `it-ops` role assignment on "Annual DR Exercise — Customer Portal"
+was removed and re-created (same values, new ID). Every other record I created was deleted again.
 
 **How to look:** `VITE_API_PROXY=http://localhost:8080 npm run dev`, sign in, and click
 through the nav. `make reviewable`, `npm run build` and `npm run test:e2e` all pass at the head
