@@ -523,3 +523,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Workflow instance Runs tab**: a design-system table (started, status badge, triggered by,
   completed or cancelled), newest first; each run's start time opens its run page. The classic
   spec is ported; its date check no longer depends on the test machine's timezone.
+- **Workflow instance Overview tab**: edit form (name, description, cadence or cron, grace
+  period), a link to its definition, and metadata, all design-system; the script is the classic
+  page's.

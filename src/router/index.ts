@@ -144,7 +144,7 @@ const authenticatedRoutes = [
         path: '',
         name: 'workflow-instance-overview',
         component: () =>
-          import('../views/workflow-instances/WorkflowInstanceOverviewView.vue'),
+          import('../screens/workflows/WorkflowInstanceOverviewTab.vue'),
       },
       {
         path: 'roles',
