@@ -96,6 +96,10 @@ page below.
 - Assessment results' classic View/Edit result buttons linked to routes that never existed.
 - Saving an assessment plan task with a date schedule failed: the classic timing editor sent bare
   dates and the API wants RFC 3339 timestamps (classic UI; fixed in the new task form).
+- Adding a component definition back matter resource never saved: the API's `POST
+  .../back-matter` replaces the whole back matter and expects `{resources: [...]}`, but the
+  classic form sent a single resource (answered 200, stored nothing). Fixed in the new form,
+  which sends the existing resources plus the new one.
 - On Implementation, the control drawer's Edit and Delete for a component statement never saved
   (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
   the requirement's statements, which is nearly all of them (classic UI; both fixed here).
@@ -928,3 +932,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   and Links fields are dropped, as with capabilities; the same "edit sends only these fields"
   concern applies. Checked live on "Weekend test CD": add, then edit, and the edit survives a
   reload. **Test data:** component "Weekend component" (no delete).
+- **Component definition back matter form** is design-system (title, description, remarks,
+  citation, links as a field list). Every component definition tab and form is now
+  design-system; `src/components/component-definitions` is gone. **Found (fixed):** adding a
+  resource never saved; see the summary. Checked live on "Weekend test CD" (two resources now:
+  "Weekend resource" with a link, and "Weekend resource 2" from probing the API).

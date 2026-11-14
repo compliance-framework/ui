@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A component definition's Back matter tab: its reference resources (citations and links), with
- * Add resource. The new-resource dialog is a classic island. The script is the classic page's.
+ * Add resource. The script is the classic page's.
  */
 import { computed, ref } from 'vue';
 import type { BackMatterResource, BackMatter } from '@/oscal';
@@ -12,7 +12,8 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import BackMatterResourceForm from './BackMatterResourceForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -94,11 +95,18 @@ const facts = (resource: BackMatterResource) => [
       >No back matter yet. Back matter holds the documents and links this
       definition cites.</Text
     >
-    <BackMatterResourceCreateModal
-      :is-open="showCreateModal"
-      :component-definition-id="componentDefinitionId"
-      @close="closeCreateModal"
-      @created="handleResourceCreated"
-    />
+    <Dialog v-model:open="showCreateModal" title="New resource">
+      <BackMatterResourceForm
+        :component-definition-id="componentDefinitionId"
+        :existing="backMatter?.resources ?? []"
+        @cancel="closeCreateModal"
+        @created="
+          (resource) => {
+            handleResourceCreated(resource);
+            closeCreateModal();
+          }
+        "
+      />
+    </Dialog>
   </Stack>
 </template>
