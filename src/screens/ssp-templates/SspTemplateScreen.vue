@@ -8,7 +8,7 @@ import type { SspTemplate } from '@/types/ssp-templates';
 import { getErrorDetail } from '@/utils/httpErrors';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
-import SspTemplateInstancesTable from '@/components/ssp-templates/SspTemplateInstancesTable.vue';
+import SspTemplateInstancesPanel from './SspTemplateInstancesPanel.vue';
 import SspTemplatePreviewPanel from '@/components/ssp-templates/SspTemplatePreviewPanel.vue';
 import { formatDateTime } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
@@ -129,8 +129,8 @@ async function runNow(): Promise<void> {
           :key="`${template.data.value.id}-${template.data.value.updatedAt}`"
           :template="template.data.value"
         />
-        <SspTemplateInstancesTable :template-id="id" />
       </LegacyPage>
+      <SspTemplateInstancesPanel :template-id="id" />
     </Stack>
   </RecordTemplate>
 

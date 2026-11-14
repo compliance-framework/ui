@@ -880,3 +880,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   existing facts. **Gap (island):** the step graph and the step panel (811 lines, with its
   evidence form) stay classic. Checked live on the failed Quarterly Access Review run: table,
   facts, Open.
+- **System template page: created systems** is a design-system panel (label values verbatim,
+  the system linking to Configure System or "(deleted)", Stale tag, created and last-seen times,
+  error and skipped values, Refresh, and Forget for deleted ones through the design-system
+  confirm; Forget is disabled with the reason when the API gave no key). It uses the reactive
+  `useApiQuery` URL and keeps the label-key stop path. The classic table and its spec are
+  replaced (spec ported). **Gap:** local-dev has no system templates, so it was not checked
+  live. The preview panel and form dialog stay classic.

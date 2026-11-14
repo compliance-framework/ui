@@ -38,9 +38,9 @@ vi.mock('@/components/ssp-templates/SspTemplatePreviewPanel.vue', () => ({
     template: '<div />',
   },
 }));
-vi.mock('@/components/ssp-templates/SspTemplateInstancesTable.vue', () => ({
+vi.mock('../SspTemplateInstancesPanel.vue', () => ({
   default: {
-    name: 'SspTemplateInstancesTable',
+    name: 'SspTemplateInstancesPanel',
     props: ['templateId'],
     template: '<div />',
   },
@@ -95,7 +95,7 @@ describe('SspTemplateScreen', () => {
     ).toMatchObject({ id: 't-1' });
     expect(
       wrapper
-        .findComponent({ name: 'SspTemplateInstancesTable' })
+        .findComponent({ name: 'SspTemplateInstancesPanel' })
         .props('templateId'),
     ).toBe('t-1');
   });
