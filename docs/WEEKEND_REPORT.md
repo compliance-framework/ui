@@ -90,7 +90,8 @@ page below.
 - The global PrimeVue toast fails axe colour contrast; the classic `FilterForm` has unlabelled
   inputs.
 - Creating a POA&M observation without a Collected date failed with "Invalid time value"
-  (classic form; fixed here). Adding the first back matter resource to a POA&M returns 500 (API).
+  (classic form; fixed here). Adding the first back matter resource to a POA&M returns 500
+  (API); the POA&M back matter tab now creates an empty back matter first, which avoids it.
   The POA&M back matter and local definitions endpoints answer 404 when empty, and the classic
   back matter page showed that as an error.
 - Assessment results' classic View/Edit result buttons linked to routes that never existed.
@@ -937,3 +938,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   design-system; `src/components/component-definitions` is gone. **Found (fixed):** adding a
   resource never saved; see the summary. Checked live on "Weekend test CD" (two resources now:
   "Weekend resource" with a link, and "Weekend resource 2" from probing the API).
+- **POA&M back matter: first resource now saves.** `POST .../back-matter/resources` answers 500
+  when a plan has no back matter yet, but works once one exists. New resource now creates an
+  empty back matter first (`POST .../back-matter` with no resources) when there is none. Checked
+  live on a temporary POA&M with no back matter (created and then deleted through the API): the
+  first resource saved. **For the API team:** the resources endpoint should create the back
+  matter itself.

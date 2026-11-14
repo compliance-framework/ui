@@ -99,6 +99,28 @@ const deleteOpen = computed({
   },
 });
 
+/**
+ * Adding a resource to a plan with no back matter yet fails on the API (500), so an empty back
+ * matter is created first.
+ */
+async function startNew() {
+  if (backMatter.status.value === 'empty' && !backMatter.data.value) {
+    try {
+      await api.post(base, { resources: [] });
+      backMatter.data.value = { resources: [] };
+    } catch (error) {
+      toast.add({
+        severity: 'error',
+        summary: "Back matter couldn't be started",
+        detail: await getErrorDetail(error, 'Try again.'),
+        life: 5000,
+      });
+      return;
+    }
+  }
+  editing.value = null;
+}
+
 function saved(resource: BackMatterResource) {
   const list = resources.value;
   const next = list.some((r) => r.uuid === resource.uuid)
@@ -164,7 +186,7 @@ const actions = (resource: BackMatterResource): MenuEntry[] => [
         variant="primary"
         icon="add"
         :disabled-reason="denied(ACTIONS.CREATE, 'adding to')"
-        @click="editing = null"
+        @click="startNew"
         >New resource</Button
       >
     </div>
