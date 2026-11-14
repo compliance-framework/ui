@@ -923,3 +923,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   could be lost; worth checking against the API. Checked live on "Weekend test CD": add, then
   edit, and the edit survives a reload. **Test data:** capability "Weekend capability" (there is
   no delete).
+- **Component definition component form** is design-system (`DefinedComponentForm`, add and
+  edit: title, type with completions, description, purpose). The classic form's dead Properties
+  and Links fields are dropped, as with capabilities; the same "edit sends only these fields"
+  concern applies. Checked live on "Weekend test CD": add, then edit, and the edit survives a
+  reload. **Test data:** component "Weekend component" (no delete).

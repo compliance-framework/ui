@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * A component definition's Components tab: each component is a disclosure with its type, purpose,
- * attributes and control implementations, and actions to edit it or download its OSCAL JSON. The
- * new and edit forms are classic islands in design-system dialogs.
+ * attributes and control implementations, and actions to edit it or download its OSCAL JSON.
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -29,9 +28,7 @@ import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import ComponentCreateForm from '@/components/component-definitions/ComponentCreateForm.vue';
-import ComponentEditForm from '@/components/component-definitions/ComponentEditForm.vue';
+import DefinedComponentForm from './DefinedComponentForm.vue';
 import { downloadText } from '@/utils/download-json';
 
 const route = useRoute();
@@ -229,21 +226,21 @@ const actions = (component: DefinedComponent): MenuEntry[] => [
       </Stack>
     </DataState>
 
-    <Dialog v-model:open="creating" title="New component" size="l">
-      <LegacyPage>
-        <ComponentCreateForm :component-definition-id="id" @created="created" />
-      </LegacyPage>
+    <Dialog v-model:open="creating" title="New component">
+      <DefinedComponentForm
+        :component-definition-id="id"
+        @cancel="creating = false"
+        @created="created"
+      />
     </Dialog>
-    <Dialog v-model:open="editOpen" title="Edit component" size="l">
-      <LegacyPage>
-        <ComponentEditForm
-          v-if="editing"
-          :component-definition-id="id"
-          :component="editing"
-          @cancel="editing = undefined"
-          @updated="updated"
-        />
-      </LegacyPage>
+    <Dialog v-model:open="editOpen" title="Edit component">
+      <DefinedComponentForm
+        v-if="editing"
+        :component-definition-id="id"
+        :component="editing"
+        @cancel="editing = undefined"
+        @updated="updated"
+      />
     </Dialog>
   </Stack>
 </template>
