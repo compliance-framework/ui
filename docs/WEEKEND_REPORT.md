@@ -766,3 +766,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Checked live on Payments Processing Platform (INT-CI): edit, save, revert. **Decision:** AI
   suggestion reasoning is shown in full instead of clamped behind "Show more". **Gap (island):**
   the shared-responsibility panel and blocks and the export dialog are still classic.
+- **Second live sweep (89 routes**: the earlier 66 plus every POA&M and assessment results tab
+  and all twelve Configure System sections): one h1 each, no page errors. Remaining API
+  responses are known: a 404 for a system with no network-architecture diagram (handled as "Not
+  described yet") and the known 500 for one component GET under Control Implementation.
