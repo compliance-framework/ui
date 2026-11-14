@@ -912,3 +912,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   timing and dependency managers remain for the workflows partials that still use them.
   **Found (fixed):** date schedules never saved; see the summary. Checked live on "Weekend test
   AP": schedule a task within dates, add and delete another.
+- **POA&M item form** is design-system (`PoamItemForm`, add and edit: title, description,
+  remarks, inline validation; editing keeps the item's links). The classic create and edit
+  forms are deleted. Checked live: add, edit, delete.

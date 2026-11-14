@@ -32,8 +32,9 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
     ],
     // The item details island shows its description and links.
     facts: () => [],
-    createForm: () => import('@/components/poam/PoamItemCreateForm.vue'),
-    editForm: () => import('@/components/poam/PoamItemEditForm.vue'),
+    createForm: () => import('./PoamItemForm.vue'),
+    editForm: () => import('./PoamItemForm.vue'),
+    designSystemForms: true,
   },
   observations: {
     path: 'observations',
