@@ -91,6 +91,9 @@ page below.
   The POA&M back matter and local definitions endpoints answer 404 when empty, and the classic
   back matter page showed that as an error.
 - Assessment results' classic View/Edit result buttons linked to routes that never existed.
+- On Implementation, the control drawer's Edit and Delete for a component statement never saved
+  (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
+  the requirement's statements, which is nearly all of them (classic UI; both fixed here).
 
 **A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
 Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
