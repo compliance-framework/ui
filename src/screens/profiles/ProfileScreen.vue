@@ -1,9 +1,8 @@
 <script setup lang="ts">
 /**
  * A profile (/profiles/:id/...): its title and sections (controls, compliance, JSON) as route
- * tabs. The sections are classic islands until rebuilt.
+ * tabs.
  */
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
@@ -70,12 +69,10 @@ const tabs = computed(() =>
     <template #status>
       <Text as="span" variant="caption">{{ profile.uuid }}</Text>
     </template>
-    <LegacyPage>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
-    </LegacyPage>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </RecordTemplate>
 </template>

@@ -1,20 +1,15 @@
 <script setup lang="ts">
 /**
  * A profile's Controls tab: which catalogs it imports and the controls it includes or excludes
- * from each, with Save and Remove per import and "Add catalog import". The control-group editor
- * and the catalog picker are classic islands. The script is the classic page's.
+ * from each, with Save and Remove per import and "Add catalog import". The script is the classic
+ * page's.
  */
 import { type Import } from '@/oscal';
-import type {
-  BackMatterResource,
-  BackMatter,
-  ProfileSelectControlByID,
-} from '@/oscal';
+import type { BackMatterResource, BackMatter } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
-import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
-import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import ControlGroupsField from './ControlGroupsField.vue';
+import CatalogImportDialog from './CatalogImportDialog.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
@@ -269,20 +264,18 @@ const counts = computed(() => [
     >
       <Stack gap="4">
         <!-- The control groups load their catalog, so they wait until its ID is known. -->
-        <LegacyPage v-if="importedCatalogsByHref[imp.href]">
-          <Stack gap="4">
-            <Text variant="label">Included controls</Text>
-            <ProfileControlGroups
-              :groups="imp.includeControls as ProfileSelectControlByID[]"
-              :catalog="importedCatalogsByHref[imp.href]"
-            />
-            <Text variant="label">Excluded controls</Text>
-            <ProfileControlGroups
-              :groups="imp.excludeControls as ProfileSelectControlByID[]"
-              :catalog="importedCatalogsByHref[imp.href]"
-            />
-          </Stack>
-        </LegacyPage>
+        <template v-if="importedCatalogsByHref[imp.href]">
+          <ControlGroupsField
+            v-model:groups="imp.includeControls"
+            :catalog="importedCatalogsByHref[imp.href]!"
+            kind="Included"
+          />
+          <ControlGroupsField
+            v-model:groups="imp.excludeControls"
+            :catalog="importedCatalogsByHref[imp.href]!"
+            kind="Excluded"
+          />
+        </template>
         <Cluster gap="2">
           <Button
             variant="primary"
@@ -315,9 +308,8 @@ const counts = computed(() => [
     </div>
   </Stack>
   <CatalogImportDialog
-    :visible="catalogDialogVisible"
+    v-model:open="catalogDialogVisible"
     :imported-catalogs="importedCatalogsByUUID"
-    @update:visible="catalogDialogVisible = $event"
     @import="addImport"
   />
 </template>

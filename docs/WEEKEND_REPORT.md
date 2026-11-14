@@ -864,3 +864,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   edit modal.
 - **Catalog page in the axe run** (a mocked catalog with a group and a control, every state and
   theme): passes.
+- **Profile Controls: control groups and catalog import** are design-system, so the profile
+  page has no islands now. Each import shows its included and excluded groups as panels: control
+  IDs as tags with a named remove button each, a Combobox of the catalog's controls (only those
+  not already in the group; it includes root-level controls, which the classic picker missed)
+  and Add, plus Remove group and New group. "Import a catalog" is a design-system dialog listing
+  catalogs, with already-imported ones disabled and the reason given. It reads through
+  `useApiQuery` instead of the old fetch client. The classic group editor, control editor and
+  dialog are deleted. Checked live on "Meridian Delivery Controls — Regulated Profile" (nothing
+  saved).
