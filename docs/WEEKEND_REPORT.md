@@ -543,3 +543,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Found:** the API rejects POA&Ms and assessment plans without `metadata.version`. The
   shared form now requires a version for every document type that has one, starting at "1.0",
   instead of showing the API's raw "metadata.version is required" after submit.
+- **Profile merge settings** (`/profiles/:id/merge`, still not on the tab bar): merge type as a
+  radio group, combine as a checkbox and method select. **Found (API):**
+  `GET /api/oscal/profiles/:id/merge` returns 500 for the local-dev profiles; the tab now shows
+  an error with Try again, where the classic one stayed blank.

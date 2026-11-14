@@ -297,7 +297,7 @@ const authenticatedRoutes = [
       {
         path: 'merge',
         name: 'profile:view-merge',
-        component: () => import('../views/profile/ProfileMergeView.vue'),
+        component: () => import('../screens/profiles/ProfileMergeTab.vue'),
         meta: {
           requiresAuth: true,
         },
