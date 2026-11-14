@@ -94,8 +94,7 @@ Replace each with a design-system version, then delete the classic component.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
-- Record tabs still classic: assessment plan task details and new-task dialog; inside the
-  rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
+- Record tabs still classic: inside the rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
   POA&M risk page (classic risk detail); profile control-group editor and
   catalog import dialog; workflow step form and step graph; execution metrics, step graph, list
   and panel on the run page; My tasks step panel.
@@ -113,7 +112,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities and steps); toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos
