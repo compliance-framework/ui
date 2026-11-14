@@ -112,7 +112,8 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
       },
       { key: 'remarks', label: 'Remarks', value: f.remarks },
     ],
-    createForm: () => import('@/components/poam/FindingCreateForm.vue'),
-    editForm: () => import('@/components/poam/FindingEditForm.vue'),
+    createForm: () => import('./FindingForm.vue'),
+    editForm: () => import('./FindingForm.vue'),
+    designSystemForms: true,
   },
 };

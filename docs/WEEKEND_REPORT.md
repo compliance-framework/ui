@@ -104,6 +104,9 @@ page below.
 - Editing a POA&M observation showed its Collected and Expires times blank (an ISO timestamp in a
   local datetime field) and sent the field's raw value back (classic UI; fixed in the new
   observation form).
+- The classic POA&M finding form never saved a target or status: its target JSON field was
+  commented out (an empty target was sent) and its required Status was never sent (classic UI;
+  fixed in the new finding form).
 - On Implementation, the control drawer's Edit and Delete for a component statement never saved
   (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
   the requirement's statements, which is nearly all of them (classic UI; both fixed here).
@@ -972,3 +975,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   already has), collected (empty means now) and expires (must be later), remarks.
   **Found (fixed):** the classic edit form lost existing timestamps; see the summary. Checked
   live: edit "Weekend observation" (its time shows; adding a method saves and keeps the date).
+- **POA&M finding form** is design-system (`FindingForm`, add and edit): title, description,
+  what it is about (control objective or statement, and its ID), result (satisfied or not),
+  optional implementation status, the plan's observations and risks as checkboxes, remarks.
+  **Decision:** the classic form's free-text Status (open, in progress, …) is replaced by the
+  OSCAL result, since that is what a finding's target records. **Found (fixed):** see the summary.
+  Checked live: add with a linked observation, reload, delete.
