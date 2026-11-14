@@ -32,4 +32,6 @@ export interface CollectionKind {
   editForm: () => Promise<Component>;
   /** Adds "Download JSON" for each entry. */
   download?: boolean;
+  /** The forms are design-system ones, so they need no classic frame. */
+  designSystemForms?: boolean;
 }

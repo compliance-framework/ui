@@ -208,16 +208,16 @@ function actions(entry: CollectionEntry): MenuEntry[] {
     </DataState>
 
     <Dialog v-model:open="creating" :title="`New ${kind.noun}`" size="l">
-      <LegacyPage>
+      <component :is="kind.designSystemForms ? 'div' : LegacyPage">
         <CreateForm
           v-bind="formProps"
           @cancel="creating = false"
           @created="created"
         />
-      </LegacyPage>
+      </component>
     </Dialog>
     <Dialog v-model:open="editOpen" :title="`Edit ${kind.noun}`" size="l">
-      <LegacyPage>
+      <component :is="kind.designSystemForms ? 'div' : LegacyPage">
         <EditForm
           v-if="editing"
           v-bind="{ ...formProps, [kind.editProp]: editing }"
@@ -225,7 +225,7 @@ function actions(entry: CollectionEntry): MenuEntry[] {
           @saved="saved"
           @updated="saved"
         />
-      </LegacyPage>
+      </component>
     </Dialog>
     <slot name="dialogs" :saved="saved" />
     <ConfirmDialog

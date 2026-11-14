@@ -109,7 +109,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the workflow step form; the system template's preview and created-systems table; Inventory; Import (OSCAL and evidence filters); toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities, steps and the task form); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the workflow step form; the system template's preview and created-systems table; Inventory; Import (OSCAL and evidence filters); toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

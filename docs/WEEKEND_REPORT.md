@@ -94,6 +94,8 @@ page below.
   The POA&M back matter and local definitions endpoints answer 404 when empty, and the classic
   back matter page showed that as an error.
 - Assessment results' classic View/Edit result buttons linked to routes that never existed.
+- Saving an assessment plan task with a date schedule failed: the classic timing editor sent bare
+  dates and the API wants RFC 3339 timestamps (classic UI; fixed in the new task form).
 - On Implementation, the control drawer's Edit and Delete for a component statement never saved
   (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
   the requirement's statements, which is nearly all of them (classic UI; both fixed here).
@@ -902,3 +904,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Decision:** dependencies are a checkbox group rather than a multi-select (workflows have a
   handful of steps, and the design system has no multi-select). Checked live: opening and
   cancelling the drawer (nothing saved). Only the step graph is still classic on that tab.
+- **Assessment plan task form** is design-system: one `TaskForm` for add and edit (title, type
+  with completions, description, "When" as not scheduled, on a date, within dates or
+  repeating, and, when editing, "Depends on" as checkboxes of the plan's other tasks, keeping
+  existing dependency remarks). `RecordCollection` gained `designSystemForms` so such forms
+  aren't wrapped in the classic frame. The classic create and edit forms are deleted; the classic
+  timing and dependency managers remain for the workflows partials that still use them.
+  **Found (fixed):** date schedules never saved; see the summary. Checked live on "Weekend test
+  AP": schedule a task within dates, add and delete another.

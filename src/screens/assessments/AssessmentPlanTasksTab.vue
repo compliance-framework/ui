@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * An assessment plan's Tasks tab, as a RecordCollection: each task with its type, description
- * and timing, and once opened its activities and their steps. The task forms are classic islands.
+ * and timing, and once opened its activities and their steps. The task form is the design system's.
  */
 import { useRoute } from 'vue-router';
 import type { Task } from '@/oscal';
@@ -39,8 +39,9 @@ const TASKS: CollectionKind = {
     { key: 'timing', label: 'Timing', value: timing(task) },
     { key: 'remarks', label: 'Remarks', value: task.remarks },
   ],
-  createForm: () => import('@/components/assessment-plans/TaskCreateForm.vue'),
-  editForm: () => import('@/components/assessment-plans/TaskEditForm.vue'),
+  createForm: () => import('./TaskForm.vue'),
+  editForm: () => import('./TaskForm.vue'),
+  designSystemForms: true,
 };
 </script>
 
