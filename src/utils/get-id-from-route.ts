@@ -1,8 +1,13 @@
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
+/**
+ * The record id from the route: `:id`, or `:systemId` on the redesigned system routes
+ * (/systems/:systemId/...), where the classic SSP section views now render.
+ */
 export function getIdFromRoute(route: RouteLocationNormalizedLoaded) {
-  if (route.params.id instanceof Array) {
-    return route.params.id[0] ?? '';
+  const id = route.params.id ?? route.params.systemId;
+  if (id instanceof Array) {
+    return id[0] ?? '';
   }
-  return route.params.id ?? '';
+  return id ?? '';
 }

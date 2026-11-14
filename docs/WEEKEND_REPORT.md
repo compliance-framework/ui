@@ -581,3 +581,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   network architecture, authorization boundary and data flow are panels ("Not described yet"
   when absent). Edit opens the classic characteristics form (island) in a design-system dialog.
   The script and spec are the classic page's, ported.
+- **Found (mine, fixed):** a sweep of every Configure System section showed **Users** and
+  **Leveraged Authorizations** requesting `/system-security-plans//...` with an empty id, so they
+  always looked empty. Their classic wrappers read only `:id` from the route, which the merged
+  page (`/systems/:systemId/configure/...`) doesn't have. `getIdFromRoute` now falls back to
+  `:systemId`, which fixes every wrapper using it. This regression came from the
+  Configure/SSP-editor merge earlier in the weekend.
+- **Found (API):** on Control Implementation,
+  `GET /system-security-plans/:id/system-implementation/components/:componentId` returns 500
+  for one of the Payments system's components.
