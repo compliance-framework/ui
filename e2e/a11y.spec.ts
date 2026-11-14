@@ -47,6 +47,7 @@ const routes = [
   '/admin/subject-templates',
   '/admin/subject-templates/st-1',
   '/admin/agents',
+  '/admin/risk-templates',
   '/admin/agents/ag-1',
   '/admin/agents/ag-1/keys',
   '/dashboards/create',

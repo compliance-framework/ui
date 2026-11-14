@@ -276,7 +276,26 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         { data: { scope: {}, summary: {}, groups: [], controls: [] } },
       );
     }
-    if (path === '/api/admin/risk-templates') return json(route, { data: [] });
+    if (path === '/api/admin/risk-templates')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'rt-1',
+              'plugin-id': 'github',
+              'policy-package': 'branch-protection',
+              name: 'unprotected-branch',
+              title: 'Unprotected default branch',
+              statement: 'The default branch accepts unreviewed pushes.',
+              'usage-count': 2,
+              'created-at': '2026-09-01T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/admin/agents')
       return list(route, lists, { data: [{
           id: 'ag-1',

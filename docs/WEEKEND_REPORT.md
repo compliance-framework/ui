@@ -29,8 +29,7 @@ without a redesigned page around it. Pages fall into three kinds:
   section, the diagram editor, the component risks list and evidence-filter drawer), catalog
   page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
   page, Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
-- **Design-system header over a classic body**: risk templates, Filter suggestions, Diagnostics
-  sections.
+- **Design-system header over a classic body**: Filter suggestions, Diagnostics sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
@@ -1105,3 +1104,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   record, keys tab and key form (same cases: create, edit, keys, revoke, delete, empty state,
   tab visibility, R40 hydration). Checked live: list, overview, create a key (secret shown once),
   revoke it, and the Configuration tab. Agents pages are in the axe run.
+- **Risk templates** are design-system: a list (template, statement, likelihood / impact hints,
+  used by, created; search in the address) with a menu per template: View details, Edit,
+  Duplicate, Delete (the confirm says how many risks use it). The form (`RiskTemplateForm`)
+  names each missing required field, and its own checks (incomplete threat IDs, a remediation
+  without a title) show in the form. Violation IDs, threat IDs and remediation tasks are field
+  lists. The request-building rules moved unchanged into `riskTemplateRequest.ts`, shared with
+  Duplicate. **Decisions:** View is a details dialog rather than the form with every field
+  disabled. Edit and Delete are disabled with a reason for a template without an ID (the classic
+  page let you click and then toasted). "Active state: Unset" reads "State: Not set". The classic
+  568-line spec is split into specs for the request rules, the form and the list (same cases).
+  Checked live: the required-field checks, create with a threat ID and remediation, view,
+  duplicate, delete the copy, edit, delete (nothing left behind). Risk templates are in the axe
+  run.
