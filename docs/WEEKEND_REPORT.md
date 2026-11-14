@@ -948,3 +948,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   name, description, role IDs and each privilege's functions as comma-separated fields,
   privileges as a field list; editing keeps the user's other fields). The classic create and
   edit forms are deleted. Checked live: add a user with roles and a privilege, then delete it.
+- **Configure System → Leveraged Authorizations: the form** is design-system: title, "Granted
+  by" as a Combobox of parties (the classic form wanted a raw party UUID), date authorized,
+  remarks. **Decision:** the classic form's Properties and Links rows are dropped from this form
+  (they are kept on save when editing). Checked live: add, then delete.

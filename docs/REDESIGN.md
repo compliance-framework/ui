@@ -88,8 +88,7 @@ large enough to rebuild separately. They work and keep their tests; they still l
 Replace each with a design-system version, then delete the classic component.
 
 - Configure System: the hidden sections reachable by link (Control Implementation); the
-  subscribe wizard inside Leverage; the export offering forms and items and allowlist editors; the user and leveraged
-  authorization forms; inside rebuilt sections, the draw.io editor, the component risks list and the
+  subscribe wizard inside Leverage; the export offering forms and items and allowlist editors;  inside rebuilt sections, the draw.io editor, the component risks list and the
   evidence-filter drawer, and the new/edit component forms.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `SharedResponsibilityPanel`,
   `ExportStatementDialog`, and the shared-responsibility blocks inside each component statement.

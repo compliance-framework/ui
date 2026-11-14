@@ -54,9 +54,8 @@ export const SSP_LEVERAGED_AUTHORIZATIONS: CollectionKind = {
     { key: 'remarks', label: 'Remarks', value: auth.remarks },
     { key: 'uuid', label: 'UUID', value: auth.uuid },
   ],
-  createForm: () =>
-    import('@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue'),
-  editForm: () =>
-    import('@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue'),
+  createForm: () => import('./LeveragedAuthorizationForm.vue'),
+  editForm: () => import('./LeveragedAuthorizationForm.vue'),
+  designSystemForms: true,
   download: true,
 };
