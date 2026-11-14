@@ -500,8 +500,40 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       return json(route, {
         data: { id: 'g1', name: 'Auditors', description: 'External audit' },
       });
-    if (/^\/api\/admin\/(users|groups)\/[^/]+\/(roles|members)$/.test(path))
-      return json(route, { data: [] });
+    const people = path.match(
+      /^\/api\/admin\/(users|groups)\/[^/]+\/(roles|members)$/,
+    );
+    if (people) {
+      const rows =
+        people[2] === 'members'
+          ? [{ 'user-id': 'u1', 'display-name': 'Tony Smith' }]
+          : people[1] === 'users'
+            ? [
+                {
+                  'assignment-id': 'ra-1',
+                  'role-name': 'admin',
+                  source: 'manual',
+                  inherited: false,
+                },
+                {
+                  'assignment-id': 'ra-2',
+                  'role-name': 'viewer',
+                  source: 'config',
+                  inherited: true,
+                  'via-group': 'Auditors',
+                },
+              ]
+            : [
+                {
+                  id: 'ra-3',
+                  'role-name': 'auditor',
+                  source: 'manual',
+                  'assignee-type': 'group',
+                  'assignee-id': 'Auditors',
+                },
+              ];
+      return list(route, lists, { data: rows }, { data: [] });
+    }
     if (path === '/api/workflows/step-executions/my')
       return list(
         route,

@@ -815,3 +815,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   unnamed PrimeVue dropdown buttons. It is replaced by a design-system `LabelConditionFields`
   (field list of label and value, completing label names and server-searched values), so Scope
   has no islands now. Checked live: add a scope entry with the new fields, then remove it.
+- **User and group pages in the axe run** (with members and direct, inherited and configuration
+  roles in the mocks), in every state and theme: they pass.

@@ -41,6 +41,8 @@ const routes = [
   '/plan-of-action-and-milestones/create',
   '/about',
   '/profiles/build-props',
+  '/users/u1',
+  '/admin/groups/g1',
   ...['', '/components', '/capabilities', '/back-matter'].map(
     (tab) => `/component-definitions/cd-1${tab}`,
   ),
