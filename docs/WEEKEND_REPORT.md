@@ -734,3 +734,17 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   doesn't close the dialog when focus is in its classic select, which handles the key itself.
   **Test data:** three draft-or-revoked "Weekend offering"s on Payments Processing Platform
   (offerings can't be deleted).
+- **Configure System → Control Implementation: left classic, options for you.** It is the
+  last classic Configure section, a 980-line raw OSCAL editor (control implementation
+  description, implemented requirements, statements, by-components, each with its own classic
+  form). Nothing in the app links to it any more; only old SSP-editor URLs and typed URLs reach
+  it. The Implementation page covers per-control statements and by-components for everyday
+  work. Four of its forms (control implementation, implemented requirement create/edit,
+  by-component edit) are used nowhere else. Options:
+  - **A. Retire it:** redirect the URL to Implementation and delete the view and its four
+    forms. That loses editing the control implementation's own description and set-parameters
+    in the UI, and adding implemented requirements for controls outside the profile.
+  - **B. Rebuild it as an "Advanced (OSCAL)" Configure tab**, a RecordCollection of implemented
+    requirements with the classic forms as islands: about a day.
+  - **C. Leave it as is** (current state): hidden, classic, working.
+  My recommendation is **A** if no one uses those three capabilities, otherwise **B**.
