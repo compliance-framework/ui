@@ -96,8 +96,7 @@ Replace each with a design-system version, then delete the classic component.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
 - Record tabs still classic: inside the rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
   POA&M risk page (classic risk detail); workflow step graph; step graph and panel on the run page; My tasks step panel.
-- Component definitions: the new/edit component, capability and resource forms (in
-  design-system dialogs).
+- Component definitions: the new/edit component and resource forms (in design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk templates,
   Filter suggestions; the workflow import panel on Import; the subject template form (in a design-system dialog); system template form, Diagnostics sections, Compliance
   Map tree/graph, catalog add/edit modals, evidence filter form, Slack link section.

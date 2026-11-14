@@ -2,7 +2,7 @@
 /**
  * A component definition's Capabilities tab: each capability is a disclosure with its description,
  * remarks, the components it incorporates (by title where the component is known) and its control
- * implementations. The new and edit forms are classic islands in design-system dialogs.
+ * implementations.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -21,9 +21,7 @@ import ItemList from '@/ds/components/ItemList/ItemList.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import CapabilityCreateForm from '@/components/component-definitions/CapabilityCreateForm.vue';
-import CapabilityEditForm from '@/components/component-definitions/CapabilityEditForm.vue';
+import CapabilityForm from './CapabilityForm.vue';
 
 const route = useRoute();
 const { can } = usePermissions();
@@ -155,25 +153,21 @@ function updated(capability: Capability) {
       </Stack>
     </DataState>
 
-    <Dialog v-model:open="creating" title="New capability" size="l">
-      <LegacyPage>
-        <CapabilityCreateForm
-          :component-definition-id="id"
-          @cancel="creating = false"
-          @created="created"
-        />
-      </LegacyPage>
+    <Dialog v-model:open="creating" title="New capability">
+      <CapabilityForm
+        :component-definition-id="id"
+        @cancel="creating = false"
+        @created="created"
+      />
     </Dialog>
-    <Dialog v-model:open="editOpen" title="Edit capability" size="l">
-      <LegacyPage>
-        <CapabilityEditForm
-          v-if="editing"
-          :component-definition-id="id"
-          :capability="editing"
-          @cancel="editing = undefined"
-          @updated="updated"
-        />
-      </LegacyPage>
+    <Dialog v-model:open="editOpen" title="Edit capability">
+      <CapabilityForm
+        v-if="editing"
+        :component-definition-id="id"
+        :capability="editing"
+        @cancel="editing = undefined"
+        @updated="updated"
+      />
     </Dialog>
   </Stack>
 </template>

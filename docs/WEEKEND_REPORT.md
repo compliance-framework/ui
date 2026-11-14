@@ -915,3 +915,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **POA&M item form** is design-system (`PoamItemForm`, add and edit: title, description,
   remarks, inline validation; editing keeps the item's links). The classic create and edit
   forms are deleted. Checked live: add, edit, delete.
+- **Component definition capability form** is design-system (`CapabilityForm`, add and edit:
+  name and description). **Decision:** the classic form's Properties and Links fields are gone;
+  the API never stored them (the classic code sent empty lists whatever you typed). **Concern
+  for you:** editing a capability sends only its name and description, as the classic form did.
+  If the API replaces the whole record, its incorporated components and control implementations
+  could be lost; worth checking against the API. Checked live on "Weekend test CD": add, then
+  edit, and the edit survives a reload. **Test data:** capability "Weekend capability" (there is
+  no delete).
