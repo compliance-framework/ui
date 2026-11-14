@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Configure System → Leverage (reached by link): the published export offerings of other systems,
- * with Subscribe opening the classic subscribe wizard in a design-system dialog. The flat catalog
+ * with Subscribe to choose the items to inherit. The flat catalog
  * is the only fetch, by design: it omits upstream SSP details, so nothing here needs read access
  * to the upstream system.
  */
@@ -20,8 +20,7 @@ import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import SubscribeOfferingWizard from '@/components/system-security-plans/SubscribeOfferingWizard.vue';
+import SubscribeOfferingForm from './SubscribeOfferingForm.vue';
 
 const props = defineProps<{ sspId: string }>();
 const route = useRoute();
@@ -127,15 +126,13 @@ const subscribeOpen = computed({
       :title="`Subscribe to ${subscribing?.title ?? 'offering'}`"
       size="l"
     >
-      <LegacyPage>
-        <SubscribeOfferingWizard
-          v-if="subscribing"
-          :ssp-id="props.sspId"
-          :offering="subscribing"
-          @cancel="subscribing = undefined"
-          @subscribed="subscribing = undefined"
-        />
-      </LegacyPage>
+      <SubscribeOfferingForm
+        v-if="subscribing"
+        :ssp-id="props.sspId"
+        :offering="subscribing"
+        @cancel="subscribing = undefined"
+        @subscribed="subscribing = undefined"
+      />
     </Dialog>
   </Stack>
 </template>

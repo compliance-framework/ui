@@ -193,7 +193,7 @@ const stubs = {
     emits: ['click'],
     template: '<button @click="$emit(\'click\', $event)"><slot /></button>',
   },
-  SubscribeOfferingWizard: {
+  SubscribeOfferingForm: {
     props: ['sspId', 'offering', 'scopedItemIds', 'preselectedItemIds'],
     emits: ['cancel', 'subscribed'],
     template:

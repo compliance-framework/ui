@@ -53,7 +53,7 @@ async function mountSection() {
       global: {
         stubs: {
           ExportOfferingForm: true,
-          ExportOfferingItemsDialog: true,
+          OfferingItems: true,
           OfferingAllowlist: true,
         },
       },

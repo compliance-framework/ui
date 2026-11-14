@@ -299,7 +299,7 @@
       >
         Loading the offering…
       </div>
-      <SubscribeOfferingWizard
+      <SubscribeOfferingForm
         v-else-if="importingOffer && importingOffering"
         :ssp-id="sspId"
         :offering="importingOffering"
@@ -321,7 +321,7 @@ import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
-import SubscribeOfferingWizard from '@/components/system-security-plans/SubscribeOfferingWizard.vue';
+import SubscribeOfferingForm from '@/screens/configure/SubscribeOfferingForm.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useSharedResponsibility } from '@/composables/useSharedResponsibility';

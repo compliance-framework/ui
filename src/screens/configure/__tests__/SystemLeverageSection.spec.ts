@@ -244,7 +244,7 @@ describe('SystemLeverageSection', () => {
 
     expect(postMock).not.toHaveBeenCalled();
     expect(body().textContent).toContain(
-      'Select at least one item to inherit.',
+      'Choose at least one item to inherit.',
     );
     wrapper.unmount();
   });
