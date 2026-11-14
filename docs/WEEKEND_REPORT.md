@@ -29,8 +29,11 @@ without a redesigned page around it. Pages fall into three kinds:
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
-globally any more). Among record tabs, the JSON tabs, the four OSCAL Overview tabs, the profile's
-Controls and Compliance tabs are rebuilt.
+globally any more). Rebuilt record tabs and sections include every JSON tab, the four OSCAL Overview tabs, the
+profile's Controls, Compliance and Merge, the whole workflow definition record, workflow instance
+Overview and Runs, assessment plan Tasks, component definition Back matter, and Configure
+System's Overview, Characteristics and JSON. A live sweep of every page (66 routes plus every
+Configure section) is clean apart from API errors listed below.
 
 The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
 page below.
@@ -63,11 +66,20 @@ page below.
 - The Compliance page read `uuid` from SSP profiles, but the API returns `id` (from before the
   weekend).
 - `SystemSecurityPlanDiagramsView` ignored its `sspId` prop; `inventory:index` was defined twice.
+- `PUT` aside, the API rejects POA&Ms and assessment plans without a version;
+  `GET /profiles/:id/merge` returns 500; one Control Implementation component GET returns 500.
+- User lookups sent role and group names (e.g. `it-iam`) to `GET /api/users/:id` (classic UI;
+  fixed here).
 - The profile Controls tab never resolved its imports' catalogs when the back matter loaded after
   the imports (a race), so every control group requested `catalogs/undefined` (classic UI; fixed
   here).
 - The global PrimeVue toast fails axe colour contrast; the classic `FilterForm` has unlabelled
   inputs.
+
+**A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
+Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
+Configure sweep on Sunday and fixed in `getIdFromRoute`; worth a second look at the other hidden
+sections.
 
 **Options for you to choose from (next phase)**
 
