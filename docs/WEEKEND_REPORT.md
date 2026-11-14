@@ -526,3 +526,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Workflow instance Overview tab**: edit form (name, description, cadence or cron, grace
   period), a link to its definition, and metadata, all design-system; the script is the classic
   page's.
+- **Assessment plan Tasks tab**: design-system Add task and empty state; each task's detail
+  editor and the new-task dialog stay classic islands. With a throwaway plan (created through
+  the API, then deleted), the assessment plan record page was checked in a browser for the first
+  time: Overview, Tasks and JSON all work. (The API rejects a plan without a version; the new
+  form always sends one.)

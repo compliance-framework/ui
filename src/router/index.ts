@@ -584,7 +584,7 @@ const authenticatedRoutes = [
         path: 'tasks',
         name: 'assessment-plan-tasks',
         component: () =>
-          import('../views/assessment-plans/AssessmentPlanTasksView.vue'),
+          import('../screens/assessments/AssessmentPlanTasksTab.vue'),
       },
       {
         path: 'json',
