@@ -793,3 +793,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   as tags. **Decision:** the free-text Catalog UUID field is gone; the catalog is chosen from the
   list (the two fields duplicated each other). Checked live. **Test data:** profile "Weekend
   props profile" (profiles can't be deleted).
+- **Import**: the OSCAL and evidence-filter imports are design-system panels, each with a
+  multi-file picker, Import, and a result per file (success or error, with the document type
+  and title, or the number of filters). The workflow import panel stays a classic island.
+  **New design-system piece:** `FileField` gains `multiple` (`v-model:files`; each file listed
+  by name and size, with "Remove files"). The single-file API is unchanged. **Found (fixed):**
+  when every file fails, the import endpoint answers 400 with the per-file results in the
+  body; the classic page showed only "Failed to import", so you couldn't tell why. The results
+  now show. Uploads go through the API client instead of raw axios. Checked live with two
+  invalid files (nothing created).

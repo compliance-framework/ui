@@ -10,11 +10,15 @@ import { useFieldControl } from '../FormField/field';
  * and required wiring, standalone it needs `label`. The chosen file shows by name and size, never
  * "1 file selected", with "Remove file" to clear it. Read-only shows the file name or "No file".
  * Put the accepted types in the FormField hint, e.g. "PNG, SVG or draw.io".
+ * With `multiple`, it takes several files through `v-model:files` instead, each listed by name and
+ * size, with "Remove files" to clear them.
  */
-const props = withDefaults(defineProps<{ accept: string; label?: string }>(), {
-  label: undefined,
-});
+const props = withDefaults(
+  defineProps<{ accept: string; label?: string; multiple?: boolean }>(),
+  { label: undefined, multiple: false },
+);
 const model = defineModel<File | null>({ default: null });
+const files = defineModel<File[]>('files', { default: () => [] });
 const { controlAttrs, invalid, readonly } = useFieldControl(() => props.label);
 
 const input = useTemplateRef<HTMLInputElement>('input');
@@ -30,24 +34,37 @@ function formatSize(bytes: number): string {
 // A file set by the screen (e.g. one saved earlier) goes into the native input too, so screen
 // readers hear the same file name that is shown.
 watch([input, model], ([element, file]) => {
-  if (!element || (element.files?.[0] ?? null) === file) return;
+  if (props.multiple || !element || (element.files?.[0] ?? null) === file)
+    return;
   const transfer = new DataTransfer();
   if (file) transfer.items.add(file);
   element.files = transfer.files;
 });
 
 function onChange(event: Event): void {
-  model.value = (event.target as HTMLInputElement).files?.[0] ?? null;
+  const chosen = (event.target as HTMLInputElement).files;
+  if (props.multiple) files.value = Array.from(chosen ?? []);
+  else model.value = chosen?.[0] ?? null;
 }
 
 function clear(): void {
-  model.value = null;
+  if (props.multiple) {
+    files.value = [];
+    if (input.value) input.value.value = '';
+  } else model.value = null;
   input.value?.focus();
 }
 </script>
 
 <template>
-  <FieldValue v-if="readonly" :value="model?.name ?? 'No file'" />
+  <FieldValue
+    v-if="readonly"
+    :value="
+      multiple
+        ? files.map((f) => f.name).join(', ') || 'No files'
+        : (model?.name ?? 'No file')
+    "
+  />
   <div v-else class="file-field">
     <input
       ref="input"
@@ -56,9 +73,25 @@ function clear(): void {
       class="file-field__control"
       :class="{ 'file-field__control--invalid': invalid }"
       :accept="accept"
+      :multiple="multiple"
       @change="onChange"
     />
-    <div v-if="model" class="file-field__chosen">
+    <div v-if="multiple && files.length" class="file-field__chosen">
+      <ul :id="fileId" class="file-field__files">
+        <li v-for="file in files" :key="file.name" class="file-field__file">
+          {{ file.name }} · {{ formatSize(file.size) }}
+        </li>
+      </ul>
+      <Button
+        variant="tertiary"
+        size="sm"
+        icon="close"
+        :aria-describedby="fileId"
+        @click="clear"
+        >Remove files</Button
+      >
+    </div>
+    <div v-else-if="!multiple && model" class="file-field__chosen">
       <span :id="fileId" class="file-field__file"
         >{{ model.name }} · {{ size }}</span
       >
@@ -81,6 +114,15 @@ function clear(): void {
   align-items: flex-start;
   gap: var(--ds-space-1);
   min-width: 0;
+}
+
+.file-field__files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .file-field__chosen {
