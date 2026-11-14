@@ -20,23 +20,24 @@ without a redesigned page around it. Pages fall into three kinds:
   systems, catalogs, profiles, component definitions, assessment plans and results, and POA&Ms;
   users, groups, parties and roles, and the user and group pages; system templates list; POA&M
   items; evidence filters list; control links (list and create); control evidence; My tasks;
-  Inventory; Build a profile from props; the subject template page; Preferences; About; and every
-  signed-out page.
+  Inventory; Build a profile from props; subject templates (list and page); the profile page;
+  Preferences; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section, the diagram editor and some forms), profile and catalog pages, workflow run,
-  Compliance Map, Diagnostics, risk page, system template record, New evidence filter, Import
-  (workflow import panel). On the component definition, POA&M, assessment plan, assessment
+  section, the diagram editor and some forms), catalog page (add/edit modals), workflow run
+  (step graph and panel), system template page (edit form), Compliance Map, Diagnostics, risk
+  page, New evidence filter, Import (workflow import panel). On the component definition, POA&M, assessment plan, assessment
   results and workflow instance pages, every tab is design-system; only some create/edit forms
   and the POA&M item details are still classic, inside design-system dialogs.
-- **Design-system header over a classic body**: Agents, risk and subject template lists, Filter
-  suggestions.
+- **Design-system header over a classic body**: Agents, risk templates, Filter suggestions,
+  Diagnostics sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
 globally any more). The second live sweep (89 routes, including every record tab and Configure
 section) is clean apart from known API errors. The e2e axe run now also covers the OSCAL record
-tabs, the Configure System sections, the user and group pages, Inventory and Build a profile.
+tabs, the Configure System sections, the user and group pages, Inventory, Build a profile, the
+catalog page, subject templates and the system template page.
 
 The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
 page below.
