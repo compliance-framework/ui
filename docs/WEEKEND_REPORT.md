@@ -18,27 +18,25 @@ without a redesigned page around it. Pages fall into three kinds:
   Compliance; Risks dashboard and register (system and cross-system); Workflow instances and
   definitions lists; the five OSCAL document lists and Catalogs; create and edit forms for
   systems, catalogs, profiles, component definitions, assessment plans and results, and POA&Ms;
-  users, groups, parties and roles; system templates list; POA&M items; evidence filters list;
-  control links (list and create); control evidence; My tasks; Preferences; About; and every
+  users, groups, parties and roles, and the user and group pages; system templates list; POA&M
+  items; evidence filters list; control links (list and create); control evidence; My tasks;
+  Inventory; Build a profile from props; the subject template page; Preferences; About; and every
   signed-out page.
-- **Design-system page with classic islands inside**: Implementation, Configure System (its
-  hidden Control Implementation, Export Offerings, Leverage and Inherited Capabilities sections,
-  plus forms inside rebuilt sections), profile, assessment plan and catalog pages, user and group
-  pages, workflow run, Compliance Map, Diagnostics, risk page, system template record, New
-  evidence filter. On the component definition, POA&M, assessment results and workflow pages,
-  every tab is now design-system; only some create/edit forms and the POA&M item details are
-  still classic, inside design-system dialogs.
-- **Design-system header over a classic body**: Agents, risk and subject templates, Import,
-  Inventory, Build a profile from props, Filter suggestions.
+- **Design-system page with classic islands inside**: Implementation (the per-control statement
+  editor and shared-responsibility panel), Configure System (the hidden Control Implementation
+  section, the diagram editor and some forms), profile and catalog pages, workflow run,
+  Compliance Map, Diagnostics, risk page, system template record, New evidence filter, Import
+  (workflow import panel). On the component definition, POA&M, assessment plan, assessment
+  results and workflow instance pages, every tab is design-system; only some create/edit forms
+  and the POA&M item details are still classic, inside design-system dialogs.
+- **Design-system header over a classic body**: Agents, risk and subject template lists, Filter
+  suggestions.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
-globally any more). Rebuilt record tabs and sections include every JSON tab, the four OSCAL Overview tabs, the
-profile's Controls, Compliance and Merge, the whole workflow definition record, workflow instance
-Overview, Roles and Runs, assessment plan Tasks, every component definition, POA&M and
-assessment results tab, and Configure System's six visible tabs plus Users, Leveraged
-Authorizations and System Implementation. A live sweep of every page (66 routes plus every
-Configure section) is clean apart from API errors listed below.
+globally any more). The second live sweep (89 routes, including every record tab and Configure
+section) is clean apart from known API errors. The e2e axe run now also covers the OSCAL record
+tabs, the Configure System sections, the user and group pages, Inventory and Build a profile.
 
 The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
 page below.
@@ -66,6 +64,10 @@ page below.
 9. Assigning workflow roles is per role (menu, then a filterable person picker) instead of one
    dialog for every role. Assessment results lost their View and Edit buttons, which led to
    routes that never existed.
+10. `useApiQuery` now treats `{"data": null}` as empty and accepts reactive URLs; `FileField`
+   takes several files with `multiple`. Small design-system changes, worth a look.
+11. Permission-gated actions are shown disabled with a reason throughout, where classic pages hid
+   them.
 
 **Bugs found that probably affect `main` too** (worth tickets)
 
