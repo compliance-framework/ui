@@ -54,8 +54,9 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
       { key: 'collected', label: 'Collected', value: date(o.collected) },
       { key: 'expires', label: 'Expires', value: date(o.expires) },
     ],
-    createForm: () => import('@/components/poam/ObservationCreateForm.vue'),
-    editForm: () => import('@/components/poam/ObservationEditForm.vue'),
+    createForm: () => import('./ObservationForm.vue'),
+    editForm: () => import('./ObservationForm.vue'),
+    designSystemForms: true,
   },
   risks: {
     path: 'risks',

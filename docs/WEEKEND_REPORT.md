@@ -101,6 +101,9 @@ page below.
   .../back-matter` replaces the whole back matter and expects `{resources: [...]}`, but the
   classic form sent a single resource (answered 200, stored nothing). Fixed in the new form,
   which sends the existing resources plus the new one.
+- Editing a POA&M observation showed its Collected and Expires times blank (an ISO timestamp in a
+  local datetime field) and sent the field's raw value back (classic UI; fixed in the new
+  observation form).
 - On Implementation, the control drawer's Edit and Delete for a component statement never saved
   (no handlers), and the drawer showed "Components (0)" for controls whose statements live on
   the requirement's statements, which is nearly all of them (classic UI; both fixed here).
@@ -964,3 +967,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   other fields). The create form (choose the destination: plan, POA&M, assessment plan or
   results) and the attach editor stay classic. Checked live: create (classic), edit, view
   details, delete.
+- **POA&M observation form** is design-system (`ObservationForm`, add and edit): title,
+  description, methods and types as checkboxes of the OSCAL values (plus any others the record
+  already has), collected (empty means now) and expires (must be later), remarks.
+  **Found (fixed):** the classic edit form lost existing timestamps; see the summary. Checked
+  live: edit "Weekend observation" (its time shows; adding a method saves and keeps the date).
