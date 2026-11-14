@@ -277,6 +277,46 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       );
     }
     if (path === '/api/admin/risk-templates') return json(route, { data: [] });
+    if (path === '/api/admin/agents')
+      return list(route, lists, { data: [{
+          id: 'ag-1',
+          name: 'collector',
+          description: 'Collects evidence',
+          'is-active': true,
+          'service-account-key-count': 1,
+          'last-authenticated-at': '2026-09-09T00:00:00Z',
+          'created-at': '2026-09-01T00:00:00Z',
+          'updated-at': '2026-09-09T00:00:00Z',
+        }] }, { data: [] });
+    if (path === '/api/admin/agents/ag-1')
+      return json(route, { data: {
+          id: 'ag-1',
+          name: 'collector',
+          description: 'Collects evidence',
+          'is-active': true,
+          'service-account-key-count': 1,
+          'last-authenticated-at': '2026-09-09T00:00:00Z',
+          'created-at': '2026-09-01T00:00:00Z',
+          'updated-at': '2026-09-09T00:00:00Z',
+        } });
+    if (path === '/api/admin/agents/ag-1/keys')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'key-1',
+              name: 'primary',
+              'client-id': 'client-1',
+              'never-expires': true,
+              'created-at': '2026-09-01T00:00:00Z',
+              'updated-at': '2026-09-01T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/admin/subject-templates' && method === 'GET')
       return list(
         route,

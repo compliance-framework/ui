@@ -28,9 +28,9 @@ without a redesigned page around it. Pages fall into three kinds:
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
   section, the diagram editor, the component risks list and evidence-filter drawer), catalog
   page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
-  page. On the assessment results and workflow instance pages, every tab is design-system too.
-- **Design-system header over a classic body**: Agents, risk templates, Filter suggestions,
-  Diagnostics sections.
+  page, Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
+- **Design-system header over a classic body**: risk templates, Filter suggestions, Diagnostics
+  sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
@@ -144,7 +144,7 @@ test CD", a profile "Weekend version probe" (the API can't delete those), a POA&
 POA&M" with an observation "Weekend observation", and assessment results "Weekend test AR"
 with one result. Later: on Payments Processing Platform, three "Weekend offering" export
 offerings and two "Weekend inventory item"s; a global evidence filter "Weekend filter" linked to
-INT-CI. The seed `it-ops` role assignment on "Annual DR Exercise — Customer Portal"
+INT-CI; a revoked key "Weekend key" on the todo-worker agent. The seed `it-ops` role assignment on "Annual DR Exercise — Customer Portal"
 was removed and re-created (same values, new ID). Every other record I created was deleted again.
 
 **How to look:** `VITE_API_PROXY=http://localhost:8080 npm run dev`, sign in, and click
@@ -1090,3 +1090,18 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Checked live: the name and filter checks, create with a linked control (back on Evidence), then
   edit and save from the list. Local-dev has filter component linking off, so the component
   picker wasn't seen live.
+- **Agents** are design-system: a list (`/admin/agents`: agent, status, keys, last sign-in,
+  registered; search in the address) and a record page per agent (`/admin/agents/:id`) with
+  Overview, Keys and Configuration tabs. **Decision:** the classic page was one screen with a
+  selectable table and a detail card below it; it is now the usual list and record, so an agent
+  has its own URL. Registering an agent opens its Keys tab, since a key comes next. A new key's
+  dialog turns into the "save the secret now" view (client ID, secret and the curl sign-in
+  command, each with Copy), instead of a second dialog. The R40 rule is kept: registration,
+  keys, Edit and Delete are hidden (not disabled) for non-admins, and nothing admin-only shows or
+  is requested until permissions have loaded (`useAgentAdmin`); a reader who follows a link to
+  Keys sees "forbidden" and no keys request is made. **Gap (island):** the Configuration tab is
+  still the classic configuration editor (about 6,000 lines with its effective view, overlay
+  editor, history and instances). The classic 724-line spec is replaced by specs for the list,
+  record, keys tab and key form (same cases: create, edit, keys, revoke, delete, empty state,
+  tab visibility, R40 hydration). Checked live: list, overview, create a key (secret shown once),
+  revoke it, and the Configuration tab. Agents pages are in the axe run.

@@ -46,6 +46,10 @@ const routes = [
   '/inventory',
   '/admin/subject-templates',
   '/admin/subject-templates/st-1',
+  '/admin/agents',
+  '/admin/agents/ag-1',
+  '/admin/agents/ag-1/keys',
+  '/dashboards/create',
   '/users/u1',
   '/admin/groups/g1',
   ...['', '/components', '/capabilities', '/back-matter'].map(

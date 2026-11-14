@@ -351,6 +351,35 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/agents/:id',
+    component: () => import('../screens/admin/AgentScreen.vue'),
+    meta: {
+      requiresAuth: true,
+      ds: true,
+      permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
+    },
+    children: [
+      {
+        path: '',
+        name: 'admin-agent',
+        component: () => import('../screens/admin/AgentOverviewTab.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'keys',
+        name: 'admin-agent-keys',
+        component: () => import('../screens/admin/AgentKeysTab.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'configuration',
+        name: 'admin-agent-configuration',
+        component: () => import('../screens/admin/AgentConfigurationTab.vue'),
+        meta: { requiresAuth: true },
+      },
+    ],
+  },
+  {
     path: '/admin/notifications',
     name: 'admin-notifications',
     redirect: { name: 'admin-diagnostics-notifications' },
