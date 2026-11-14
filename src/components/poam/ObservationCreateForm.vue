@@ -260,8 +260,14 @@ async function submit() {
         formData.types.filter((t) => t.trim()).length > 0
           ? formData.types.filter((t) => t.trim())
           : undefined,
-      collected: new Date(formData.collected).toISOString() || undefined,
-      expires: new Date(formData.expires).toISOString() || undefined,
+      // OSCAL requires collected: an empty field means now.
+      collected: (formData.collected
+        ? new Date(formData.collected)
+        : new Date()
+      ).toISOString(),
+      expires: formData.expires
+        ? new Date(formData.expires).toISOString()
+        : undefined,
       remarks: formData.remarks || undefined,
     };
 

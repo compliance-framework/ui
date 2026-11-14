@@ -98,9 +98,10 @@ const recordTabs = computed(() => {
     :tabs="recordTabs"
   >
     <LegacyPage>
-      <RouterView v-slot="{ Component }">
+      <!-- Keyed: the item, observation, risk and finding tabs are one component. -->
+      <RouterView v-slot="{ Component, route: tab }">
         <KeepAlive>
-          <component :is="Component" />
+          <component :is="Component" :key="tab.name" />
         </KeepAlive>
       </RouterView>
     </LegacyPage>

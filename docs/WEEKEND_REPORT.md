@@ -631,3 +631,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Every component definition tab is now design-system, so the record no longer has a classic
   frame. Checked live on "k8s components". **Gap:** record-page tabs are still not in the axe
   e2e run (true of every record page so far).
+- **POA&M items, Observations, Risks and Findings tabs**: one design-system tab
+  (`PoamCollectionTab`) configured per kind in `poamCollections.ts`, like the document forms.
+  Each entry is a disclosure with count tags, facts and a menu (edit, delete; items also attach
+  or detach; risks also open the risk page), with the design-system confirm. **Decision:** findings
+  now show their target as "type: title or id" and their states as text, instead of raw JSON.
+  **Gap (island):** the forms, the attach dialog and the POA&M item details and milestones stay
+  classic. The record screen keys its tab by route, since four tabs share one component. Checked
+  live: create observation, create item, attach dialog, delete item.
+  **Found (fixed):** creating an observation without a Collected date failed with "Invalid time
+  value" (classic bug). An empty Collected now means now (OSCAL requires it); an empty Expires is
+  left out. Test data: observation "Weekend observation" on "Weekend test POA&M".

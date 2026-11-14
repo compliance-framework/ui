@@ -640,8 +640,7 @@ const authenticatedRoutes = [
       {
         path: 'poam-items',
         name: 'plan-of-action-and-milestones-poam-items',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesPoamItemsView.vue'),
+        component: () => import('../screens/poam/PoamCollectionTab.vue'),
       },
       // Folded into the edit form; old links open it.
       {
@@ -664,14 +663,12 @@ const authenticatedRoutes = [
       {
         path: 'observations',
         name: 'plan-of-action-and-milestones-observations',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesObservationsView.vue'),
+        component: () => import('../screens/poam/PoamCollectionTab.vue'),
       },
       {
         path: 'risks',
         name: 'plan-of-action-and-milestones-risks',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesRisksView.vue'),
+        component: () => import('../screens/poam/PoamCollectionTab.vue'),
       },
       {
         path: 'risks/:riskId',
@@ -681,8 +678,7 @@ const authenticatedRoutes = [
       {
         path: 'findings',
         name: 'plan-of-action-and-milestones-findings',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesFindingsView.vue'),
+        component: () => import('../screens/poam/PoamCollectionTab.vue'),
       },
       {
         path: 'back-matter',
