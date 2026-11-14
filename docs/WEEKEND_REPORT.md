@@ -652,3 +652,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Found (API, not fixed):** adding the first back matter resource to a POA&M fails with a 500
   (`POST .../back-matter/resources`, logged with no detail). The classic page uses the same form
   and endpoint, so it fails there too.
+- **Assessment results → Results tab**: fully design-system, with no islands. Each result is a
+  disclosure with count tags, its period and description, and item lists of its findings,
+  observations and risks. Delete goes through the design-system confirm. New result is a
+  design-system dialog with validation (title, start, end after start); as before, it reviews all
+  controls. **Decision:** the classic View and Edit buttons are dropped: they linked to
+  `/assessment-results/:id/results/:resultId(/edit)`, which were never routes (they 404'd into
+  the not-found page). **Option for you:** a result page (findings, observations, risks in full)
+  would be the natural next step if results matter to users. Every assessment results tab is now
+  design-system, so that record has no classic frame. Test data: "Weekend test AR".

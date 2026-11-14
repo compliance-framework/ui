@@ -755,7 +755,7 @@ const authenticatedRoutes = [
         path: 'results',
         name: 'assessment-results-results',
         component: () =>
-          import('../views/assessment-results/AssessmentResultsResultsView.vue'),
+          import('../screens/assessments/AssessmentResultsResultsTab.vue'),
       },
       // Local definitions and back matter were "coming soon" placeholders; old links open the
       // overview instead.

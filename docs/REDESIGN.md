@@ -94,7 +94,7 @@ Replace each with a design-system version, then delete the classic component.
 - Implementation: `IndexControlImplementation`, `ControlEvidenceCounter`, `StatementByComponent`,
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
-- Record tabs still classic: assessment plan task details and new-task dialog; assessment results Results; inside the
+- Record tabs still classic: assessment plan task details and new-task dialog; inside the
   rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
   POA&M risk page (classic risk detail); workflow instance Role
   assignments (its assign dialog needs an async user picker); profile control-group editor and
@@ -111,7 +111,8 @@ Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
 instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
-definition Components, Capabilities and Back matter, every POA&M tab; toasts,
+definition Components, Capabilities and Back matter, every POA&M tab, assessment results
+Results; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos
