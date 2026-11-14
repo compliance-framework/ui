@@ -754,8 +754,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Implementation drawer: AI suggestions and component statements** are design-system
   (`ControlSuggestions`, `ByComponentStatement`). Each component statement is a panel with its
   status tag, open risks for the control (linking to the register), the markdown statement and
-  remarks, and an Edit/Delete menu. Edit happens in place, with design-system fields (the status
-  select uses a `none` sentinel, since the select can't hold an empty value), and delete goes
+  remarks, and an Edit/Delete menu. Edit happens in place, with design-system fields, and delete goes
   through the design-system confirm. **Found (fixed, affects `main`):**
   1. The drawer's Edit and Delete never worked. The classic drawer rendered the statement
      component with no save or delete handlers, so edits vanished silently. The screen now saves
@@ -778,3 +777,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   deleted, along with four assessment-plan activity modals and forms that nothing used. Checked
   live: create, open and rename a task. **Test data:** assessment plan "Weekend test AP" with
   the task "Weekend scan (renamed)".
+- **User and group pages: members and roles** are design-system. Group members are a table
+  (name, email, native or synced from SSO) with Add member (a filterable picker over the user
+  directory, leaving out existing members) and Remove; SSO-synced memberships are shown with
+  Remove disabled and the reason. Roles are one shared `RoleAssignmentsSection` for users and
+  groups: role, source (manual or configuration) and, for users, origin (direct or inherited
+  via a group), with Assign role (only roles not already held directly) and Remove (disabled
+  with the reason for configuration and inherited grants). **Decision:** Remove and Assign are
+  shown disabled with a reason instead of hidden. Both classic role specs are ported. Checked
+  live on "Weekend test group": add member, assign role, remove both (group restored).
+  These pages now have no classic islands.

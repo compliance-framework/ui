@@ -5,8 +5,7 @@ import { useToast } from 'primevue/usetoast';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser, CCFUserGroup, DataResponse } from '@/stores/types';
 import { getErrorDetail } from '@/utils/httpErrors';
-import UserRolesPanel from '@/components/users/UserRolesPanel.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import RoleAssignmentsSection from './RoleAssignmentsSection.vue';
 import { formatDateTime } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
@@ -25,7 +24,7 @@ import EditUserDialog from './EditUserDialog.vue';
 
 /**
  * A user (/users/:id, admin): account details, groups, and system roles. Edit, Lock and Delete are
- * page actions. The roles panel is the classic one (a legacy island).
+ * page actions.
  */
 const route = useRoute();
 const router = useRouter();
@@ -211,12 +210,13 @@ async function remove(): Promise<void> {
         </PanelSection>
       </Panel>
 
-      <LegacyPage>
-        <UserRolesPanel
-          :user-id="user.data.value.id"
-          :user-email="user.data.value.email"
-        />
-      </LegacyPage>
+      <RoleAssignmentsSection
+        :roles-url="`/api/admin/users/${user.data.value.id}/roles`"
+        assignee-type="user"
+        :assignee-id="user.data.value.email"
+        description="System roles held directly or inherited from group membership."
+        empty-body="This user holds no system roles, directly or through a group."
+      />
     </Stack>
   </RecordTemplate>
 

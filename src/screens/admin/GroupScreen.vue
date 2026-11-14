@@ -5,9 +5,8 @@ import { useToast } from 'primevue/usetoast';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFGroup } from '@/stores/types';
 import { getErrorDetail } from '@/utils/httpErrors';
-import GroupMembersPanel from '@/components/groups/GroupMembersPanel.vue';
-import GroupRolesPanel from '@/components/groups/GroupRolesPanel.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import GroupMembersSection from './GroupMembersSection.vue';
+import RoleAssignmentsSection from './RoleAssignmentsSection.vue';
 import { formatDateTime } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
@@ -20,8 +19,7 @@ import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 import GroupFormDialog from './GroupFormDialog.vue';
 
 /**
- * A group (/admin/groups/:id): its details, members and system roles. The members and roles
- * panels are the classic ones (legacy islands).
+ * A group (/admin/groups/:id): its details, members and system roles.
  */
 const route = useRoute();
 const router = useRouter();
@@ -95,15 +93,14 @@ async function remove(): Promise<void> {
       >
     </template>
     <Stack gap="6">
-      <LegacyPage>
-        <GroupMembersPanel :group-id="group.data.value.id" />
-      </LegacyPage>
-      <LegacyPage>
-        <GroupRolesPanel
-          :group-id="group.data.value.id"
-          :group-name="group.data.value.name"
-        />
-      </LegacyPage>
+      <GroupMembersSection :group-id="group.data.value.id" />
+      <RoleAssignmentsSection
+        :roles-url="`/api/admin/groups/${group.data.value.id}/roles`"
+        assignee-type="group"
+        :assignee-id="group.data.value.name"
+        description="System roles granted to this group. Members inherit them."
+        empty-body="Assign a role to grant it to every member of this group."
+      />
     </Stack>
   </RecordTemplate>
 

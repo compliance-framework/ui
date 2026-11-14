@@ -101,8 +101,7 @@ Replace each with a design-system version, then delete the classic component.
 - Component definitions: the new/edit component, capability and resource forms (in
   design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk and subject templates,
-  Import, Inventory, Build profile from props, Filter suggestions; also the user and group roles
-  and members panels, system template form/preview/instances, Diagnostics sections, Compliance
+  Import, Inventory, Build profile from props, Filter suggestions; system template form/preview/instances, Diagnostics sections, Compliance
   Map tree/graph, catalog control tree and dialogs, evidence filter form, Slack link section.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
@@ -112,7 +111,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities and steps); toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

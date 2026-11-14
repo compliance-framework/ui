@@ -92,18 +92,13 @@ const status = computed(() =>
 // Edit in place ------------------------------------------------------------------------------
 
 const editing = ref(false);
-/** The Select can't hold an empty value, so "No status" is `none`. */
-const NONE = 'none';
-const statusOptions = implementationStatusOptionsWithNone.map((option) => ({
-  label: option.label,
-  value: option.value || NONE,
-}));
-const draft = ref({ description: '', state: NONE, remarks: '' });
+const statusOptions = [...implementationStatusOptionsWithNone];
+const draft = ref({ description: '', state: '', remarks: '' });
 
 function startEdit() {
   draft.value = {
     description: props.byComponent.description ?? '',
-    state: props.byComponent.implementationStatus?.state || NONE,
+    state: props.byComponent.implementationStatus?.state ?? '',
     remarks: props.byComponent.implementationStatus?.remarks ?? '',
   };
   editing.value = true;
@@ -112,10 +107,9 @@ function startEdit() {
 function save() {
   const next: ByComponent = JSON.parse(JSON.stringify(props.byComponent));
   next.description = draft.value.description;
-  next.implementationStatus =
-    draft.value.state !== NONE
-      ? { state: draft.value.state, remarks: draft.value.remarks || undefined }
-      : undefined;
+  next.implementationStatus = draft.value.state
+    ? { state: draft.value.state, remarks: draft.value.remarks || undefined }
+    : undefined;
   emit('save', normalizeByComponentImplementationStatus(next));
   editing.value = false;
 }
@@ -161,7 +155,7 @@ const actions = computed<MenuEntry[]>(() => [
             <Select v-model="draft.state" :options="statusOptions" />
           </FormField>
           <FormField
-            v-if="draft.state !== NONE"
+            v-if="draft.state"
             label="Status remarks"
             hint="Why it has this status, or what is left to do."
           >
