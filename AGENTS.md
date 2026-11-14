@@ -97,8 +97,8 @@ These cause most API-related bugs in this repo:
 
 - Components use `<script setup lang="ts">`; there is no Options API.
 - Style with Tailwind classes, include `dark:` variants, and use `PageCard` for page sections.
-- Only `PrimaryButton`, `SecondaryButton`, `CatalogGroup`, `CatalogControl` and `v-tooltip`
-  are registered globally. Import everything else explicitly: there are no auto-imports.
+- Only `PrimaryButton`, `SecondaryButton` and `v-tooltip` are registered globally. Import
+  everything else explicitly: there are no auto-imports.
 - API types are written by hand in `src/types` or `src/oscal`. Match the API's JSON tags, after
   camelCasing.
 - Tooltip text lives in `src/config/tooltips.ts` (see `docs/TOOLTIPS.md`).

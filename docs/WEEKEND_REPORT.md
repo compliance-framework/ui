@@ -849,3 +849,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
      click.
   The classic spec is split into list and form specs. Checked live: list, edit and save.
 - **Subject templates list and page in the axe run** (every state and theme): pass.
+- **Catalog page: the control tree** is design-system (`CatalogGroupNode`, `CatalogControlNode`,
+  recursive). Each group or control is a disclosure whose open state is remembered across
+  reloads (same store as before), holding its parts as markdown (one shared `partMarkdown`
+  helper replaces `PartDisplayEditor`), evidence results as status badges, attributes, children,
+  and a menu: edit, edit description or parts, add a group or control inside, evidence (for
+  classed controls), delete (design-system confirm). The add and edit forms stay classic modals.
+  The global `CatalogGroup`/`CatalogControl` registrations are gone (AGENTS.md updated).
+  **Decisions:**
+  1. Actions live inside an opened node, not on its header row; the design-system disclosure
+     has no header actions.
+  2. Evidence counts show inside the control, not on its row.
+  Checked live on "Meridian Internal Controls — Delivery": open, reload (stays open), menus,
+  edit modal.

@@ -1,18 +1,17 @@
 <script setup lang="ts">
 /**
- * A catalog (/catalogs/:id): its controls as a tree of groups. The header and actions are the
- * design system's; the control tree and the add, edit and delete dialogs are the classic ones
- * (legacy islands). The script is the classic page's.
+ * A catalog (/catalogs/:id): its controls as a tree of groups (CatalogGroupNode and
+ * CatalogControlNode). The add and edit forms are classic modals (legacy islands). The script is
+ * the classic page's.
  */
 import { onActivated, ref } from 'vue';
 import { type Catalog, type Group, type Control } from '@/oscal';
 import { useRoute, useRouter } from 'vue-router';
-import CatalogGroup from '@/views/catalog/CatalogGroup.vue';
-import CatalogControl from '@/views/catalog/CatalogControl.vue';
+import CatalogGroupNode from './CatalogGroupNode.vue';
+import CatalogControlNode from './CatalogControlNode.vue';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
@@ -178,24 +177,22 @@ function onCatalogUpdated(updated: Catalog) {
         >This catalog has no groups or controls yet. Add a group to organise
         controls, or add a control directly.</Text
       >
-      <LegacyPage>
-        <CatalogGroup
-          v-for="group in groups"
-          :key="group.id"
-          :group="group"
-          :catalog="catalog"
-          @deleted="onGroupDeleted"
-          @updated="reloadLists"
-        />
-        <CatalogControl
-          v-for="control in controls"
-          :key="control.id"
-          :control="control"
-          :catalog="catalog"
-          @deleted="onControlDeleted"
-          @updated="reloadLists"
-        />
-      </LegacyPage>
+      <CatalogGroupNode
+        v-for="group in groups"
+        :key="group.id"
+        :group="group"
+        :catalog="catalog"
+        @deleted="onGroupDeleted"
+        @updated="reloadLists"
+      />
+      <CatalogControlNode
+        v-for="control in controls"
+        :key="control.id"
+        :control="control"
+        :catalog="catalog"
+        @deleted="onControlDeleted"
+        @updated="reloadLists"
+      />
     </Stack>
   </RecordTemplate>
 
