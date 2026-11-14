@@ -48,14 +48,6 @@ const recordTabs = computed(() => {
       to: { name: 'plan-of-action-and-milestones-poam-items', params: { id } },
     },
     {
-      label: 'Import SSP',
-      to: { name: 'plan-of-action-and-milestones-import-ssp', params: { id } },
-    },
-    {
-      label: 'System ID',
-      to: { name: 'plan-of-action-and-milestones-system-id', params: { id } },
-    },
-    {
       label: 'Local definitions',
       to: {
         name: 'plan-of-action-and-milestones-local-definitions',

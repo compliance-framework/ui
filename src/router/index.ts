@@ -643,17 +643,17 @@ const authenticatedRoutes = [
         component: () =>
           import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesPoamItemsView.vue'),
       },
+      // Folded into the edit form; old links open it.
       {
         path: 'import-ssp',
         name: 'plan-of-action-and-milestones-import-ssp',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesImportSspView.vue'),
+        redirect: { name: 'plan-of-action-and-milestones-edit' },
       },
+      // Folded into the edit form; old links open it.
       {
         path: 'system-id',
         name: 'plan-of-action-and-milestones-system-id',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesSystemIdView.vue'),
+        redirect: { name: 'plan-of-action-and-milestones-edit' },
       },
       {
         path: 'local-definitions',

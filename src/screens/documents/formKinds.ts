@@ -22,6 +22,7 @@ export interface DocumentFormKind {
   /** A new document before the form's fields are applied. */
   blank: () => Record<string, unknown>;
   version: boolean;
+  /** The API rejects these documents without a version. */
   versionRequired?: boolean;
   /** Edit shows the published date (assessment plans). */
   published?: boolean;
@@ -36,7 +37,11 @@ export interface DocumentFormKind {
     placeholder?: string;
     url: boolean;
     remarksLabel: string;
+    /** Optional imports can be left empty (a POA&M's SSP). */
+    optional?: boolean;
   };
+  /** A POA&M's system ID: the identifier of the system it tracks, and its type. */
+  systemId?: boolean;
   /** Assessment results start with one result, named on create. */
   initialResult?: boolean;
   /**
@@ -101,8 +106,9 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     listRoute: 'catalog-list',
     listLabel: 'Catalogs',
     resource: RESOURCES.CATALOG,
-    blank: () => ({ metadata: {} }),
+    blank: () => ({ metadata: { version: '1.0' } }),
     version: true,
+    versionRequired: true,
     catalogType: true,
   },
   'component-definition': {
@@ -112,8 +118,9 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     listRoute: 'component-definitions',
     listLabel: 'Component definitions',
     resource: RESOURCES.COMPONENT_DEFINITION,
-    blank: () => ({ metadata: {} }),
+    blank: () => ({ metadata: { version: '1.0' } }),
     version: true,
+    versionRequired: true,
   },
   profile: {
     noun: 'profile',
@@ -140,6 +147,7 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     resource: RESOURCES.ASSESSMENT_PLAN,
     blank: () => ({ metadata: { version: '1.0' }, importSsp: {} }),
     version: true,
+    versionRequired: true,
     published: true,
     importRef: {
       key: 'importSsp',
@@ -157,11 +165,16 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     listLabel: 'Assessment results',
     resource: RESOURCES.ASSESSMENT_RESULTS,
     blank: () => ({
-      metadata: { published: new Date().toISOString(), oscalVersion: '1.1.3' },
+      metadata: {
+        version: '1.0',
+        published: new Date().toISOString(),
+        oscalVersion: '1.1.3',
+      },
       importAp: {},
       results: [],
     }),
     version: true,
+    versionRequired: true,
     published: true,
     importRef: {
       key: 'importAp',
@@ -184,13 +197,19 @@ export const DOCUMENT_FORMS: Record<string, DocumentFormKind> = {
     listRoute: 'plan-of-action-and-milestones',
     listLabel: 'POA&Ms',
     resource: RESOURCES.POAM_OSCAL,
-    // The API requires a system ID; the classic form sent this placeholder too.
-    blank: () => ({
-      metadata: {},
-      systemId: { id: 'change-me', identifierType: '' },
-      poamItems: [],
-    }),
+    blank: () => ({ metadata: { version: '1.0' }, poamItems: [] }),
     version: true,
+    versionRequired: true,
+    systemId: true,
+    importRef: {
+      key: 'importSsp',
+      label: 'System security plan',
+      hint: 'Optional: a reference to the SSP these items track, such as #uuid-of-the-ssp.',
+      placeholder: '#ssp-uuid',
+      url: false,
+      remarksLabel: 'Remarks on the SSP',
+      optional: true,
+    },
   },
 };
 
@@ -222,6 +241,7 @@ export function validateDocument(
     version: string;
     importHref: string;
     resultTitle: string;
+    systemIdValue: string;
   },
   mode: 'create' | 'edit' = 'create',
 ): Record<string, string> {
@@ -230,9 +250,13 @@ export function validateDocument(
   if (!fields.title.trim()) errors.title = 'Enter a title.';
   if (kind.versionRequired && !fields.version.trim())
     errors.version = 'Enter a version, like 1.0.0.';
+  if (kind.systemId && !fields.systemIdValue.trim())
+    errors.systemIdValue = "Enter the system's identifier.";
   if (kind.importRef) {
     const href = fields.importHref.trim();
-    if (!href)
+    if (!href && kind.importRef.optional) {
+      // Nothing to check.
+    } else if (!href)
       errors.importHref = kind.importRef.url
         ? 'Enter the URL of the system security plan.'
         : 'Enter a reference to the assessment plan.';

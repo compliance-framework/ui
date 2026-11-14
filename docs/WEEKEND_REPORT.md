@@ -535,3 +535,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the import-AP reference and remarks), so it's removed and its URL opens the edit form. Its
   prefill check moved to the shared form's spec. The assessment results record now has
   Overview, Results and JSON.
+- **Decision:** the POA&M **Import SSP** and **System ID** tabs (read-only values plus create and
+  edit dialogs) are folded into the POA&M form: a required System ID (with an optional
+  identifier type) and an optional SSP reference, on create and edit. Their URLs open the edit
+  form. The classic create silently sent the placeholder system ID `change-me`; now you enter
+  the real one. (Checked: a full-document PUT persists both.)
+- **Found:** the API rejects POA&Ms and assessment plans without `metadata.version`. The
+  shared form now requires a version for every document type that has one, starting at "1.0",
+  instead of showing the API's raw "metadata.version is required" after submit.

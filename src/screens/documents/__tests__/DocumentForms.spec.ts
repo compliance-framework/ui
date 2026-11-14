@@ -153,8 +153,13 @@ describe('DocumentForms', () => {
       data: {
         data: {
           uuid: 'p-1',
-          metadata: { title: 'Remediation plan', oscalVersion: '1.1.3' },
+          metadata: {
+            title: 'Remediation plan',
+            version: '2',
+            oscalVersion: '1.1.3',
+          },
           poamItems: [{ uuid: 'i-1' }],
+          systemId: { id: 'payments', identifierType: '' },
         },
       },
     });
@@ -174,6 +179,7 @@ describe('DocumentForms', () => {
       expect.objectContaining({
         uuid: 'p-1',
         poamItems: [{ uuid: 'i-1' }],
+        systemId: { id: 'payments', identifierType: '' },
         metadata: expect.objectContaining({
           title: 'Remediation plan 2027',
           oscalVersion: '1.1.3',
@@ -263,7 +269,7 @@ describe('DocumentForms', () => {
       data: {
         data: {
           uuid: 'ar-1',
-          metadata: { title: 'Q4' },
+          metadata: { title: 'Q4', version: '1' },
           importAp: { href: '#ap-1' },
           results: [{ uuid: 'r-1', title: 'Run' }],
         },

@@ -48,6 +48,7 @@ type Doc = Record<string, unknown> & {
   metadata: Record<string, unknown>;
   importSsp?: Record<string, unknown>;
   importAp?: Record<string, unknown>;
+  systemId?: { id?: string; identifierType?: string };
 };
 
 const fields = reactive({
@@ -60,6 +61,8 @@ const fields = reactive({
   importRemarks: '',
   resultTitle: '',
   resultDescription: '',
+  systemIdValue: '',
+  systemIdType: '',
   catalogType: 'standard',
 });
 const loaded = ref<Doc>();
@@ -75,6 +78,8 @@ function fill(doc: Doc): void {
   const imported = (
     config.importRef ? doc[config.importRef.key] : undefined
   ) as { href?: string; remarks?: string } | undefined;
+  fields.systemIdValue = String(doc.systemId?.id ?? '');
+  fields.systemIdType = String(doc.systemId?.identifierType ?? '');
   fields.importHref = String(imported?.href ?? '');
   fields.importRemarks = String(imported?.remarks ?? '');
 }
@@ -156,13 +161,22 @@ function payload(): Doc {
         : {}),
     },
   };
+  if (config.systemId)
+    doc.systemId = {
+      id: fields.systemIdValue.trim(),
+      identifierType: fields.systemIdType.trim(),
+    };
   if (config.importRef) {
     const key = config.importRef.key;
-    doc[key] = {
-      ...(base[key] as Record<string, unknown> | undefined),
-      href: fields.importHref.trim(),
-      remarks: fields.importRemarks.trim() || undefined,
-    };
+    const href = fields.importHref.trim();
+    doc[key] =
+      href || !config.importRef.optional
+        ? {
+            ...(base[key] as Record<string, unknown> | undefined),
+            href,
+            remarks: fields.importRemarks.trim() || undefined,
+          }
+        : undefined;
   }
   if (config.initialResult && props.mode === 'create')
     doc.results = [
@@ -279,11 +293,27 @@ async function submit(): Promise<void> {
           <FormField label="Remarks">
             <Textarea v-model="fields.remarks" :rows="4" />
           </FormField>
+          <template v-if="config.systemId">
+            <FormField
+              label="System ID"
+              hint="The identifier of the system this POA&M tracks."
+              required
+              :error="errors.systemIdValue"
+            >
+              <TextInput v-model="fields.systemIdValue" />
+            </FormField>
+            <FormField
+              label="Identifier type"
+              hint="Optional: a URI for the identifier scheme, e.g. https://ietf.org/rfc/rfc4122."
+            >
+              <TextInput v-model="fields.systemIdType" />
+            </FormField>
+          </template>
           <template v-if="config.importRef">
             <FormField
               :label="config.importRef.label"
               :hint="config.importRef.hint"
-              required
+              :required="!config.importRef.optional"
               :error="errors.importHref"
             >
               <TextInput
