@@ -787,3 +787,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   shown disabled with a reason instead of hidden. Both classic role specs are ported. Checked
   live on "Weekend test group": add member, assign role, remove both (group restored).
   These pages now have no classic islands.
+- **Build a profile from props**: fully design-system: catalog picker, title and version, "any
+  or every rule matches" (segmented radio), rules as a field list (prop name, operator, value),
+  inline validation, and a result panel linking to the new profile with the matched control IDs
+  as tags. **Decision:** the free-text Catalog UUID field is gone; the catalog is chosen from the
+  list (the two fields duplicated each other). Checked live. **Test data:** profile "Weekend
+  props profile" (profiles can't be deleted).

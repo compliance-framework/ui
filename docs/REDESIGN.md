@@ -71,7 +71,7 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 | Evidence filters (dashboards)                                                                    | `dashboards`, `dashboards.*`                                                                                 | List **done** (trend in a drawer); New filter and Suggestions frames done (form and suggestions are islands)                                                                                   |
 | Analysis: cross-system risks, compliance map                                                     | `admin-risks`, `lineage`, `lineage-graph`                                                                    | Cross-system risks **done**; Compliance Map frame and tabs **done** (tree, graph, scope bar and drawer are islands)                                                                            |
 | Integrations: workflow definitions, agents, import                                               | `workflow:index`, `workflow-definition-*`, `admin-agents`, `admin-import`                                    | Workflow definitions list **done**; definition record done with islands; agents and import **done** (design-system header, classic body)                                                       |
-| Control Definitions: catalogs, profiles, control links, component definitions                    | `catalog-*`, `profile*`, `control-links-*`, `component-definition*`                                          | Lists of catalogs, profiles, component definitions; catalog page; control evidence; control links; create catalog, profile, component definition; build-props (classic body) **done**          |
+| Control Definitions: catalogs, profiles, control links, component definitions                    | `catalog-*`, `profile*`, `control-links-*`, `component-definition*`                                          | Lists of catalogs, profiles, component definitions; catalog page; control evidence; control links; create catalog, profile, component definition; build-props **done**          |
 | Assessment plans, assessment results                                                             | `assessment-plan*`, `assessment-results*`                                                                    | Lists, create and edit **done** (shared form); records done with islands                                                                                                                       |
 | POA&M documents                                                                                  | `plan-of-action-and-milestones*`                                                                             | List, create and edit **done** (shared form); record done with islands                                                                                                                         |
 | Admin: users, groups, parties, roles, templates (SSP, subject, risk), diagnostics, notifications | `users-list`, `user-view`, `admin-*`                                                                         | Users, groups, parties, roles; user and group pages; system templates; Diagnostics; subject and risk templates (design-system header, classic body) **done**                                   |
@@ -101,7 +101,7 @@ Replace each with a design-system version, then delete the classic component.
 - Component definitions: the new/edit component, capability and resource forms (in
   design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk and subject templates,
-  Import, Inventory, Build profile from props, Filter suggestions; system template form/preview/instances, Diagnostics sections, Compliance
+  Import, Inventory, Filter suggestions; system template form/preview/instances, Diagnostics sections, Compliance
   Map tree/graph, catalog control tree and dialogs, evidence filter form, Slack link section.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
@@ -111,7 +111,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos
