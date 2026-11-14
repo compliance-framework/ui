@@ -36,8 +36,9 @@ App-wide pieces are design-system too: **toasts, confirmations and the error dia
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
 globally any more). The third live sweep (97 routes, including every record tab and Configure
 section) is clean apart from known API errors. Most record forms are design-system now too (task,
-POA&M item, observation, finding, capability, component, back matter, system user, leveraged
-authorization, system component, export offering, inventory edit, workflow step), each written
+POA&M item, observation, finding, back matter and local definitions, capability, component,
+component definition back matter, system user, leveraged authorization, system component, export
+offering, inventory edit, workflow step), each written
 as one add-and-edit form. The e2e axe run now also covers the OSCAL record
 tabs, the Configure System sections, the user and group pages, Inventory, Build a profile, the
 catalog page, subject templates and the system template page.
