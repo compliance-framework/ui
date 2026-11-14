@@ -96,8 +96,7 @@ Replace each with a design-system version, then delete the classic component.
 - Risk page body (`RiskDetailView`, embedded): overview, lifecycle actions, tabs, remediation.
 - Record tabs still classic: assessment plan task details and new-task dialog; inside the
   rebuilt POA&M tabs, the item details and milestones, the attach dialog and every form; the
-  POA&M risk page (classic risk detail); workflow instance Role
-  assignments (its assign dialog needs an async user picker); profile control-group editor and
+  POA&M risk page (classic risk detail); profile control-group editor and
   catalog import dialog; workflow step form and step graph; execution metrics, step graph, list
   and panel on the run page; My tasks step panel.
 - Component definitions: the new/edit component, capability and resource forms (in
@@ -112,7 +111,7 @@ Controls, Compliance and Merge, workflow definition Overview, Steps (table) and 
 instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
-Results; toasts,
+Results, workflow instance Roles; toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

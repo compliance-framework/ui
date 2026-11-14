@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
  * A workflow instance (/workflow-instances/:id/...): its status, cadence, Activate/Deactivate and
- * Run now, and its sections as route tabs. The classic page's logic is kept; the sections
- * (overview, role assignments, runs, JSON) are classic islands until rebuilt.
+ * Run now, and its sections as route tabs (overview, roles, runs, JSON). The classic page's logic
+ * is kept.
  */
 import { computed as dsComputed } from 'vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
@@ -207,12 +206,10 @@ const tabs = dsComputed(() => {
         >Run now</Button
       >
     </template>
-    <LegacyPage>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
-    </LegacyPage>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </RecordTemplate>
 </template>

@@ -208,26 +208,6 @@ function choose(value: unknown): void {
   cursor: pointer;
 }
 
-.combobox__choices {
-  z-index: var(--ds-z-overlay);
-  width: var(--reka-combobox-trigger-width);
-  max-width: var(--reka-combobox-content-available-width);
-  max-height: min(
-    var(--reka-combobox-content-available-height),
-    calc(var(--ds-size-control-md) * 10)
-  );
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--ds-space-1) 0;
-  background: var(--ds-color-surface-overlay);
-  border: var(--ds-border-width) solid var(--ds-color-border-strong);
-  border-radius: var(--ds-radius-none);
-  box-shadow: var(--ds-shadow-raised);
-  font-family: var(--ds-font-ui);
-  font-size: var(--ds-font-size-body);
-  line-height: var(--ds-leading-body);
-}
-
 .combobox__choice {
   min-height: var(--ds-size-control-md);
   padding: var(--ds-space-2) var(--ds-space-3);
@@ -249,5 +229,28 @@ function choose(value: unknown): void {
   padding: var(--ds-space-2) var(--ds-space-3);
   color: var(--ds-color-text-secondary);
   font-size: var(--ds-font-size-caption);
+}
+</style>
+
+<!-- Unscoped: the list is a popper wrapper's inner element, so it doesn't get the scope attribute. -->
+<style>
+.combobox__choices {
+  z-index: var(--ds-z-overlay);
+  width: var(--reka-combobox-trigger-width);
+  max-width: var(--reka-combobox-content-available-width);
+  max-height: min(
+    var(--reka-combobox-content-available-height),
+    calc(var(--ds-size-control-md) * 10)
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ds-space-1) 0;
+  background: var(--ds-color-surface-overlay);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  box-shadow: var(--ds-shadow-raised);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 </style>

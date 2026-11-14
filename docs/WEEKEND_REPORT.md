@@ -661,3 +661,15 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the not-found page). **Option for you:** a result page (findings, observations, risks in full)
   would be the natural next step if results matter to users. Every assessment results tab is now
   design-system, so that record has no classic frame. Test data: "Weekend test AR".
+- **Workflow instance → Roles tab**: design-system table of every role the workflow's steps name
+  (plus any other assigned role), with who holds it ("Unassigned" tag; groups shown as
+  "id (group)") and a summary of how many are still to assign. **Decision:** assigning is per
+  role (menu → Assign role → a Combobox of people) instead of the classic all-roles dialog; to
+  hand a role to someone else, remove it, then assign it, as before. The picker loads
+  `/api/users/select` once and filters as you type, so it needs no async search. Checked live
+  on "Annual DR Exercise — Customer Portal" (I removed and restored the seed `it-ops` group
+  assignment; it has a new ID now). Every workflow instance tab is now design-system.
+  **Found (fixed):** the design-system Combobox's list had none of its styles (no width, border,
+  background or max height). Its element is the inner node of a popper wrapper, which doesn't
+  get Vue's scope attribute. That rule is now in an unscoped style block; this also fixes the
+  Combobox on New control link and workflow definition Controls.
