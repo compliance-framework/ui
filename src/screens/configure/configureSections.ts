@@ -45,7 +45,7 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     label: 'Authorization Boundary',
     tab: true,
     classic: 'diagrams',
-    component: view('Diagrams'),
+    component: () => import('@/screens/configure/SystemDiagramsSection.vue'),
   },
   {
     suffix: 'components',

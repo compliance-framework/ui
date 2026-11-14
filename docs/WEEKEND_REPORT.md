@@ -614,3 +614,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Edit and New component open the classic forms (islands) in design-system dialogs; the
   evidence-filters drawer (still deep-linkable) is a design-system drawer. **Gap (island):**
   each component's risk list is classic. `ComponentsPanel` is deleted.
+- **Configure System → Authorization Boundary**: three design-system panels (authorization
+  boundary, network architecture, data flow), each with Add diagram; every diagram is a
+  disclosure with rename (inline field) and delete. **Gap (island):** the draw.io editor is
+  classic; it stays mounted while a diagram is closed, as before. Checked live: add, edit
+  open, and delete through the confirm. The classic DiagramsView and its spec are ported and
+  deleted. **All six visible Configure System tabs are now design-system**; the hidden sections
+  are still classic.

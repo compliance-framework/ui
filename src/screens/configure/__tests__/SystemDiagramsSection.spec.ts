@@ -1,7 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref, shallowRef, type Ref } from 'vue';
-import DiagramsView from '@/views/system/DiagramsView.vue';
+import { defineComponent, h, ref, shallowRef, type Ref } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { TooltipProvider } from 'reka-ui';
+import SystemDiagramsSection from '../SystemDiagramsSection.vue';
+
+// Mounted inside a TooltipProvider (icon buttons), attached so visibility can be checked.
+const DiagramsView = defineComponent({
+  props: { sspId: { type: String, required: true } },
+  setup: (props) => () =>
+    h(TooltipProvider, null, () =>
+      h(SystemDiagramsSection, { sspId: props.sspId }),
+    ),
+});
 
 const {
   activePlan,
@@ -155,52 +166,17 @@ const endpoint = {
 };
 
 const stubs = {
-  Dialog: { template: '<div><slot /></div>' },
-  Drawer: { template: '<div><slot /></div>' },
-  Panel: { template: '<section><slot name="header" /><slot /></section>' },
-  PrimaryButton: { template: '<button><slot /></button>' },
-  TertiaryButton: { template: '<button><slot /></button>' },
-  InputText: {
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
-    template:
-      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-  },
-  CollapsableGroup: {
-    template: '<section><slot name="header" /><slot /></section>',
-  },
   DrawIODiagramEditor: {
     props: ['diagram'],
     template:
       '<div class="drawio-editor" :data-diagram-uuid="diagram.uuid">DrawIO {{ diagram.uuid }}</div>',
   },
-  TooltipTitle: {
-    props: ['text'],
-    template: '<h3>{{ text }}</h3>',
-  },
-  MultiSelect: { template: '<div />' },
-  RouterLinkButton: {
-    props: ['to'],
-    template: '<a><slot /></a>',
-  },
-  RiskOverviewSection: { template: '<div />' },
-  Diagrams: { template: '<div />' },
-  ComponentRisksList: { template: '<div />' },
-  ComponentDashboardsView: { template: '<div />' },
-  SystemImplementationUserCreateForm: { template: '<div />' },
-  SystemImplementationUserEditForm: { template: '<div />' },
-  SystemImplementationComponentCreateForm: { template: '<div />' },
-  SystemImplementationComponentEditForm: { template: '<div />' },
-  SystemImplementationLeveragedAuthorizationCreateForm: {
-    template: '<div />',
-  },
-  SystemImplementationLeveragedAuthorizationEditForm: {
-    template: '<div />',
-  },
 };
 
-describe('System area views', () => {
+describe('SystemDiagramsSection', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
+    document.body.innerHTML = '';
     apiPayloads.clear();
     apiErrors.clear();
     executeCalls.length = 0;
@@ -225,12 +201,13 @@ describe('System area views', () => {
     const wrapper = mount(DiagramsView, {
       props: { sspId: activePlan.uuid },
       global: { stubs },
+      attachTo: document.body,
     });
     await flushPromises();
 
     await wrapper
       .findAll('button')
-      .filter((button) => button.text() === 'Add Diagram')[1]
+      .filter((button) => button.text() === 'Add diagram')[1]
       .trigger('click');
     await flushPromises();
 
@@ -265,6 +242,7 @@ describe('System area views', () => {
     const wrapper = mount(DiagramsView, {
       props: { sspId: activePlan.uuid },
       global: { stubs },
+      attachTo: document.body,
     });
     await flushPromises();
 
@@ -295,6 +273,7 @@ describe('System area views', () => {
     const wrapper = mount(DiagramsView, {
       props: { sspId: activePlan.uuid },
       global: { stubs },
+      attachTo: document.body,
     });
     await flushPromises();
 
@@ -337,6 +316,7 @@ describe('System area views', () => {
     const wrapper = mount(DiagramsView, {
       props: { sspId: activePlan.uuid },
       global: { stubs },
+      attachTo: document.body,
     });
     await flushPromises();
 
@@ -345,12 +325,12 @@ describe('System area views', () => {
     expect(editor.isVisible()).toBe(true);
 
     await wrapper
-      .findAll('span')
-      .find((span) => span.text() === 'Collapsible diagram')
+      .findAll('button')
+      .find((button) => button.text() === 'Collapsible diagram')
       ?.trigger('click');
     await flushPromises();
 
     expect(editor.exists()).toBe(true);
-    expect(editor.attributes('style')).toContain('display: none');
+    expect(editor.isVisible()).toBe(false);
   });
 });
