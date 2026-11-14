@@ -99,7 +99,7 @@ Replace each with a design-system version, then delete the classic component.
 - Component definitions: the new/edit component, capability and resource forms (in
   design-system dialogs).
 - Admin bodies under design-system headers (`embedded`): Agents, risk templates,
-  Filter suggestions; the workflow import panel on Import; the subject template form (in a design-system dialog); system template form and preview, Diagnostics sections, Compliance
+  Filter suggestions; the workflow import panel on Import; the subject template form (in a design-system dialog); system template form, Diagnostics sections, Compliance
   Map tree/graph, catalog add/edit modals, evidence filter form, Slack link section.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
@@ -109,7 +109,7 @@ instance Overview and Runs, assessment plan Tasks list, every visible Configure 
 definition Components, Capabilities and Back matter, every POA&M tab, assessment results
 Results, workflow instance Roles, Configure System Users, Leveraged Authorizations, System
 Implementation, Leverage, Inherited Capabilities and Export Offerings; the Implementation drawer's
-AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the system template's created-systems table; Inventory; Import (OSCAL and evidence filters); toasts,
+AI suggestions and component statements; assessment plan Tasks (with activities and steps); the user and group pages' members and roles; Build a profile from props; Scope's label-condition fields; the subject templates list and page; the catalog control tree; the profile control-group editor and catalog import dialog; the run page's step table and timings; the system template's preview and created-systems table; Inventory; Import (OSCAL and evidence filters); toasts,
 confirmations and the error dialog app-wide.
 
 ## To-dos

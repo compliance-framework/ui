@@ -31,9 +31,9 @@ vi.mock('@/components/ssp-templates/SspTemplateFormDialog.vue', () => ({
     template: '<div />',
   },
 }));
-vi.mock('@/components/ssp-templates/SspTemplatePreviewPanel.vue', () => ({
+vi.mock('../SspTemplatePreviewSection.vue', () => ({
   default: {
-    name: 'SspTemplatePreviewPanel',
+    name: 'SspTemplatePreviewSection',
     props: ['template'],
     template: '<div />',
   },
@@ -90,7 +90,7 @@ describe('SspTemplateScreen', () => {
     expect(wrapper.text()).toContain('{{ ._app }}');
     expect(
       wrapper
-        .findComponent({ name: 'SspTemplatePreviewPanel' })
+        .findComponent({ name: 'SspTemplatePreviewSection' })
         .props('template'),
     ).toMatchObject({ id: 't-1' });
     expect(

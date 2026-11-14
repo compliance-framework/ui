@@ -6,10 +6,9 @@ import { useAuthenticatedInstance } from '@/composables/axios';
 import { serializeFilter } from '@/parsers/labelfilter';
 import type { SspTemplate } from '@/types/ssp-templates';
 import { getErrorDetail } from '@/utils/httpErrors';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
 import SspTemplateInstancesPanel from './SspTemplateInstancesPanel.vue';
-import SspTemplatePreviewPanel from '@/components/ssp-templates/SspTemplatePreviewPanel.vue';
+import SspTemplatePreviewSection from './SspTemplatePreviewSection.vue';
 import { formatDateTime } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
@@ -20,8 +19,8 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
 /**
- * A system template (/admin/ssp-templates/:id): its settings, Edit and Run now. The preview of
- * what it would create, the systems it has created, and the edit form are classic islands.
+ * A system template (/admin/ssp-templates/:id): its settings, Edit and Run now, a preview of what
+ * it would create, and the systems it has created. The edit form is a classic island.
  */
 const route = useRoute();
 const toast = useToast();
@@ -124,12 +123,10 @@ async function runNow(): Promise<void> {
     </template>
     <Stack gap="6">
       <DescriptionList :items="facts" />
-      <LegacyPage>
-        <SspTemplatePreviewPanel
-          :key="`${template.data.value.id}-${template.data.value.updatedAt}`"
-          :template="template.data.value"
-        />
-      </LegacyPage>
+      <SspTemplatePreviewSection
+        :key="`${template.data.value.id}-${template.data.value.updatedAt}`"
+        :template="template.data.value"
+      />
       <SspTemplateInstancesPanel :template-id="id" />
     </Stack>
   </RecordTemplate>

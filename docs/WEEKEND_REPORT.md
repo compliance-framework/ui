@@ -887,3 +887,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `useApiQuery` URL and keeps the label-key stop path. The classic table and its spec are
   replaced (spec ported). **Gap:** local-dev has no system templates, so it was not checked
   live. The preview panel and form dialog stay classic.
+- **System template page: preview** is design-system too (on-demand Preview; a summary
+  sentence; a panel per system it would create or that exists, with the entries it would learn
+  or skip; groups below the minimum streams; invalid key values; failures as an inline error).
+  Only the edit form is still classic on that page. Spec ported; not checked live (no
+  templates in local-dev).
