@@ -6,7 +6,7 @@ import { useAuthenticatedInstance } from '@/composables/axios';
 import { serializeFilter } from '@/parsers/labelfilter';
 import type { SspTemplate } from '@/types/ssp-templates';
 import { getErrorDetail } from '@/utils/httpErrors';
-import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
+import SspTemplateFormDialog from './SspTemplateFormDialog.vue';
 import SspTemplateInstancesPanel from './SspTemplateInstancesPanel.vue';
 import SspTemplatePreviewSection from './SspTemplatePreviewSection.vue';
 import { formatDateTime } from '@/ds/format';
@@ -20,7 +20,7 @@ import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
 /**
  * A system template (/admin/ssp-templates/:id): its settings, Edit and Run now, a preview of what
- * it would create, and the systems it has created. The edit form is a classic island.
+ * it would create, and the systems it has created.
  */
 const route = useRoute();
 const toast = useToast();

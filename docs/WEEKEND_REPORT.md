@@ -1049,3 +1049,26 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   ("At least one selector label is required" and so on) now show in the form, not as a toast.
   The classic system template form uses the new preview too. Both classic specs are ported.
   Checked live: edit and save an existing template, then the empty-form checks.
+- **System template form** is design-system (`SspTemplateForm` in a design-system dialog, on the
+  list and the template page). **Decisions:** key labels and each scope label group are
+  comma-separated text fields, since the design system has no chip input (the classic form used
+  PrimeVue's chip AutoComplete). Saved keys show as fixed text, as they can't change. Profiles
+  are checkboxes. The form's own checks show in the form. The classic spec is ported. Checked live:
+  the new-template form and its checks (local-dev has no system templates to edit).
+- **Workflow import** is design-system (`WorkflowImportPanel`, now a third panel beside OSCAL
+  documents and evidence filters on Import): files, then the overall result, the record counts and
+  a message per file listing that file's non-zero counts ("21 definitions created, 105 steps").
+  **Decision:** the per-file table with nine count columns became one message per file, like the
+  other two importers. The file count and size limits show as the field's error. The classic spec is
+  ported. Checked live with a file that isn't a workflow (the API's parse error shows for it).
+- **Inventory create and relationships forms** are design-system (`InventoryItemCreateForm`,
+  `InventoryItemRelationsForm`). Create: destination, then (only when needed) which plan, POA&M
+  or assessment, description, asset type, remarks. **Decision:** the UUID field and its Generate
+  button are gone; a UUID is generated on save. The relationships form ("Attach to components")
+  replaces the classic tabs with four field lists: implemented components (a Select of the plan's
+  components), responsible parties (a role Select and party checkboxes, where the classic form
+  took free-text role IDs and comma-separated party UUIDs), properties and links. Saved values the
+  lists don't know still show, by ID. Neither classic form had a spec; both have new ones. Checked
+  live: create (asset type kept), attach to a component, both confirmed through the API.
+  **Test data:** two "Weekend inventory item"s on Payments Processing Platform, one attached to a
+  component.

@@ -4,7 +4,7 @@ import { useToast } from 'primevue/usetoast';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { SspTemplate } from '@/types/ssp-templates';
 import { getErrorDetail } from '@/utils/httpErrors';
-import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
+import SspTemplateFormDialog from './SspTemplateFormDialog.vue';
 import { formatDateTime, plural } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
@@ -24,8 +24,7 @@ import { matches, useListView } from '../listView';
 
 /**
  * System templates (List template, admin): rules that create one system security plan per
- * application, or other label combination, found in the evidence. The create and edit form is
- * still the classic dialog (a legacy island).
+ * application, or other label combination, found in the evidence, with a create and edit form.
  */
 const toast = useToast();
 const api = useAuthenticatedInstance();

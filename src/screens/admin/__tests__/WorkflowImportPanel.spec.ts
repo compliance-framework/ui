@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent, h } from 'vue';
+import { TooltipProvider } from 'reka-ui';
 import WorkflowImportPanel from '../WorkflowImportPanel.vue';
 import type { WorkflowImportData } from '@/composables/workflows/useWorkflowImport';
 
@@ -49,39 +51,18 @@ function makeResponse(
 }
 
 function mountPanel() {
-  return mount(WorkflowImportPanel, {
-    global: {
-      stubs: {
-        PageCard: { template: '<section><slot /></section>' },
-        PrimaryButton: {
-          props: ['disabled'],
-          template:
-            '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-        },
-        SecondaryButton: {
-          props: ['disabled'],
-          template:
-            '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-        },
-        Button: {
-          props: ['disabled'],
-          template:
-            '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-        },
-        Badge: { template: '<span><slot /></span>' },
-        Message: { template: '<div><slot /></div>' },
-      },
-    },
-  });
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(WorkflowImportPanel)),
+    }),
+  );
 }
 
 async function selectFiles(
   wrapper: ReturnType<typeof mountPanel>,
   files: File[],
 ) {
-  const input = wrapper.find<HTMLInputElement>(
-    '[data-testid="workflow-file-input"]',
-  );
+  const input = wrapper.find<HTMLInputElement>('input[type="file"]');
   Object.defineProperty(input.element, 'files', {
     value: files,
     configurable: true,
@@ -89,23 +70,22 @@ async function selectFiles(
   await input.trigger('change');
 }
 
+const submit = async (wrapper: ReturnType<typeof mountPanel>) => {
+  await wrapper.find('form').trigger('submit');
+  await flushPromises();
+};
+
 describe('WorkflowImportPanel', () => {
   beforeEach(() => {
     mockImportWorkflows.mockReset();
   });
 
-  it('renders the workflow import panel with disabled submit initially', () => {
+  it('asks for a file before importing', async () => {
     const wrapper = mountPanel();
-
-    expect(wrapper.text()).toContain('Import workflows');
-    expect(wrapper.text()).toContain(
-      'Upload SOC 2 CCF workflow seed JSON files',
-    );
-    expect(
-      wrapper
-        .find('[data-testid="workflow-import-submit"]')
-        .attributes('disabled'),
-    ).toBeDefined();
+    expect(wrapper.text()).toContain('SOC 2 CCF workflow seed files');
+    await submit(wrapper);
+    expect(wrapper.text()).toContain('Choose at least one workflow JSON file.');
+    expect(mockImportWorkflows).not.toHaveBeenCalled();
   });
 
   it('selects files and submits them to the import composable', async () => {
@@ -117,13 +97,10 @@ describe('WorkflowImportPanel', () => {
     ];
 
     await selectFiles(wrapper, files);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
     expect(mockImportWorkflows).toHaveBeenCalledWith(files);
-    expect(wrapper.text()).toContain('Selected 2 file(s)');
+    expect(wrapper.text()).toContain('one.json');
   });
 
   it('blocks submit when more than 10 files are selected', async () => {
@@ -138,12 +115,8 @@ describe('WorkflowImportPanel', () => {
 
     await selectFiles(wrapper, files);
 
-    expect(wrapper.text()).toContain('Select at most 10 files per import.');
-    expect(
-      wrapper
-        .find('[data-testid="workflow-import-submit"]')
-        .attributes('disabled'),
-    ).toBeDefined();
+    expect(wrapper.text()).toContain('Choose at most 10 files per import.');
+    await submit(wrapper);
     expect(mockImportWorkflows).not.toHaveBeenCalled();
   });
 
@@ -159,11 +132,8 @@ describe('WorkflowImportPanel', () => {
 
     expect(wrapper.text()).toContain('Each file must be 5 MB or smaller');
     expect(wrapper.text()).toContain('large.json');
-    expect(
-      wrapper
-        .find('[data-testid="workflow-import-submit"]')
-        .attributes('disabled'),
-    ).toBeDefined();
+    await submit(wrapper);
+    expect(mockImportWorkflows).not.toHaveBeenCalled();
   });
 
   it('renders a 200 all-success aggregate and file row', async () => {
@@ -184,12 +154,10 @@ describe('WorkflowImportPanel', () => {
     await selectFiles(wrapper, [
       new File(['[]'], 'soc2_workflows.json', { type: 'application/json' }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
-    expect(wrapper.text()).toContain('1 of 1 file(s) processed successfully');
+    expect(wrapper.text()).toContain('1 of 1 file processed');
+    expect(wrapper.text()).toContain('1 definition created');
     expect(wrapper.text()).toContain('soc2_workflows.json');
     expect(wrapper.text()).toContain('Definitions created');
     expect(wrapper.text()).toContain('21');
@@ -225,12 +193,9 @@ describe('WorkflowImportPanel', () => {
       new File(['[]'], 'good.json', { type: 'application/json' }),
       new File(['}'], 'broken.json', { type: 'application/json' }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
-    expect(wrapper.text()).toContain('1 of 2 file(s) processed with failures');
+    expect(wrapper.text()).toContain('1 of 2 files processed with failures');
     expect(wrapper.text()).toContain('Failed');
     expect(wrapper.text()).toContain('broken.json');
     expect(wrapper.text()).toContain('Failed to parse JSON: invalid character');
@@ -258,16 +223,10 @@ describe('WorkflowImportPanel', () => {
     await selectFiles(wrapper, [
       new File(['[]'], 'mixed.json', { type: 'application/json' }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
-    expect(wrapper.text()).toContain('1 of 1 file(s) processed with failures');
-    expect(wrapper.text()).not.toContain(
-      '1 of 1 file(s) processed successfully',
-    );
-    expect(wrapper.text()).toContain('Processed with failures');
+    expect(wrapper.text()).toContain('1 of 1 file processed with failures');
+    expect(wrapper.text()).toContain('2 definitions created, 1 failed');
     expect(wrapper.text()).toContain('imported 2 definition(s), 1 failed');
   });
 
@@ -296,20 +255,13 @@ describe('WorkflowImportPanel', () => {
         type: 'application/json',
       }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
     expect(wrapper.text()).toContain(
       'Import failed; no workflow records were imported',
     );
-    expect(wrapper.text()).not.toContain(
-      '1 of 1 file(s) processed successfully',
-    );
-    expect(wrapper.text()).not.toContain(
-      '1 of 1 file(s) processed with failures',
-    );
+    expect(wrapper.text()).not.toContain('1 of 1 file processed');
+    expect(wrapper.text()).not.toContain('1 of 1 file processed with failures');
     expect(wrapper.text()).toContain('Failed');
     expect(wrapper.text()).toContain('deleted-definition.json');
     expect(wrapper.text()).toContain(
@@ -324,26 +276,16 @@ describe('WorkflowImportPanel', () => {
     await selectFiles(wrapper, [
       new File(['[]'], 'one.json', { type: 'application/json' }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
-    expect(wrapper.find('[data-testid="workflow-error"]').text()).toContain(
-      'no files provided',
-    );
+    expect(wrapper.text()).toContain('no files provided');
 
     mockImportWorkflows.mockRejectedValueOnce(
       new Error('The selected workflow files are too large or too many files.'),
     );
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
-    expect(wrapper.find('[data-testid="workflow-error"]').text()).toContain(
-      'too large or too many files',
-    );
+    expect(wrapper.text()).toContain('too large or too many files');
   });
 
   it('renders re-import updates as updated definitions', async () => {
@@ -371,10 +313,7 @@ describe('WorkflowImportPanel', () => {
     await selectFiles(wrapper, [
       new File(['[]'], 'soc2_workflows.json', { type: 'application/json' }),
     ]);
-    await wrapper
-      .find('[data-testid="workflow-import-submit"]')
-      .trigger('click');
-    await flushPromises();
+    await submit(wrapper);
 
     expect(wrapper.text()).toContain('Definitions updated');
     expect(wrapper.text()).toContain('21');

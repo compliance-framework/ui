@@ -3,7 +3,7 @@
  * Inventory (/inventory): inventory items from security plans, evidence, POA&Ms and assessments,
  * filtered by source and asset type (both in the address). Items from the current system's plan
  * can be edited, attached to its components and deleted; any item can be viewed in full or
- * downloaded. The create, edit and attach forms are classic islands.
+ * downloaded.
  */
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -36,10 +36,9 @@ import Select from '@/ds/components/Select/Select.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import InventoryItemCreateForm from '@/components/inventory/InventoryItemCreateForm.vue';
+import InventoryItemCreateForm from './InventoryItemCreateForm.vue';
 import InventoryItemEditForm from './InventoryItemEditForm.vue';
-import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
+import InventoryItemRelationsForm from './InventoryItemRelationsForm.vue';
 
 interface Item extends InventoryItem {
   source: string;
@@ -388,13 +387,12 @@ function actions(item: Item): MenuEntry[] {
     <DescriptionList :items="details" layout="stacked" />
   </Drawer>
   <Dialog v-model:open="creating" title="New inventory item" size="l">
-    <LegacyPage>
-      <InventoryItemCreateForm
-        :ssp-id="sspId"
-        @cancel="creating = false"
-        @created="done(() => (creating = false), 'Item added')"
-      />
-    </LegacyPage>
+    <InventoryItemCreateForm
+      v-if="creating"
+      :ssp-id="sspId"
+      @cancel="creating = false"
+      @created="done(() => (creating = false), 'Item added')"
+    />
   </Dialog>
   <Dialog v-model:open="editOpen" title="Edit inventory item">
     <InventoryItemEditForm
@@ -406,15 +404,13 @@ function actions(item: Item): MenuEntry[] {
     />
   </Dialog>
   <Dialog v-model:open="attachOpen" title="Attach to components" size="l">
-    <LegacyPage>
-      <SystemImplementationInventoryItemAttachModal
-        v-if="attaching"
-        :ssp-id="attaching.sourceId || sspId!"
-        :item="attaching"
-        @cancel="attaching = undefined"
-        @saved="done(() => (attaching = undefined), 'Item attached')"
-      />
-    </LegacyPage>
+    <InventoryItemRelationsForm
+      v-if="attaching"
+      :ssp-id="attaching.sourceId || sspId!"
+      :item="attaching"
+      @cancel="attaching = undefined"
+      @saved="done(() => (attaching = undefined), 'Item saved')"
+    />
   </Dialog>
   <ConfirmDialog
     v-model:open="deleteOpen"

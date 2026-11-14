@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Import (/admin/import): OSCAL documents and evidence filters from JSON files, each with a
- * result per file, plus workflows (the workflow import panel is a classic island).
+ * result per file, plus workflows.
  */
 import { reactive } from 'vue';
 import type { AxiosError } from 'axios';
@@ -17,8 +17,7 @@ import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
 import Grid from '@/ds/components/layout/Grid.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import WorkflowImportPanel from '@/views/admin/partials/WorkflowImportPanel.vue';
+import WorkflowImportPanel from './WorkflowImportPanel.vue';
 
 /** The import endpoints answer in snake_case; the client camelCases it. */
 interface FileResult {
@@ -120,9 +119,6 @@ function detail(importer: Importer, file: FileResult): string {
       title="Import"
       description="Import OSCAL documents, evidence filters and workflows from JSON files."
     />
-    <LegacyPage>
-      <WorkflowImportPanel />
-    </LegacyPage>
     <Grid min="md" gap="5">
       <Panel
         v-for="importer in importers"
@@ -159,6 +155,7 @@ function detail(importer: Importer, file: FileResult): string {
           </Stack>
         </form>
       </Panel>
+      <WorkflowImportPanel />
     </Grid>
   </Stack>
 </template>

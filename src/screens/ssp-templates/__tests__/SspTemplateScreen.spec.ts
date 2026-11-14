@@ -24,7 +24,7 @@ vi.mock('@/composables/axios', () => ({
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: state.toastAdd }),
 }));
-vi.mock('@/components/ssp-templates/SspTemplateFormDialog.vue', () => ({
+vi.mock('@/screens/ssp-templates/SspTemplateFormDialog.vue', () => ({
   default: {
     name: 'SspTemplateFormDialog',
     props: ['visible', 'template'],
