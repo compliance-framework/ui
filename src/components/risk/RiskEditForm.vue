@@ -1,137 +1,75 @@
 <template>
-  <div class="p-6">
-    <form @submit.prevent="submit" class="space-y-4">
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Title <span class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="formData.title"
-          type="text"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter risk title"
-        />
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Description <span class="text-red-500">*</span>
-        </label>
-        <textarea
+  <form novalidate @submit.prevent="submit">
+    <Stack gap="4">
+      <FormField label="Title" required>
+        <TextInput v-model="formData.title" placeholder="Enter risk title" />
+      </FormField>
+      <FormField label="Description" required>
+        <Textarea
           v-model="formData.description"
-          required
-          rows="4"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          :rows="4"
           placeholder="Enter risk description"
-        ></textarea>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Statement <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          v-model="formData.statement"
-          required
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter risk statement"
-        ></textarea>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Status <span class="text-red-500">*</span>
-        </label>
-        <select
-          v-model="formData.status"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-        >
-          <option value="">Select status</option>
-          <option
-            v-for="status in statusOptions"
-            :key="status.value"
-            :value="status.value"
-          >
-            {{ status.label }}
-          </option>
-        </select>
-      </div>
-
-      <div
-        class="rounded-md border border-ccf-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4"
-      >
-        <p class="text-sm text-gray-600 dark:text-slate-400">
-          Threats and remediations are managed from the dedicated tabs on the
-          risk detail view.
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Deadline
-        </label>
-        <input
-          v-model="formData.deadline"
-          type="datetime-local"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
         />
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Remarks
-        </label>
-        <textarea
+      </FormField>
+      <FormField label="Statement" required>
+        <Textarea
+          v-model="formData.statement"
+          :rows="3"
+          placeholder="Enter risk statement"
+        />
+      </FormField>
+      <FormField label="Status" required>
+        <Select
+          v-model="formData.status"
+          :options="statusOptions"
+          placeholder="Select status"
+        />
+      </FormField>
+      <Text variant="caption"
+        >Threats and remediations are managed from the tabs on the risk
+        page.</Text
+      >
+      <FormField label="Deadline">
+        <TextInput v-model="formData.deadline" type="datetime-local" />
+      </FormField>
+      <FormField label="Remarks">
+        <Textarea
           v-model="formData.remarks"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          :rows="3"
           placeholder="Enter additional remarks (optional)"
-        ></textarea>
-      </div>
-
-      <div class="flex justify-end gap-3 pt-4">
-        <button
-          type="button"
-          @click="$emit('cancel')"
-          class="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600"
-        >
-          Cancel
-        </button>
-        <button
+        />
+      </FormField>
+      <Cluster justify="end" gap="2">
+        <Button @click="$emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
           type="submit"
-          :disabled="
+          :loading="saving"
+          :disabled-reason="
             !formData.title ||
             !formData.description ||
             !formData.statement ||
-            !formData.status ||
-            saving
+            !formData.status
+              ? 'Fill in title, description, statement and status.'
+              : undefined
           "
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >Save</Button
         >
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-      </div>
-    </form>
-  </div>
+      </Cluster>
+    </Stack>
+  </form>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, onMounted } from 'vue';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Risk } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';

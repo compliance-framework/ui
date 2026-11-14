@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { ref, shallowRef, toValue } from 'vue';
+import { DOMWrapper, mount } from '@vue/test-utils';
+import { TooltipProvider } from 'reka-ui';
+import { defineComponent, h, ref, shallowRef, toValue } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 
 const mockCreateRisk = vi.fn().mockResolvedValue({});
@@ -136,19 +137,31 @@ describe('RiskCreateForm', () => {
     templatesError.value = null;
   });
 
+  // The form sits in a TooltipProvider, as in the app; the template picker is a dialog that
+  // renders in a portal, so buttons are looked up in the whole document.
   const mountForm = () => {
-    return mount(RiskCreateForm, {
-      props: {
-        poamId: 'poam-1',
-      },
-    });
+    document.body.innerHTML = '';
+    return mount(
+      defineComponent({
+        render: () =>
+          h(TooltipProvider, null, () =>
+            h(RiskCreateForm, { poamId: 'poam-1' }),
+          ),
+      }),
+      { attachTo: document.body },
+    );
   };
 
   const findButtonByText = (
     wrapper: ReturnType<typeof mount>,
     label: string,
   ) => {
-    return wrapper.findAll('button').find((button) => button.text() === label);
+    void wrapper;
+    // A disabled button also carries its reason, read out after its label.
+    const button = [...document.querySelectorAll('button')].find((el) =>
+      el.textContent?.trim().startsWith(label),
+    );
+    return button ? new DOMWrapper(button) : undefined;
   };
 
   it('applies selected template values to the risk form', async () => {
@@ -187,7 +200,7 @@ describe('RiskCreateForm', () => {
     expect((statusSelect.element as HTMLSelectElement).value).toBe('');
     expect(wrapper.text()).toContain('Using template: Template Risk');
     expect(wrapper.text()).toContain(
-      'Threats and remediations can be added after the risk is created from the dedicated tabs on the risk detail view.',
+      'Threats and remediations can be added after the risk is created, from the tabs on the risk page.',
     );
   });
 
@@ -272,13 +285,10 @@ describe('RiskCreateForm', () => {
       }),
     );
 
-    const unavailableButton = findButtonByText(
-      wrapper,
-      'Templates Unavailable',
-    );
+    const unavailableButton = findButtonByText(wrapper, 'Use Template');
     expect(unavailableButton).toBeDefined();
-    expect(unavailableButton!.attributes('disabled')).toBeDefined();
-    expect(wrapper.text()).toContain(
+    expect(unavailableButton!.attributes('aria-disabled')).toBe('true');
+    expect(document.body.textContent).toContain(
       'You do not have permission to use risk templates.',
     );
   });

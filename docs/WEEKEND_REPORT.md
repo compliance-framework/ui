@@ -996,3 +996,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   new components default to Operational, so they're no longer silently dropped for lacking a
   status; empty rows are dropped. The classic spec is ported. Checked live: add a component and
   an inventory item, reload, then remove them again (plan back to empty).
+- **Risk forms (create and edit)** are design-system, transplanted in place (same files and
+  scripts) so both their users get them: the POA&M Risks tab and the classic component risks
+  list in Configure System. The risk-template picker is a design-system dialog with a table;
+  "Use Template" is disabled with the reason when templates are forbidden (it used to rename
+  itself "Templates Unavailable"). Both classic specs adapted (portal, tooltip provider,
+  wording). Checked live on the POA&M Risks tab: picker, create with status and impact, edit,
+  delete. **Found (API, harmless):** the edit form's "refresh before save" GETs
+  `/plan-of-action-and-milestones/:id/risks/:riskId`, which answers 404; the form falls back to
+  the risk it was given, as before.

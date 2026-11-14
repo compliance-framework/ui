@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref, shallowRef, toValue } from 'vue';
+import { defineComponent, h, ref, shallowRef, toValue } from 'vue';
+import { TooltipProvider } from 'reka-ui';
 import type { Risk } from '@/oscal';
 
 const mockUpdateRisk = vi.fn().mockResolvedValue({});
@@ -83,12 +84,14 @@ describe('RiskEditForm', () => {
   });
 
   function mountForm(risk: Risk) {
-    return mount(RiskEditForm, {
-      props: {
-        poamId: 'poam-1',
-        risk,
-      },
-    });
+    return mount(
+      defineComponent({
+        render: () =>
+          h(TooltipProvider, null, () =>
+            h(RiskEditForm, { poamId: 'poam-1', risk }),
+          ),
+      }),
+    );
   }
 
   it('shows guidance that threats and remediations moved to detail tabs', async () => {
@@ -96,7 +99,7 @@ describe('RiskEditForm', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain(
-      'Threats and remediations are managed from the dedicated tabs on the risk detail view.',
+      'Threats and remediations are managed from the tabs on the risk page.',
     );
   });
 

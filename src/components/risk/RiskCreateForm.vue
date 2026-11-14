@@ -1,287 +1,143 @@
 <template>
-  <div class="p-6">
-    <form @submit.prevent="submit" class="space-y-4">
-      <div
-        class="p-4 rounded-md border border-ccf-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-900"
-      >
-        <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+  <form novalidate @submit.prevent="submit">
+    <Stack gap="4">
+      <Cluster justify="between" gap="2">
+        <Text variant="secondary">{{
+          selectedTemplateName
+            ? `Using template: ${selectedTemplateName}`
+            : 'Optionally pre-fill this form from a reusable risk template.'
+        }}</Text>
+        <Button
+          :disabled-reason="
+            templatesAccessDenied
+              ? 'You do not have permission to use risk templates.'
+              : undefined
+          "
+          @click="openTemplateSelector"
+          >Use Template</Button
         >
-          <p class="text-sm text-gray-600 dark:text-slate-400">
-            Optionally pre-fill this form from a reusable risk template.
-          </p>
-          <button
-            type="button"
-            @click="openTemplateSelector"
-            :disabled="templatesAccessDenied"
-            class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm"
-          >
-            {{
-              templatesAccessDenied ? 'Templates Unavailable' : 'Use Template'
-            }}
-          </button>
-        </div>
-        <p
-          v-if="templatesAccessDenied"
-          class="mt-2 text-sm text-amber-700 dark:text-amber-300"
-        >
-          You do not have permission to use risk templates.
-        </p>
-        <p
-          v-if="selectedTemplateName"
-          class="mt-2 text-sm text-blue-700 dark:text-blue-300"
-        >
-          Using template: {{ selectedTemplateName }}
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Title <span class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="formData.title"
-          type="text"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter risk title"
-        />
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Description <span class="text-red-500">*</span>
-        </label>
-        <textarea
+      </Cluster>
+      <FormField label="Title" required>
+        <TextInput v-model="formData.title" placeholder="Enter risk title" />
+      </FormField>
+      <FormField label="Description" required>
+        <Textarea
           v-model="formData.description"
-          required
-          rows="4"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          :rows="4"
           placeholder="Enter risk description"
-        ></textarea>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Statement <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          v-model="formData.statement"
-          required
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter risk statement"
-        ></textarea>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Status <span class="text-red-500">*</span>
-        </label>
-        <select
-          v-model="formData.status"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-        >
-          <option value="">Select status</option>
-          <option
-            v-for="status in riskStatusOptions"
-            :key="status.value"
-            :value="status.value"
-          >
-            {{ status.label }}
-          </option>
-        </select>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >
-            Likelihood
-          </label>
-          <select
-            v-model="formData.likelihood"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <option value="">Not set</option>
-            <option
-              v-for="level in riskLevelOptions"
-              :key="`likelihood-${level.value}`"
-              :value="level.value"
-            >
-              {{ level.label }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >
-            Impact
-          </label>
-          <select
-            v-model="formData.impact"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <option value="">Not set</option>
-            <option
-              v-for="level in riskLevelOptions"
-              :key="`impact-${level.value}`"
-              :value="level.value"
-            >
-              {{ level.label }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div
-        class="rounded-md border border-ccf-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4"
-      >
-        <p class="text-sm text-gray-600 dark:text-slate-400">
-          Threats and remediations can be added after the risk is created from
-          the dedicated tabs on the risk detail view.
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Deadline
-        </label>
-        <input
-          v-model="formData.deadline"
-          type="datetime-local"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
         />
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Remarks
-        </label>
-        <textarea
+      </FormField>
+      <FormField label="Statement" required>
+        <Textarea
+          v-model="formData.statement"
+          :rows="3"
+          placeholder="Enter risk statement"
+        />
+      </FormField>
+      <FormField label="Status" required>
+        <Select
+          v-model="formData.status"
+          :options="riskStatusOptions"
+          placeholder="Select status"
+        />
+      </FormField>
+      <Grid min="sm" gap="4">
+        <FormField label="Likelihood">
+          <Select
+            v-model="formData.likelihood"
+            :options="riskLevelOptions"
+            placeholder="Not set"
+          />
+        </FormField>
+        <FormField label="Impact">
+          <Select
+            v-model="formData.impact"
+            :options="riskLevelOptions"
+            placeholder="Not set"
+          />
+        </FormField>
+      </Grid>
+      <Text variant="caption"
+        >Threats and remediations can be added after the risk is created, from
+        the tabs on the risk page.</Text
+      >
+      <FormField label="Deadline">
+        <TextInput v-model="formData.deadline" type="datetime-local" />
+      </FormField>
+      <FormField label="Remarks">
+        <Textarea
           v-model="formData.remarks"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          :rows="3"
           placeholder="Enter additional remarks (optional)"
-        ></textarea>
-      </div>
-
-      <div class="flex justify-end gap-3 pt-4">
-        <button
-          type="button"
-          @click="$emit('cancel')"
-          class="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600"
-        >
-          Cancel
-        </button>
-        <button
+        />
+      </FormField>
+      <Cluster justify="end" gap="2">
+        <Button @click="$emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
           type="submit"
-          :disabled="
+          :loading="saving"
+          :disabled-reason="
             !formData.title ||
             !formData.description ||
             !formData.statement ||
-            !formData.status ||
-            saving
+            !formData.status
+              ? 'Fill in title, description, statement and status.'
+              : undefined
           "
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >Create</Button
         >
-          {{ saving ? 'Creating...' : 'Create' }}
-        </button>
-      </div>
-    </form>
+      </Cluster>
+    </Stack>
 
     <Dialog
-      v-model:visible="showTemplateSelector"
-      modal
-      size="lg"
-      header="Select Risk Template"
+      v-model:open="showTemplateSelector"
+      title="Select risk template"
+      description="Pre-fills title, description, statement and default values."
+      size="l"
     >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-600 dark:text-slate-400">
-          Select a template to pre-fill title, description, statement, and
-          default values.
-        </p>
-
-        <div
-          v-if="templatesLoading"
-          class="py-8 text-center text-gray-500 dark:text-slate-400"
+      <DataState
+        :status="
+          templatesLoading
+            ? 'loading'
+            : templatesError
+              ? 'error'
+              : riskTemplates?.length
+                ? 'ready'
+                : 'empty'
+        "
+        subject="risk templates"
+        empty-title="No risk templates"
+        empty-body="Create risk templates under Admin to reuse them here."
+        icon="templates"
+        @retry="openTemplateSelector"
+      >
+        <DataTable
+          caption="Risk templates"
+          caption-hidden
+          :columns="[
+            { key: 'title', label: 'Title', minWidth: 'sm' },
+            { key: 'statement', label: 'Statement' },
+            { key: 'levels', label: 'Likelihood / impact', nowrap: true },
+          ]"
+          :rows="
+            (riskTemplates ?? []).map((template, index) => ({
+              id: getRiskTemplateKey(template) || `template-${index}`,
+              title: template.title,
+              statement: template.statement || 'Not set',
+              levels: formatLikelihoodImpact(template),
+              template,
+            }))
+          "
+          :row-key="(r) => r.id"
         >
-          Loading templates...
-        </div>
-
-        <div v-else-if="templatesError" class="py-8 text-center text-red-500">
-          Failed to load risk templates.
-        </div>
-
-        <div
-          v-else-if="!riskTemplates?.length"
-          class="py-8 text-center text-gray-500 dark:text-slate-400"
-        >
-          No risk templates available.
-        </div>
-
-        <div
-          v-else
-          class="max-h-[420px] overflow-auto rounded border border-ccf-300 dark:border-slate-700"
-        >
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-slate-800">
-              <tr>
-                <th class="text-left p-3 font-semibold">Title</th>
-                <th class="text-left p-3 font-semibold">Statement</th>
-                <th class="text-left p-3 font-semibold">Likelihood/Impact</th>
-                <th class="text-left p-3 font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(template, index) in riskTemplates"
-                :key="
-                  getRiskTemplateKey(template) ||
-                  `risk-template-option-${index}`
-                "
-                class="border-t border-ccf-300 dark:border-slate-700"
-              >
-                <td class="p-3 font-medium text-gray-900 dark:text-slate-200">
-                  {{ template.title }}
-                </td>
-                <td class="p-3 text-gray-600 dark:text-slate-400">
-                  {{ template.statement || 'N/A' }}
-                </td>
-                <td class="p-3 text-gray-600 dark:text-slate-400">
-                  {{ formatLikelihoodImpact(template) }}
-                </td>
-                <td class="p-3">
-                  <button
-                    type="button"
-                    class="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                    @click="applyTemplate(template)"
-                  >
-                    Apply
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <template #actions="{ row: r }">
+            <Button size="sm" @click="applyTemplate(r.template)">Apply</Button>
+          </template>
+        </DataTable>
+      </DataState>
     </Dialog>
-  </div>
+  </form>
 </template>
 
 <script setup lang="ts">
@@ -305,7 +161,18 @@ import {
   buildRiskCollectionEndpoint,
   type RiskContext,
 } from '@/utils/risk-context';
-import Dialog from '@/volt/Dialog.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DataTable from '@/ds/components/DataTable/DataTable.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Grid from '@/ds/components/layout/Grid.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { getRiskTemplateKey, type RiskTemplate } from '@/types/risk-templates';
 
 const props = defineProps<{
