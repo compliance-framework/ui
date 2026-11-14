@@ -990,3 +990,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   description, remarks, citation, document IDs, links, properties; editing keeps an embedded
   file). Unlike the classic form, it doesn't save empty citation and embedded-file stubs.
   Checked live: add with a document ID, edit the citation, delete.
+- **POA&M local definitions form** is design-system (components, inventory items and assessment
+  components as field lists, plus remarks; still one PUT for adding and editing). **Decision:**
+  new components default to Operational, so they're no longer silently dropped for lacking a
+  status; empty rows are dropped. The classic spec is ported. Checked live: add a component and
+  an inventory item, reload, then remove them again (plan back to empty).

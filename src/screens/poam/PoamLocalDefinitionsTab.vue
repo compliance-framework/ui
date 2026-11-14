@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * A POA&M's Local definitions tab: the components, inventory items and assessment assets defined
- * in the plan itself, plus remarks. They are edited together in one classic form, in a
- * design-system dialog. The API answers 404 while a plan has none.
+ * in the plan itself, plus remarks, edited together in one form. The API answers 404 while a plan
+ * has none.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -17,8 +17,7 @@ import ItemList from '@/ds/components/ItemList/ItemList.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
+import LocalDefinitionsForm from './LocalDefinitionsForm.vue';
 
 const route = useRoute();
 const { can } = usePermissions();
@@ -118,15 +117,13 @@ function saved(next: POAMLocalDefinitions) {
       :title="exists ? 'Edit local definitions' : 'Add local definitions'"
       size="l"
     >
-      <LegacyPage>
-        <LocalDefinitionsForm
-          v-if="editing"
-          :poam-id="poamId"
-          :local-definitions="data || undefined"
-          @cancel="editing = false"
-          @saved="saved"
-        />
-      </LegacyPage>
+      <LocalDefinitionsForm
+        v-if="editing"
+        :poam-id="poamId"
+        :local-definitions="data || undefined"
+        @cancel="editing = false"
+        @saved="saved"
+      />
     </Dialog>
   </Stack>
 </template>
