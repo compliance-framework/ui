@@ -4,8 +4,8 @@ import type { CCFUser } from '@/stores/types';
 
 const mockAuthenticatedGet = vi.hoisted(() => vi.fn());
 const mockSelectableUsers = vi.hoisted(() => [
-  { id: 'user-1', displayName: 'Alpha User' },
-  { id: 'user-2', displayName: 'Beta User' },
+  { id: '00000000-0000-4000-8000-000000000001', displayName: 'Alpha User' },
+  { id: '00000000-0000-4000-8000-000000000002', displayName: 'Beta User' },
   { id: 'already-cached', displayName: 'Cached User' },
 ]);
 const mockUseDataApi = vi.hoisted(() =>
@@ -57,7 +57,9 @@ describe('useUserSearch', () => {
     await searchUsers({ query: 'alpha' });
 
     expect(userSuggestions.value).toHaveLength(1);
-    expect(userSuggestions.value[0].id).toBe('user-1');
+    expect(userSuggestions.value[0].id).toBe(
+      '00000000-0000-4000-8000-000000000001',
+    );
     expect(userSuggestions.value[0].displayName).toBe('Alpha User');
   });
 
@@ -297,6 +299,12 @@ describe('useUserSearch', () => {
       expect(instance2.getCachedUser('123')).toBeUndefined();
     });
 
+    it('skips references that are not user ids, such as a role name', async () => {
+      const { loadUsersByIds } = useUserSearch();
+      await loadUsersByIds(['it-iam', 'security@example.com']);
+      expect(mockAuthenticatedGet).not.toHaveBeenCalled();
+    });
+
     it('hydrates missing users by id and skips already cached users', async () => {
       mockAuthenticatedGet.mockImplementation(async (url: string) => {
         const pathname = new URL(url, 'http://localhost').pathname;
@@ -329,18 +337,22 @@ describe('useUserSearch', () => {
 
       await loadUsersByIds([
         'already-cached',
-        'user-1',
-        'user-2',
-        'user-3',
-        'user-4',
-        'user-5',
-        'user-6',
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+        '00000000-0000-4000-8000-000000000004',
+        '00000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000006',
       ]);
 
       expect(mockAuthenticatedGet).toHaveBeenCalledTimes(6);
       expect(getCachedUser('already-cached')?.email).toBe('cached@example.com');
-      expect(getCachedUser('user-1')?.displayName).toBe('Alpha User');
-      expect(getCachedUser('user-2')?.displayName).toBe('Beta User');
+      expect(
+        getCachedUser('00000000-0000-4000-8000-000000000001')?.displayName,
+      ).toBe('Alpha User');
+      expect(
+        getCachedUser('00000000-0000-4000-8000-000000000002')?.displayName,
+      ).toBe('Beta User');
     });
   });
 });

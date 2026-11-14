@@ -557,3 +557,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Found (classic bug, fixed here):** the classic picker listed only controls inside catalog
   groups, so catalogs whose controls sit at the root (policies, procedures) offered none. It now
   uses `useControlOptions`, like New control link.
+
+### Smoke test of every page
+
+- A live sweep of 66 pages in local-dev (every list, record and tab, with real IDs) checking for
+  page errors, failed requests and exactly one h1: all clean after one fix.
+- **Found (classic bug, fixed here):** user lookups (`useUserSearch().loadUsersByIds`) sent every
+  assignee reference to `GET /api/users/:id`, including role and group names such as `it-iam`
+  (a 400 each, e.g. on a workflow instance's Role assignments tab). It now looks up only UUIDs.

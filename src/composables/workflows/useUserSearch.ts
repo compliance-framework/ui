@@ -1,3 +1,4 @@
+import { looksLikeUuid } from '@/utils/risk-workflow';
 import { ref } from 'vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
@@ -136,9 +137,11 @@ export function useUserSearch() {
    * Useful for loading users associated with existing assignments
    */
   async function loadUsersByIds(ids: string[]) {
+    // GET /api/users/:id takes a UUID; assignments can also name a role or group (e.g.
+    // "it-iam"), which would only produce a 400.
     const normalizedIds = ids
       .map((id) => (typeof id === 'string' ? id.trim() : ''))
-      .filter((id) => !!id);
+      .filter((id) => !!id && looksLikeUuid(id));
     const missing = Array.from(
       new Set(normalizedIds.filter((id) => !userCache.value[id])),
     );
