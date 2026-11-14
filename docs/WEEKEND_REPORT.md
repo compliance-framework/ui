@@ -85,8 +85,8 @@ primitives once makes the rest fast, and merging sooner reduces the conflict cos
 bang.
 
 **Test data I created in local-dev:** a group "Weekend test group", a user
-`weekend.test2@example.com` (renamed "Weekend2 Tester"), and a component definition "Weekend
-test CD" (the API can't delete those). Every other record I created was deleted again.
+`weekend.test2@example.com` (renamed "Weekend2 Tester"), a component definition "Weekend
+test CD", and a profile "Weekend version probe" (the API can't delete those). Every other record I created was deleted again.
 
 **How to look:** `VITE_API_PROXY=http://localhost:8080 npm run dev`, sign in, and click
 through the nav. `make reviewable`, `npm run build` and `npm run test:e2e` all pass at the head
