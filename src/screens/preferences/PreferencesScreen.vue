@@ -1,14 +1,13 @@
 <script setup lang="ts">
 /**
  * Preferences (/preferences): where each kind of notification is sent (email, Slack), and the
- * signed-in account. The Slack link section is the classic one (a legacy island). The script is
+ * signed-in account with its Slack link. The script is
  * the classic page's; the template and the helpers at the end are new.
  */
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
-import SlackAccountLinkSection from '@/components/preferences/SlackAccountLinkSection.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import SlackLinkSection from './SlackLinkSection.vue';
 import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
@@ -677,9 +676,7 @@ const account = computed(() => [
       </Panel>
       <Panel title="Account" :level="2">
         <DescriptionList :items="account" />
-        <LegacyPage>
-          <SlackAccountLinkSection @status-change="onSlackLinkStatusChange" />
-        </LegacyPage>
+        <SlackLinkSection @status-change="onSlackLinkStatusChange" />
       </Panel>
     </template>
   </Stack>

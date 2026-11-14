@@ -1,82 +1,16 @@
-<template>
-  <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-    <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-      Slack
-    </h3>
-    <p
-      v-if="!slackStatusLoading && slackLinkConfigured && !isSlackLinked"
-      class="mt-2 text-base text-gray-600 dark:text-gray-400"
-    >
-      Linking redirects you to Slack and returns you here after authorization.
-    </p>
-
-    <div
-      v-if="slackStatusLoading"
-      class="mt-4 rounded-xl border border-slate-300 bg-slate-50 px-5 py-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200"
-    >
-      Loading Slack link status...
-    </div>
-
-    <template v-else-if="!slackLinkConfigured">
-      <div
-        class="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-200"
-      >
-        Slack linking is not configured for this environment.
-      </div>
-    </template>
-
-    <template v-else>
-      <div
-        class="mt-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
-      >
-        <div class="flex min-w-0 items-start gap-4">
-          <div
-            class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/70"
-            aria-hidden="true"
-          >
-            <img
-              :src="slackLogoLight"
-              alt="Slack logo"
-              class="h-10 w-10 object-contain"
-            />
-          </div>
-
-          <div class="min-w-0">
-            <p
-              class="break-words text-sm font-medium leading-snug text-gray-900 dark:text-gray-100"
-            >
-              {{
-                isSlackLinked
-                  ? linkedConnectionText
-                  : 'Link your Slack identity to this account.'
-              }}
-            </p>
-          </div>
-        </div>
-
-        <button
-          v-if="!isSlackLinked"
-          @click="startSlackLinkFlow"
-          :disabled="slackActionLoading"
-          class="self-start rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ slackActionLoading ? 'Redirecting...' : 'Link' }}
-        </button>
-
-        <button
-          v-else
-          @click="unlinkSlackAccount"
-          :disabled="slackActionLoading"
-          class="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ slackActionLoading ? 'Unlinking...' : 'Unlink' }}
-        </button>
-      </div>
-    </template>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * Preferences → Account → Slack: whether this account is linked to a Slack identity, with Link
+ * (a redirect to Slack and back) or Unlink. It also finishes the link when Slack redirects back
+ * with a status in the query, and reports its state so Slack alerts can be offered. The script
+ * is the classic section's.
+ */
+import Button from '@/ds/components/Button/Button.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Skeleton from '@/ds/components/Skeleton/Skeleton.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import { computed, onMounted, ref, watchEffect } from 'vue';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
@@ -90,7 +24,6 @@ import {
   resolveSlackCallbackCode,
   resolveSlackCallbackStatus,
 } from '@/utils/slack-link-callback';
-import slackLogoLight from '@/assets/slack-logo-light.svg';
 
 interface SlackLinkStatus {
   linked: boolean;
@@ -331,3 +264,33 @@ watchEffect(() => {
   });
 });
 </script>
+
+<template>
+  <PanelSection title="Slack">
+    <Skeleton v-if="slackStatusLoading" />
+    <InlineMessage v-else-if="!slackLinkConfigured" tone="warning"
+      >Slack linking is not configured for this environment.</InlineMessage
+    >
+    <Cluster v-else justify="between" gap="3">
+      <Text v-if="isSlackLinked">{{ linkedConnectionText }}</Text>
+      <Text v-else
+        >Link your Slack identity to this account. Linking takes you to Slack
+        and brings you back here.</Text
+      >
+      <Button
+        v-if="!isSlackLinked"
+        variant="primary"
+        :loading="slackActionLoading"
+        @click="startSlackLinkFlow"
+        >Link Slack</Button
+      >
+      <Button
+        v-else
+        variant="danger"
+        :loading="slackActionLoading"
+        @click="unlinkSlackAccount"
+        >Unlink Slack</Button
+      >
+    </Cluster>
+  </PanelSection>
+</template>

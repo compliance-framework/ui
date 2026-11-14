@@ -5,7 +5,7 @@ import {
   CALLBACK_CODE_QUERY_KEY,
   CALLBACK_STATUS_QUERY_KEY,
 } from '@/utils/slack-link-callback';
-import SlackAccountLinkSection from '../preferences/SlackAccountLinkSection.vue';
+import SlackLinkSection from '../SlackLinkSection.vue';
 
 const {
   mockAxios,
@@ -49,7 +49,7 @@ vi.mock('vue-router', () => ({
   }),
 }));
 
-describe('SlackAccountLinkSection', () => {
+describe('SlackLinkSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRoute.query = {};
@@ -77,14 +77,14 @@ describe('SlackAccountLinkSection', () => {
       },
     });
 
-    const wrapper = mount(SlackAccountLinkSection);
+    const wrapper = mount(SlackLinkSection);
 
     await flushPromises();
     await nextTick();
 
     expect(mockAxios.get).toHaveBeenCalledWith('/api/auth/slack/link/status');
     expect(wrapper.text()).toContain('Connected to openai as user@example.com');
-    expect(wrapper.find('button').text()).toBe('Unlink');
+    expect(wrapper.find('button').text()).toBe('Unlink Slack');
 
     const statusChangeEvents = wrapper.emitted('status-change');
     expect(statusChangeEvents?.[statusChangeEvents.length - 1]).toEqual([
@@ -103,7 +103,7 @@ describe('SlackAccountLinkSection', () => {
       },
     });
 
-    const wrapper = mount(SlackAccountLinkSection);
+    const wrapper = mount(SlackLinkSection);
 
     await flushPromises();
     await nextTick();
@@ -138,7 +138,7 @@ describe('SlackAccountLinkSection', () => {
       },
     });
 
-    mount(SlackAccountLinkSection);
+    mount(SlackLinkSection);
 
     await flushPromises();
     await nextTick();
@@ -164,7 +164,7 @@ describe('SlackAccountLinkSection', () => {
       keep: 'value',
     };
 
-    mount(SlackAccountLinkSection);
+    mount(SlackLinkSection);
 
     await flushPromises();
     await nextTick();
@@ -190,7 +190,7 @@ describe('SlackAccountLinkSection', () => {
     };
     mockRouterReplace.mockRejectedValueOnce(new Error('router failed'));
 
-    const wrapper = mount(SlackAccountLinkSection);
+    const wrapper = mount(SlackLinkSection);
 
     await flushPromises();
     await nextTick();
@@ -206,6 +206,6 @@ describe('SlackAccountLinkSection', () => {
     expect(wrapper.text()).toContain(
       'Link your Slack identity to this account.',
     );
-    expect(wrapper.find('button').text()).toBe('Link');
+    expect(wrapper.find('button').text()).toBe('Link Slack');
   });
 });

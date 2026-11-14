@@ -29,9 +29,9 @@ vi.mock('@/components/PageCard.vue', () => ({
   },
 }));
 
-vi.mock('@/components/preferences/SlackAccountLinkSection.vue', () => ({
+vi.mock('@/screens/preferences/SlackLinkSection.vue', () => ({
   default: {
-    name: 'SlackAccountLinkSection',
+    name: 'SlackLinkSection',
     emits: ['status-change'],
     template: '<div data-test="slack-account-link-section"></div>',
   },
@@ -44,7 +44,7 @@ const emitSlackStatus = async (
   await flushPromises();
   await nextTick();
   wrapper
-    .getComponent({ name: 'SlackAccountLinkSection' })
+    .getComponent({ name: 'SlackLinkSection' })
     .vm.$emit('status-change', state);
   await nextTick();
   await flushPromises();
@@ -882,7 +882,7 @@ describe('PreferencesView', () => {
       );
 
       wrapper
-        .getComponent({ name: 'SlackAccountLinkSection' })
+        .getComponent({ name: 'SlackLinkSection' })
         .vm.$emit('status-change', {
           loading: false,
           configured: true,
