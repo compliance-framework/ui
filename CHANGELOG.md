@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.3](https://github.com/compliance-framework/ui/compare/v2.15.2...v2.15.3) (2026-11-14)
+
+
+### Bug Fixes
+
+* **deps:** patch OS packages in nginx:stable-alpine (ALPINE-CVE-2026-4738, ALPINE-CVE-2026-87636, ALPINE-CVE-2026-9947) ([#396](https://github.com/compliance-framework/ui/issues/396)) ([772409d](https://github.com/compliance-framework/ui/commit/772409da7d997eb34c7a75999e7fd6162bd69e5c))
+
 ## [2.15.2](https://github.com/compliance-framework/ui/compare/v2.15.1...v2.15.2) (2026-11-07)
 
 
