@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * A POA&M's Back matter tab: its resources (citations, links, document IDs, embedded files), each
- * a disclosure with its facts and a menu to edit or delete it. The resource form is a classic
- * island in a design-system dialog.
+ * a disclosure with its facts and a menu to edit or delete it.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -25,8 +24,7 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import BackMatterResourceForm from '@/components/poam/BackMatterResourceForm.vue';
+import PoamResourceForm from './PoamResourceForm.vue';
 
 const route = useRoute();
 const toast = useToast();
@@ -236,16 +234,13 @@ const actions = (resource: BackMatterResource): MenuEntry[] => [
       :title="editing ? 'Edit resource' : 'New resource'"
       size="l"
     >
-      <LegacyPage>
-        <BackMatterResourceForm
-          v-if="formOpen"
-          :poam-id="poamId"
-          :resource="editing"
-          :is-edit="Boolean(editing)"
-          @cancel="editing = undefined"
-          @saved="saved"
-        />
-      </LegacyPage>
+      <PoamResourceForm
+        v-if="formOpen"
+        :poam-id="poamId"
+        :resource="editing"
+        @cancel="editing = undefined"
+        @saved="saved"
+      />
     </Dialog>
     <ConfirmDialog
       v-model:open="deleteOpen"

@@ -986,3 +986,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Checked live: add with a linked observation, reload, delete.
 - **Third live sweep (97 routes**, adding the assessment plan record, Inventory, Build a profile,
   Import and subject templates): one h1 each, no page errors; only the known API responses.
+- **POA&M back matter form** is design-system (`PoamResourceForm`, add and edit: title,
+  description, remarks, citation, document IDs, links, properties; editing keeps an embedded
+  file). Unlike the classic form, it doesn't save empty citation and embedded-file stubs.
+  Checked live: add with a document ID, edit the citation, delete.
