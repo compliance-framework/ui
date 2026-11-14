@@ -944,3 +944,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   live on a temporary POA&M with no back matter (created and then deleted through the API): the
   first resource saved. **For the API team:** the resources endpoint should create the back
   matter itself.
+- **Configure System → Users: the user form** is design-system (`SystemUserForm`: title, short
+  name, description, role IDs and each privilege's functions as comma-separated fields,
+  privileges as a field list; editing keeps the user's other fields). The classic create and
+  edit forms are deleted. Checked live: add a user with roles and a privilege, then delete it.

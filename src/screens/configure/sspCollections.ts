@@ -32,10 +32,9 @@ export const SSP_USERS: CollectionKind = {
     { key: 'remarks', label: 'Remarks', value: user.remarks },
     { key: 'uuid', label: 'UUID', value: user.uuid },
   ],
-  createForm: () =>
-    import('@/components/system-security-plans/SystemImplementationUserCreateForm.vue'),
-  editForm: () =>
-    import('@/components/system-security-plans/SystemImplementationUserEditForm.vue'),
+  createForm: () => import('./SystemUserForm.vue'),
+  editForm: () => import('./SystemUserForm.vue'),
+  designSystemForms: true,
   download: true,
 };
 
