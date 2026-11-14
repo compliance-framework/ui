@@ -2,8 +2,8 @@
 /**
  * Configure System → Export Offerings (reached by link): the offerings this system publishes for
  * others to inherit from, with their status, version and items, and a menu to edit, manage
- * items, set the allowed downstream systems, publish, deprecate or revoke. The forms and the
- * items and allowlist editors are classic islands in design-system dialogs.
+ * items, set the allowed downstream systems, publish, deprecate or revoke. The items and allowlist
+ * editors are classic islands in design-system dialogs.
  */
 import { computed, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -30,8 +30,7 @@ import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import ExportOfferingCreateForm from '@/components/system-security-plans/ExportOfferingCreateForm.vue';
-import ExportOfferingEditForm from '@/components/system-security-plans/ExportOfferingEditForm.vue';
+import ExportOfferingForm from './ExportOfferingForm.vue';
 import ExportOfferingItemsDialog from '@/components/system-security-plans/ExportOfferingItemsDialog.vue';
 import ExportOfferingAllowlistDialog from '@/components/system-security-plans/ExportOfferingAllowlistDialog.vue';
 
@@ -290,25 +289,22 @@ function actions(offering: SSPExportOffering): MenuEntry[] {
       </DataTable>
     </DataState>
 
-    <Dialog v-model:open="creating" title="New export offering" size="l">
-      <LegacyPage>
-        <ExportOfferingCreateForm
-          :ssp-id="sspId"
-          @cancel="creating = false"
-          @created="created"
-        />
-      </LegacyPage>
+    <Dialog v-model:open="creating" title="New export offering">
+      <ExportOfferingForm
+        v-if="creating"
+        :ssp-id="sspId"
+        @cancel="creating = false"
+        @created="created"
+      />
     </Dialog>
-    <Dialog v-model:open="editOpen" title="Edit export offering" size="l">
-      <LegacyPage>
-        <ExportOfferingEditForm
-          v-if="editing"
-          :ssp-id="sspId"
-          :offering="editing"
-          @cancel="editing = undefined"
-          @saved="saved"
-        />
-      </LegacyPage>
+    <Dialog v-model:open="editOpen" title="Edit export offering">
+      <ExportOfferingForm
+        v-if="editing"
+        :ssp-id="sspId"
+        :offering="editing"
+        @cancel="editing = undefined"
+        @saved="saved"
+      />
     </Dialog>
     <Dialog
       v-model:open="itemsOpen"

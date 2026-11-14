@@ -6,8 +6,7 @@ import { TooltipProvider } from 'reka-ui';
 import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
 import type { MenuAction } from '@/ds/components/Menu/menuEntries';
-import ExportOfferingCreateForm from '@/components/system-security-plans/ExportOfferingCreateForm.vue';
-import ExportOfferingEditForm from '@/components/system-security-plans/ExportOfferingEditForm.vue';
+import ExportOfferingForm from '../ExportOfferingForm.vue';
 import SystemExportOfferingsSection from '../SystemExportOfferingsSection.vue';
 
 const api = vi.hoisted(() => ({ post: vi.fn(), patch: vi.fn() }));
@@ -53,8 +52,7 @@ async function mountSection() {
       // The classic forms and editors are islands with their own specs.
       global: {
         stubs: {
-          ExportOfferingCreateForm: true,
-          ExportOfferingEditForm: true,
+          ExportOfferingForm: true,
           ExportOfferingItemsDialog: true,
           ExportOfferingAllowlistDialog: true,
         },
@@ -162,7 +160,7 @@ describe('SystemExportOfferingsSection', () => {
       .click();
     await flushPromises();
     wrapper
-      .findComponent(ExportOfferingCreateForm)
+      .findComponent(ExportOfferingForm)
       .vm.$emit('created', offering('o-3', 'draft', 'New baseline'));
     await flushPromises();
     expect(wrapper.text()).toContain('New baseline');
@@ -171,7 +169,7 @@ describe('SystemExportOfferingsSection', () => {
       .onSelect!();
     await flushPromises();
     wrapper
-      .findComponent(ExportOfferingEditForm)
+      .findComponent(ExportOfferingForm)
       .vm.$emit('saved', offering('o-2', 'published', 'Renamed baseline'));
     await flushPromises();
     expect(wrapper.text()).toContain('Renamed baseline');

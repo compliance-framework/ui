@@ -958,3 +958,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   remarks, and protocols as a field list with nested port ranges. The classic forms remain only
   for the classic per-control statement editor on Implementation. Checked live: add with a
   protocol and port range, edit, delete, and the template path (fields fill and lock; cancelled).
+- **Export offering form** is design-system (`ExportOfferingForm`, add and edit: title and
+  description). Checked live: edit a description, which survives a reload.
