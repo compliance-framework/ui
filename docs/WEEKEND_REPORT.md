@@ -862,3 +862,5 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   2. Evidence counts show inside the control, not on its row.
   Checked live on "Meridian Internal Controls — Delivery": open, reload (stays open), menus,
   edit modal.
+- **Catalog page in the axe run** (a mocked catalog with a group and a control, every state and
+  theme): passes.

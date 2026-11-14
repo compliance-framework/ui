@@ -18,6 +18,7 @@ const routes = [
   `/evidence/${EVIDENCE_ID}/update`,
   '/systems',
   '/catalogs',
+  '/catalogs/cat-1',
   '/catalogs/cat-1/control/ac-2/evidence',
   '/users',
   '/admin/groups',

@@ -690,6 +690,54 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         },
         { data: null },
       );
+    // A catalog with one group holding one control.
+    const catalogPath = path.match(/^\/api\/oscal\/catalogs\/cat-1(\/.*)?$/);
+    if (catalogPath && method === 'GET') {
+      const rest = catalogPath[1] ?? '';
+      if (rest === '')
+        return json(route, {
+          data: {
+            uuid: 'cat-1',
+            metadata: { title: 'Example catalog', version: '1.0' },
+          },
+        });
+      if (rest === '/groups')
+        return list(
+          route,
+          lists,
+          {
+            data: [
+              {
+                id: 'ac',
+                title: 'Access control',
+                parts: [
+                  { id: 'ac_ovw', name: 'overview', prose: 'About access.' },
+                ],
+              },
+            ],
+          },
+          { data: [] },
+        );
+      if (rest === '/groups/ac/controls')
+        return json(route, {
+          data: [
+            {
+              id: 'ac-2',
+              title: 'Account management',
+              parts: [
+                {
+                  id: 'ac-2_smt',
+                  name: 'statement',
+                  prose: 'Manage accounts.',
+                },
+              ],
+            },
+          ],
+        });
+      return json(route, { data: [] });
+    }
+    if (path.startsWith('/api/evidence/compliance-by-control/'))
+      return json(route, { data: [] });
     // A record of the redesigned OSCAL types, with every sub-collection its tabs read.
     const oscalRecord = path.match(
       /^\/api\/oscal\/(component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)\/([^/]+)(\/.*)?$/,
