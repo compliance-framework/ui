@@ -21,14 +21,14 @@ without a redesigned page around it. Pages fall into three kinds:
   users, groups, parties and roles, and the user and group pages; system templates list; POA&M
   items; evidence filters list; control links (list and create); control evidence; My tasks;
   Inventory; Build a profile from props; subject templates (list and page); the profile page;
+  the component definition, POA&M and assessment plan records (every tab, form and dialog);
   Preferences; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
   section, the diagram editor and some forms), catalog page (add/edit modals), workflow run
   (step graph and panel), system template page (edit form), Compliance Map, Diagnostics, risk
-  page, New evidence filter, Import (workflow import panel). On the component definition, POA&M, assessment plan, assessment
-  results and workflow instance pages, every tab is design-system; only some create/edit forms
-  and the POA&M item details are still classic, inside design-system dialogs.
+  page, New evidence filter, Import (workflow import panel). On the assessment results and workflow instance pages, every tab is
+  design-system too.
 - **Design-system header over a classic body**: Agents, risk templates, Filter suggestions,
   Diagnostics sections.
 
