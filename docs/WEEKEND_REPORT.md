@@ -1020,3 +1020,32 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the classic rule that "any system may subscribe" is only said about a list that actually
   loaded. Permission-gated actions are disabled with the reason. The classic spec is ported.
   Checked live: allow a system, then remove it.
+- **Export offering items editor** is design-system (`OfferingItems`: each item as control and
+  statement over component and capability, with a named Remove; a Select of the plan's
+  statement-level capabilities and Add item). Requirement-level capabilities stay listed but
+  can't be chosen, with the reason in the option. A revoked offering says so and its actions are
+  disabled with the reason (the classic editor hid them). The API's refusal shows by the picker,
+  not as a toast. This also closes the classic select's Escape gap noted above. The classic spec
+  is ported.
+- **Subscribe form** is design-system (`SubscribeOfferingForm`, replacing the classic wizard in
+  both its places: Configure System → Leverage and the Implementation statement editor's
+  shared-responsibility panel). It has one checkbox group of items to inherit, then one group per
+  chosen item, "Already handled for …", for the responsibilities this system already meets.
+  Errors show in the form. **Decision:** the button says Subscribe, not Import, to match the
+  Leverage table. The classic spec is ported (including the API's `null` responsibilities).
+  **Gap:** local-dev has no statement-level exports and no published offerings, so adding an
+  item and subscribing weren't checked live (the empty states were); the specs cover both, and
+  the request logic is the classic code unchanged.
+- **Slack link section on Preferences** is design-system (`SlackLinkSection`, the classic script
+  kept: link status, Link Slack or Unlink Slack, finishing the link when Slack redirects back).
+  **Decision:** the Slack logo tile is dropped; the section heading says Slack. Checked live: the
+  "not configured" state (local-dev has no Slack). The classic spec is ported.
+- **Subject template form** is design-system (`SubjectTemplateForm` with `SubjectTemplatePreview`),
+  replacing the classic form and its three sub-builders. The label schema, selector labels,
+  sample labels, properties and links are field lists. **Decision:** identity label keys are
+  checkboxes of the schema's keys (they were a filterable multi-select of the same keys); with no
+  schema yet, a caption says to add fields first. Properties and links sit in a collapsed
+  "Properties and links" disclosure, as the classic "Advanced" panel did. The form's own checks
+  ("At least one selector label is required" and so on) now show in the form, not as a toast.
+  The classic system template form uses the new preview too. Both classic specs are ported.
+  Checked live: edit and save an existing template, then the empty-form checks.

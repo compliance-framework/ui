@@ -180,7 +180,7 @@
         </div>
       </div>
 
-      <TemplatePreview
+      <SubjectTemplatePreview
         :title-template="form.titleTemplate"
         :description-template="form.descriptionTemplate"
         purpose-template=""
@@ -256,7 +256,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import TemplatePreview from '@/components/subject-templates/TemplatePreview.vue';
+import SubjectTemplatePreview from '@/screens/admin/SubjectTemplatePreview.vue';
 import {
   buildUpsertSspTemplatePayload,
   createEmptySspTemplateForm,
@@ -306,7 +306,7 @@ const filterError = computed(() => {
   }
 });
 
-// TemplatePreview substitutes `{{ name }}` placeholders by their sample label's key. SSP
+// The preview substitutes `{{ name }}` placeholders by their sample label's key. SSP
 // templates are Go templates over the key values (`{{ ._app }}`), so each sample label is
 // named with the leading dot to match.
 const previewLabelSchema = computed(() =>

@@ -3,7 +3,7 @@
  * Subject templates (/admin/subject-templates): reusable templates for the subjects evidence is
  * about. Search by name, filter by type and source mode, sort (all in the address); each template
  * opens its page, or can be edited or duplicated. `?edit=<id>` (from a template's page) opens its
- * editor. The form is a classic island in a design-system dialog.
+ * editor.
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -33,8 +33,7 @@ import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import Select from '@/ds/components/Select/Select.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import SubjectTemplateForm from '@/components/subject-templates/SubjectTemplateForm.vue';
+import SubjectTemplateForm from './SubjectTemplateForm.vue';
 import { matches, useListView } from '../listView';
 
 interface Row {
@@ -303,14 +302,12 @@ const actions = (row: Row): MenuEntry[] => [
     :title="form?.title ?? 'Subject template'"
     size="l"
   >
-    <LegacyPage>
-      <SubjectTemplateForm
-        v-if="form"
-        :initial="form.initial"
-        :template-id="form.templateId"
-        @cancel="form = undefined"
-        @saved="saved"
-      />
-    </LegacyPage>
+    <SubjectTemplateForm
+      v-if="form"
+      :initial="form.initial"
+      :template-id="form.templateId"
+      @cancel="form = undefined"
+      @saved="saved"
+    />
   </Dialog>
 </template>

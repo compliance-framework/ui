@@ -72,8 +72,8 @@ function mountDialog(template: SspTemplate | null = null) {
           emits: ['update:modelValue'],
           template: '<div />',
         },
-        TemplatePreview: {
-          name: 'TemplatePreview',
+        SubjectTemplatePreview: {
+          name: 'SubjectTemplatePreview',
           props: ['titleTemplate', 'labelSchema'],
           template: '<div />',
         },
@@ -102,7 +102,9 @@ describe('SspTemplateFormDialog', () => {
 
     // The preview names sample labels like the Go template placeholders.
     expect(
-      wrapper.findComponent({ name: 'TemplatePreview' }).props('labelSchema'),
+      wrapper
+        .findComponent({ name: 'SubjectTemplatePreview' })
+        .props('labelSchema'),
     ).toEqual([{ key: '._app', description: '' }]);
 
     await wrapper.find('form').trigger('submit');
