@@ -573,3 +573,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   summary. **Decision:** its Download JSON button is dropped, since the JSON section copies and
   downloads. The classic view's profile-binding cases now test `useSspProfileBindings` directly
   (it had no spec of its own).
+- **Component definition Back matter tab**: each resource as a panel (description, remarks,
+  citation, links, UUID), with Add resource always available. The classic tab only offered it
+  while the list was empty. The new-resource dialog stays a classic island.
