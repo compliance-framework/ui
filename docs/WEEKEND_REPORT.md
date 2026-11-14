@@ -837,3 +837,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Found (fixed, design system):** `useApiQuery` showed an error for `{"data": null}`, which Go
   APIs send for an empty list (here, filtering inventory by type). It now shows the empty state.
   `useApiQuery` also accepts a reactive URL now, fetching again when it changes.
+- **Subject templates list**: design-system list page with search, type and source-mode
+  filters and sorting (all in the address), names linking to the template page, and a menu to
+  edit or duplicate (with a unique "(Copy n)" name). `?edit=<id>` still opens the editor (the
+  template page's Edit uses it). The form moved out of the classic page into its own classic
+  component, `SubjectTemplateForm`, shown in a design-system dialog. **Decisions:**
+  1. Client-side pagination is dropped (deployments have a handful of templates; the table
+     sorts and filters instead).
+  2. A 403 now shows the design-system "no access" state instead of a toast.
+  3. Edit for a template without an ID is disabled with the reason instead of erroring on
+     click.
+  The classic spec is split into list and form specs. Checked live: list, edit and save.
