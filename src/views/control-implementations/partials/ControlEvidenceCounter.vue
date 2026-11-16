@@ -4,6 +4,7 @@ import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { useDataApi } from '@/composables/axios';
 import { computed, watch } from 'vue';
 import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
+import EvidenceCounts from '@/screens/EvidenceCounts.vue';
 
 const { control, sspId } = defineProps<{
   control: Control;

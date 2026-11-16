@@ -66,47 +66,23 @@ const control: Control = {
 } as Control;
 
 const stubs = {
-  Label: {
-    props: ['for', 'required'],
-    template:
-      '<label :for="$props.for"><slot /><span v-if="required">*</span></label>',
-  },
-  InputText: {
-    props: ['id', 'modelValue', 'invalid', 'disabled', 'placeholder'],
-    emits: ['update:modelValue'],
-    template:
-      '<input :id="id" :value="modelValue" :disabled="disabled" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-  },
-  Textarea: {
-    props: ['id', 'modelValue', 'invalid', 'disabled', 'placeholder'],
-    emits: ['update:modelValue'],
-    template:
-      '<textarea :id="id" :value="modelValue" :disabled="disabled" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-  },
-  Message: {
-    props: ['severity'],
-    template: '<div role="alert"><slot /></div>',
-  },
-  PrimaryButton: {
-    props: ['disabled', 'type'],
-    template:
-      '<button :type="type || \'button\'" :disabled="disabled"><slot /></button>',
-  },
-  SecondaryButton: {
-    props: ['disabled', 'type'],
-    template:
-      '<button :type="type || \'button\'" :disabled="disabled"><slot /></button>',
-  },
-  TertiaryButton: {
-    props: ['disabled', 'type'],
-    template:
-      '<button :type="type || \'button\'" :disabled="disabled"><slot /></button>',
-  },
+  // Inline, so the dialog's content is in the wrapper.
   Dialog: {
-    props: ['visible', 'header'],
-    template: '<div v-if="visible"><h2>{{ header }}</h2><slot /></div>',
+    props: ['open', 'title'],
+    template: '<div v-if="open"><h2>{{ title }}</h2><slot /></div>',
   },
+  // A disabled button's reason tooltip needs a provider; the text is enough here.
+  Tooltip: { template: '<slot />' },
 };
+
+/** The input labelled `label` (FormField ties them with a generated id). */
+function field(wrapper: VueWrapper, label: string) {
+  const labelEl = wrapper
+    .findAll('label')
+    .find((l) => l.text().replace('*', '').trim() === label);
+  expect(labelEl, `missing field ${label}`).toBeTruthy();
+  return wrapper.find(`[id="${labelEl!.attributes('for')}"]`);
+}
 
 function mountForm(component: Component, props: Record<string, unknown>) {
   return mount(component, {
@@ -146,8 +122,8 @@ describe('catalog forms', () => {
 
   it('creates top-level, group, and nested controls through the existing endpoints', async () => {
     const topLevel = mountForm(ControlCreateForm, { catalog });
-    await topLevel.find('#control-id').setValue('ac-1');
-    await topLevel.find('#control-title').setValue('Policy');
+    await field(topLevel, 'ID').setValue('ac-1');
+    await field(topLevel, 'Title').setValue('Policy');
     await submit(topLevel);
 
     expect(
@@ -162,8 +138,8 @@ describe('catalog forms', () => {
       catalog,
       parentGroup: group,
     });
-    await groupControl.find('#control-id').setValue('ac-2');
-    await groupControl.find('#control-title').setValue('Account Management');
+    await field(groupControl, 'ID').setValue('ac-2');
+    await field(groupControl, 'Title').setValue('Account Management');
     await submit(groupControl);
 
     expect(
@@ -180,8 +156,8 @@ describe('catalog forms', () => {
       catalog,
       parentControl: control,
     });
-    await nestedControl.find('#control-id').setValue('ac-1.1');
-    await nestedControl.find('#control-title').setValue('Policy Procedures');
+    await field(nestedControl, 'ID').setValue('ac-1.1');
+    await field(nestedControl, 'Title').setValue('Policy Procedures');
     await submit(nestedControl);
 
     expect(
@@ -196,8 +172,8 @@ describe('catalog forms', () => {
 
   it('renders server errors in the control create form', async () => {
     const wrapper = mountForm(ControlCreateForm, { catalog });
-    await wrapper.find('#control-id').setValue('ac-1');
-    await wrapper.find('#control-title').setValue('Policy');
+    await field(wrapper, 'ID').setValue('ac-1');
+    await field(wrapper, 'Title').setValue('Policy');
     executeFor('/api/oscal/catalogs/catalog-1/controls')?.mockRejectedValueOnce(
       new Error('API rejected control'),
     );
@@ -244,8 +220,8 @@ describe('catalog forms', () => {
 
   it('creates groups and sub-groups through the existing endpoints', async () => {
     const topLevel = mountForm(GroupCreateForm, { catalog });
-    await topLevel.find('#group-id').setValue('ia');
-    await topLevel.find('#group-title').setValue('Identification');
+    await field(topLevel, 'ID').setValue('ia');
+    await field(topLevel, 'Title').setValue('Identification');
     await submit(topLevel);
 
     expect(
@@ -259,8 +235,8 @@ describe('catalog forms', () => {
 
     apiCalls.length = 0;
     const subGroup = mountForm(GroupCreateForm, { catalog, parent: group });
-    await subGroup.find('#group-id').setValue('ac-family');
-    await subGroup.find('#group-title').setValue('Family');
+    await field(subGroup, 'ID').setValue('ac-family');
+    await field(subGroup, 'Title').setValue('Family');
     await submit(subGroup);
 
     expect(
@@ -278,14 +254,14 @@ describe('catalog forms', () => {
       control,
       modelValue: true,
     });
-    await controlEdit.find('#control-edit-title').setValue('');
+    await field(controlEdit, 'Title').setValue('');
     await submit(controlEdit);
     expect(controlEdit.text()).toContain('Title is required');
     expect(
       executeFor('/api/oscal/catalogs/catalog-1/controls/ac-1'),
     ).not.toHaveBeenCalled();
 
-    await controlEdit.find('#control-edit-title').setValue('Updated Control');
+    await field(controlEdit, 'Title').setValue('Updated Control');
     await submit(controlEdit);
     expect(
       executeFor('/api/oscal/catalogs/catalog-1/controls/ac-1'),
@@ -299,7 +275,7 @@ describe('catalog forms', () => {
       group,
       modelValue: true,
     });
-    await groupEdit.find('#group-edit-title').setValue('Updated Group');
+    await field(groupEdit, 'Title').setValue('Updated Group');
     await submit(groupEdit);
     expect(
       executeFor('/api/oscal/catalogs/catalog-1/groups/ac'),
@@ -312,7 +288,7 @@ describe('catalog forms', () => {
       catalog,
       modelValue: true,
     });
-    await catalogEdit.find('#catalog-edit-title').setValue('Updated Catalog');
+    await field(catalogEdit, 'Title').setValue('Updated Catalog');
     await submit(catalogEdit);
     expect(executeFor('/api/oscal/catalogs/catalog-1')).toHaveBeenCalledWith({
       data: expect.objectContaining({

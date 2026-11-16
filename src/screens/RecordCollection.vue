@@ -27,7 +27,6 @@ import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import type { CollectionEntry, CollectionKind } from './collectionKind';
 
 const props = withDefaults(
@@ -208,24 +207,20 @@ function actions(entry: CollectionEntry): MenuEntry[] {
     </DataState>
 
     <Dialog v-model:open="creating" :title="`New ${kind.noun}`" size="l">
-      <component :is="kind.designSystemForms ? 'div' : LegacyPage">
-        <CreateForm
-          v-bind="formProps"
-          @cancel="creating = false"
-          @created="created"
-        />
-      </component>
+      <CreateForm
+        v-bind="formProps"
+        @cancel="creating = false"
+        @created="created"
+      />
     </Dialog>
     <Dialog v-model:open="editOpen" :title="`Edit ${kind.noun}`" size="l">
-      <component :is="kind.designSystemForms ? 'div' : LegacyPage">
-        <EditForm
-          v-if="editing"
-          v-bind="{ ...formProps, [kind.editProp]: editing }"
-          @cancel="editing = undefined"
-          @saved="saved"
-          @updated="saved"
-        />
-      </component>
+      <EditForm
+        v-if="editing"
+        v-bind="{ ...formProps, [kind.editProp]: editing }"
+        @cancel="editing = undefined"
+        @saved="saved"
+        @updated="saved"
+      />
     </Dialog>
     <slot name="dialogs" :saved="saved" />
     <ConfirmDialog

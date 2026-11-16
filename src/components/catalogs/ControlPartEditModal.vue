@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import Button from '@/ds/components/Button/Button.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog, Control, Part } from '@/oscal';
-import Dialog from '@/volt/Dialog.vue';
-import Label from '@/volt/Label.vue';
-import Textarea from '@/volt/Textarea.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { computed, ref, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -117,46 +118,33 @@ async function submit() {
 
 <template>
   <Dialog
-    v-model:visible="show"
-    modal
-    :header="`Edit ${partLabel}`"
-    :draggable="false"
-    class="w-full max-w-2xl"
+    v-model:open="show"
+    :title="`Edit ${partLabel.toLowerCase()}`"
+    size="l"
   >
-    <form @submit.prevent="submit" class="space-y-6">
-      <div>
-        <Label for="control-part-text">Text</Label>
-        <Textarea
-          id="control-part-text"
-          v-model="prose"
-          :placeholder="`Enter ${partLabel.toLowerCase()} text`"
-          rows="8"
-          class="w-full"
-        />
-      </div>
-
-      <Message v-if="errorMessage" severity="error">
-        {{ errorMessage }}
-      </Message>
-
-      <div
-        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-      >
-        <SecondaryButton type="button" @click="show = false">
-          Cancel
-        </SecondaryButton>
-        <PrimaryButton
-          type="submit"
-          :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
-          v-tooltip.top="{
-            value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
-            disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
-          }"
-        >
-          <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-          Save Text
-        </PrimaryButton>
-      </div>
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <FormField label="Text">
+          <Textarea v-model="prose" :rows="8" />
+        </FormField>
+        <InlineMessage v-if="errorMessage" tone="error" title="Not saved">
+          <p>{{ errorMessage }}</p>
+        </InlineMessage>
+        <Cluster justify="end" gap="2">
+          <Button @click="show = false">Cancel</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            :loading="isSubmitting"
+            :disabled-reason="
+              can(RESOURCES.CATALOG, ACTIONS.UPDATE)
+                ? undefined
+                : permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE)
+            "
+            >Save text</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>

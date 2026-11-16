@@ -26,8 +26,7 @@ without a redesigned page around it. Pages fall into three kinds:
   edit dialog); Import; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section, the diagram editor, the component risks list and evidence-filter drawer), catalog
-  page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics,
+  section, the diagram editor and the characteristics form), workflow run (step graph and panel), Compliance Map, Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -1188,3 +1187,20 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the editor: the shared-responsibility panel and blocks and the inherited-responsibilities
   section. Specs adapted (Export, Import, index). Checked live: the drawer opens the editor and
   saves.
+- **Found (fixed): Implementation's evidence counts were blank** since part 1: both counters
+  lost the import of the shared `EvidenceCounts`, so Vue rendered nothing (a warning, no error;
+  type-check doesn't see unresolved components). A scan of every `.vue` file for tags that are
+  neither imported nor global found no other cases (one classic workflow form, unchanged from
+  `main`, uses an unregistered icon tag).
+- **Catalog modals:** create group, create control, edit catalog, edit group, edit control,
+  edit a control's statement, guidance or assessment objective, and edit a group's description
+  are design-system dialogs, transplanted in place (scripts kept). The catalog page has no
+  classic pieces left.
+- **Configure System → Components:** each component's risks list is a design-system table
+  (status, severity with likelihood × impact, review deadline, owner) with the status and sort
+  pickers, and each risk is a link rather than a clickable card; New risk opens a design-system
+  drawer. The evidence filters drawer lists linked filters in a table (with View evidence and
+  Unlink in a menu) and reuses the Implementation editor's design-system forms to link or
+  create one. **Cleanup:** the record collections (POA&M items, observations, risks, findings;
+  system users, leveraged authorizations) all use design-system forms, so their classic
+  fallback frame is gone. Specs adapted (catalog forms, risks list, evidence filters).

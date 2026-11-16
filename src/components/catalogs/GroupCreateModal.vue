@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import type { Catalog, Group } from '@/oscal';
 import GroupCreateForm from '@/components/catalogs/GroupCreateForm.vue';
-import Dialog from '@/volt/Dialog.vue';
 
 const show = defineModel<boolean>();
 
@@ -23,18 +23,13 @@ function done(group: Group) {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="show"
-    modal
-    header="Create Group"
-    :draggable="false"
-    class="w-full max-w-2xl"
-  >
+  <Dialog v-model:open="show" title="New group">
     <GroupCreateForm
-      @created="done"
-      @cancel="show = false"
+      v-if="show"
       :parent="props.parent"
       :catalog="props.catalog"
+      @created="done"
+      @cancel="show = false"
     />
   </Dialog>
 </template>

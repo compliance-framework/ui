@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import Button from '@/ds/components/Button/Button.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog, Group } from '@/oscal';
-import Dialog from '@/volt/Dialog.vue';
-import Label from '@/volt/Label.vue';
-import InputText from '@/volt/InputText.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
@@ -107,68 +108,36 @@ async function submit() {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="show"
-    modal
-    header="Edit Group"
-    :draggable="false"
-    class="w-full max-w-2xl"
-  >
-    <form @submit.prevent="submit" class="space-y-6">
-      <div>
-        <Label for="group-edit-id">ID</Label>
-        <InputText
-          id="group-edit-id"
-          :model-value="props.group.id"
-          class="w-full"
-          disabled
-        />
-      </div>
-      <div>
-        <Label for="group-edit-title" required>Title</Label>
-        <InputText
-          id="group-edit-title"
-          v-model="form.title"
-          placeholder="Enter group title"
-          class="w-full"
-          :invalid="!!errors.title"
-        />
-        <small v-if="errors.title" class="text-red-500">
-          {{ errors.title }}
-        </small>
-      </div>
-      <div>
-        <Label for="group-edit-class">Class</Label>
-        <InputText
-          id="group-edit-class"
-          v-model="form.class"
-          placeholder="Optional class"
-          class="w-full"
-        />
-      </div>
-
-      <Message v-if="errorMessage" severity="error">
-        {{ errorMessage }}
-      </Message>
-
-      <div
-        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-      >
-        <SecondaryButton type="button" @click="show = false">
-          Cancel
-        </SecondaryButton>
-        <PrimaryButton
-          type="submit"
-          :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
-          v-tooltip.top="{
-            value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
-            disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
-          }"
-        >
-          <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-          Save Group
-        </PrimaryButton>
-      </div>
+  <Dialog v-model:open="show" title="Edit group">
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <FormField label="ID" readonly>
+          <TextInput :model-value="props.group.id" />
+        </FormField>
+        <FormField label="Title" required :error="errors.title || undefined">
+          <TextInput v-model="form.title" />
+        </FormField>
+        <FormField label="Class" hint="Optional">
+          <TextInput v-model="form.class" />
+        </FormField>
+        <InlineMessage v-if="errorMessage" tone="error" title="Not saved">
+          <p>{{ errorMessage }}</p>
+        </InlineMessage>
+        <Cluster justify="end" gap="2">
+          <Button @click="show = false">Cancel</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            :loading="isSubmitting"
+            :disabled-reason="
+              can(RESOURCES.CATALOG, ACTIONS.UPDATE)
+                ? undefined
+                : permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE)
+            "
+            >Save group</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>

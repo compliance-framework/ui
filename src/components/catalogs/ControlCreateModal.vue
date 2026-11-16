@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import type { Catalog, Control, Group } from '@/oscal';
 import ControlCreateForm from '@/components/catalogs/ControlCreateForm.vue';
-import Dialog from '@/volt/Dialog.vue';
 
 const show = defineModel<boolean>();
 
@@ -24,19 +24,14 @@ function done(control: Control) {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="show"
-    modal
-    header="Create Control"
-    :draggable="false"
-    class="w-full max-w-2xl"
-  >
+  <Dialog v-model:open="show" title="New control">
     <ControlCreateForm
-      @created="done"
-      @cancel="show = false"
+      v-if="show"
       :catalog="catalog"
       :parent-group="props.parentGroup"
       :parent-control="props.parentControl"
+      @created="done"
+      @cancel="show = false"
     />
   </Dialog>
 </template>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog, Control, Group } from '@/oscal';
 import { reactive } from 'vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import Label from '@/volt/Label.vue';
-import InputText from '@/volt/InputText.vue';
-import Message from '@/volt/Message.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useFormSubmit } from '@/composables/useFormSubmit';
 import { usePermissions } from '@/composables/usePermissions';
@@ -119,64 +120,39 @@ async function createControl(): Promise<void> {
 </script>
 
 <template>
-  <form @submit.prevent="createControl" class="space-y-6">
-    <div>
-      <Label for="control-id" required>ID</Label>
-      <InputText
-        id="control-id"
-        v-model="control.id"
-        placeholder="e.g. ac-1"
-        class="w-full"
-        :invalid="!!errors.id"
-      />
-      <small v-if="errors.id" class="text-red-500">{{ errors.id }}</small>
-    </div>
-
-    <div>
-      <Label for="control-class">Class</Label>
-      <InputText
-        id="control-class"
-        v-model="control.class"
-        placeholder="Optional class"
-        class="w-full"
-      />
-    </div>
-
-    <div>
-      <Label for="control-title" required>Title</Label>
-      <InputText
-        id="control-title"
-        v-model="control.title"
-        placeholder="Enter control title"
-        class="w-full"
-        :invalid="!!errors.title"
-      />
-      <small v-if="errors.title" class="text-red-500">
-        {{ errors.title }}
-      </small>
-    </div>
-
-    <Message v-if="errorMessage" severity="error">
-      {{ errorMessage }}
-    </Message>
-
-    <div
-      class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-    >
-      <SecondaryButton type="button" @click="emit('cancel')">
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton
-        type="submit"
-        :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.CREATE)"
-        v-tooltip.top="{
-          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
-          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
-        }"
+  <form novalidate @submit.prevent="createControl">
+    <Stack gap="4">
+      <FormField
+        label="ID"
+        required
+        hint="e.g. ac-1"
+        :error="errors.id || undefined"
       >
-        <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        Create Control
-      </PrimaryButton>
-    </div>
+        <TextInput v-model="control.id" />
+      </FormField>
+      <FormField label="Title" required :error="errors.title || undefined">
+        <TextInput v-model="control.title" />
+      </FormField>
+      <FormField label="Class" hint="Optional">
+        <TextInput v-model="control.class" />
+      </FormField>
+      <InlineMessage v-if="errorMessage" tone="error" title="Not saved">
+        <p>{{ errorMessage }}</p>
+      </InlineMessage>
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
+          type="submit"
+          :loading="isSubmitting"
+          :disabled-reason="
+            can(RESOURCES.CATALOG, ACTIONS.CREATE)
+              ? undefined
+              : permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE)
+          "
+          >Create control</Button
+        >
+      </Cluster>
+    </Stack>
   </form>
 </template>

@@ -34,7 +34,6 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
     facts: () => [],
     createForm: () => import('./PoamItemForm.vue'),
     editForm: () => import('./PoamItemForm.vue'),
-    designSystemForms: true,
   },
   observations: {
     path: 'observations',
@@ -56,7 +55,6 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
     ],
     createForm: () => import('./ObservationForm.vue'),
     editForm: () => import('./ObservationForm.vue'),
-    designSystemForms: true,
   },
   risks: {
     path: 'risks',
@@ -114,6 +112,5 @@ export const POAM_COLLECTIONS: Record<string, PoamCollection> = {
     ],
     createForm: () => import('./FindingForm.vue'),
     editForm: () => import('./FindingForm.vue'),
-    designSystemForms: true,
   },
 };

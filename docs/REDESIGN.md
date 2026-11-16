@@ -88,15 +88,14 @@ large enough to rebuild separately. They work and keep their tests; they still l
 Replace each with a design-system version, then delete the classic component.
 
 - Configure System: the hidden Control Implementation section (reachable by link); inside
-  rebuilt sections, the draw.io editor, the component risks list, the evidence-filter
-  drawer.
+  rebuilt sections, the draw.io editor and the system characteristics form.
 - Implementation: `SharedResponsibilityPanel`, `InheritedResponsibilitiesSection`, and the
   shared-responsibility blocks inside each component statement.
 - Record tabs still classic: the
   workflow step graph; step graph and panel on the run page; My tasks step panel.
 - Agents: the Configuration tab (`AgentConfigTab` and its editor, about 6,000 lines).
 - Admin bodies under design-system headers (`embedded`): Diagnostics sections, Compliance
-  Map tree/graph, catalog add/edit modals.
+  Map tree/graph.
 
 Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow

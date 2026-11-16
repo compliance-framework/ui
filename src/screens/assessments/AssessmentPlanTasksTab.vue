@@ -41,7 +41,6 @@ const TASKS: CollectionKind = {
   ],
   createForm: () => import('./TaskForm.vue'),
   editForm: () => import('./TaskForm.vue'),
-  designSystemForms: true,
 };
 </script>
 

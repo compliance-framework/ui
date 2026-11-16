@@ -2,13 +2,12 @@
 /**
  * Configure System → Components: the system's components, each opening to its description,
  * purpose, protocols and risks, with Dashboards (evidence filters), Edit, Download and Delete.
- * The risks list and the evidence filters drawer content are classic islands. The script is the classic ComponentsPanel's.
+ * The script is the classic ComponentsPanel's.
  */
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { downloadJson } from '@/utils/download-json';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';
@@ -463,16 +462,15 @@ function componentActions(component: SystemComponent): MenuEntry[] {
           />
         </Cluster>
         <DescriptionList :items="componentFacts(component)" layout="stacked" />
-        <LegacyPage v-if="!componentPanelCollapsed(component.uuid)">
-          <ComponentRisksList
-            :ssp-id="sspId"
-            :component="component"
-            :risks="risks || []"
-            :users="users || []"
-            :loading-risks="loadingRisks"
-            @risks-updated="refreshRisksAndUsers"
-          />
-        </LegacyPage>
+        <ComponentRisksList
+          v-if="!componentPanelCollapsed(component.uuid)"
+          :ssp-id="sspId"
+          :component="component"
+          :risks="risks || []"
+          :users="users || []"
+          :loading-risks="loadingRisks"
+          @risks-updated="refreshRisksAndUsers"
+        />
       </Stack>
     </Disclosure>
 
@@ -482,13 +480,11 @@ function componentActions(component: SystemComponent): MenuEntry[] {
       title="Evidence filters"
       :description="selectedComponent?.title"
     >
-      <LegacyPage>
-        <ComponentDashboardsView
-          v-if="selectedComponent"
-          :ssp-id="sspId"
-          :component="selectedComponent"
-        />
-      </LegacyPage>
+      <ComponentDashboardsView
+        v-if="selectedComponent"
+        :ssp-id="sspId"
+        :component="selectedComponent"
+      />
     </Drawer>
     <Dialog
       v-model:open="showCreateComponentModal"

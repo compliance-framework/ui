@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ComponentDashboardsView from '../ComponentDashboardsView.vue';
 
@@ -43,24 +44,22 @@ describe('ComponentDashboardsView', () => {
         component: { uuid: 'comp-1', title: 'API' } as never,
       },
       global: {
+        plugins: [createPinia()],
         stubs: {
-          BurgerMenu: {
-            props: ['items'],
-            template:
-              '<button data-testid="create" @click="items[0].command()" />',
-          },
           DashboardEvidenceCounter: true,
-          FormInput: true,
-          Select: true,
-          PrimaryButton: true,
-          SecondaryButton: true,
-          Button: true,
+          EvidenceDashboardForm: true,
+          DashboardLinkForm: true,
+          Menu: true,
+          Tooltip: { template: '<slot />' },
         },
       },
     });
     await flushPromises();
 
-    await wrapper.find('[data-testid="create"]').trigger('click');
+    const create = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'New evidence filter');
+    await create!.trigger('click');
     await flushPromises();
 
     expect(state.getSspId?.()).toBe('ssp-1');

@@ -4,17 +4,22 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
-import FormInput from '@/components/forms/FormInput.vue';
-import type { Evidence, EvidenceLabel } from '@/stores/evidence.ts';
-import Select from '@/volt/Select.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import BurgerMenu from '@/components/BurgerMenu.vue';
+import type { Evidence } from '@/stores/evidence.ts';
 import { useToggle } from '@/composables/useToggle';
 import { useBaselineEvidence } from '@/composables/useBaselineEvidence';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
-import Button from '@/volt/Button.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DataTable from '@/ds/components/DataTable/DataTable.vue';
+import type { DataTableColumn } from '@/ds/components/DataTable/types';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
+import DashboardLinkForm from '@/views/control-implementations/partials/DashboardLinkForm.vue';
+import EvidenceDashboardForm from '@/views/control-implementations/partials/EvidenceDashboardForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 
 const toast = useToast();
@@ -492,250 +497,114 @@ async function submitEvidenceLinking() {
     });
   }
 }
+
+const DASHBOARD_COLUMNS: DataTableColumn[] = [
+  { key: 'name', label: 'Evidence filter', minWidth: 'sm' },
+  { key: 'evidence', label: 'Evidence' },
+];
+const dashboardActions = (dashboard: DashboardWithComponents): MenuEntry[] => [
+  {
+    label: 'View evidence',
+    icon: 'evidence',
+    onSelect: () => viewDashboardEvidence(dashboard),
+  },
+  {
+    label: 'Unlink',
+    icon: 'delete',
+    tone: 'danger',
+    onSelect: () => void unlinkDashboard(dashboard),
+  },
+];
 </script>
 
 <template>
-  <!-- Evidence Linking Section -->
-  <div class="mt-8">
-    <div class="flex items-center mb-4 gap-x-4">
-      <h5 class="font-medium text-xl">Evidence Linking</h5>
-      <BurgerMenu
-        :items="[
-          {
-            label: 'Create New Evidence Filter',
-            command: () => {
-              setLinkExistingForm(false);
-              setEvidenceLinkingForm(true);
-            },
-          },
-          {
-            label: 'Link Existing Evidence Filter',
-            command: () => {
-              setEvidenceLinkingForm(false);
-              setLinkExistingForm(true);
-            },
-          },
-        ]"
-      />
-    </div>
-
-    <!-- Existing Dashboards List -->
-    <div v-if="existingDashboards.length > 0" class="mb-6">
-      <h6 class="text-sm font-medium text-gray-500 mb-2">
-        Linked Evidence Filters
-      </h6>
-      <div class="space-y-2">
-        <div
-          v-for="dashboard in existingDashboards"
-          :key="dashboard.id"
-          class="p-3 bg-gray-50 dark:bg-slate-800 rounded-md flex items-center justify-between gap-4"
+  <PanelSection title="Linked evidence filters" :level="3">
+    <template #actions>
+      <Cluster gap="2">
+        <Button
+          icon="link"
+          @click="
+            setEvidenceLinkingForm(false);
+            setLinkExistingForm(true);
+          "
+          >Link existing filter</Button
         >
-          <span class="font-medium">{{ dashboard.name }}</span>
-          <div class="flex items-center gap-3">
-            <DashboardEvidenceCounter :dashboard-id="dashboard.id!" />
-            <Button
-              type="button"
-              severity="secondary"
-              text
-              size="small"
-              @click="viewDashboardEvidence(dashboard)"
-              class="text-blue-600 hover:text-blue-800"
-            >
-              View Evidence
-            </Button>
-            <Button
-              type="button"
-              severity="danger"
-              text
-              size="small"
-              @click="unlinkDashboard(dashboard)"
-              class="text-red-500 hover:text-red-700"
-            >
-              Unlink
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-else-if="dashboardsLoading" class="mb-6 text-sm text-gray-500">
-      Loading evidence filters...
-    </div>
-    <div
-      v-else-if="
-        showEvidenceLinkingForm === false && showLinkExistingForm === false
-      "
-      class="mb-6 text-sm text-gray-500"
-    >
-      No evidence filters linked to this component yet.
-    </div>
-
-    <!-- Link Existing Dashboard Form -->
-    <form @submit.prevent="linkExistingDashboard" v-if="showLinkExistingForm">
-      <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-      <div class="flex justify-between items-center mb-4">
-        <h4 class="m-0">Link Existing Evidence Filter</h4>
-      </div>
-      <div class="mb-4">
-        <label class="inline-block pb-2 text-sm font-medium"
-          >Select Evidence Filter</label
-        >
-        <Select
-          v-model="selectedDashboardToLink"
-          :options="availableDashboardsToLink"
-          optionLabel="name"
-          filter
-          placeholder="Select an evidence filter to link..."
-          class="w-full"
-        />
-      </div>
-      <div class="text-right">
-        <SecondaryButton
+        <Button
+          icon="add"
           @click="
             setLinkExistingForm(false);
-            selectedDashboardToLink = null;
+            setEvidenceLinkingForm(true);
           "
-          >Cancel</SecondaryButton
+          >New evidence filter</Button
         >
-        <PrimaryButton type="submit" :disabled="!selectedDashboardToLink"
-          >Link Evidence Filter</PrimaryButton
-        >
-      </div>
-    </form>
-
-    <!-- New Dashboard Form -->
-    <form
-      @submit.prevent="submitEvidenceLinking"
-      v-if="showEvidenceLinkingForm"
+      </Cluster>
+    </template>
+    <DataState
+      :status="
+        existingDashboards.length
+          ? 'ready'
+          : dashboardsLoading
+            ? 'loading'
+            : 'empty'
+      "
+      subject="evidence filters"
+      empty-title="No evidence filters linked"
+      empty-body="Link an evidence filter, or create one from a piece of evidence, to show this component's evidence."
+      icon="evidence"
     >
-      <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-      <div class="flex justify-between items-center mb-4">
-        <h4 class="m-0">New Evidence Filter</h4>
-      </div>
-      <div class="mb-4">
-        <label class="inline-block pb-2 text-sm font-medium">Name</label>
-        <FormInput
-          v-model="evidenceDashboard.name"
-          placeholder="Evidence filter name"
-        />
-      </div>
+      <DataTable
+        caption="Linked evidence filters"
+        caption-hidden
+        :columns="DASHBOARD_COLUMNS"
+        :rows="existingDashboards"
+        :row-key="(d) => d.id!"
+      >
+        <template #cell-evidence="{ row: dashboard }">
+          <DashboardEvidenceCounter :dashboard-id="dashboard.id!" />
+        </template>
+        <template #actions="{ row: dashboard }">
+          <Menu
+            :label="`Actions for ${dashboard.name}`"
+            :items="dashboardActions(dashboard)"
+          />
+        </template>
+      </DataTable>
+    </DataState>
+  </PanelSection>
 
-      <!-- Baseline Evidence Selection (single select) -->
-      <div class="mb-4">
-        <label class="inline-block pb-2 text-sm font-medium"
-          >Select Baseline Evidence</label
-        >
-        <div class="flex flex-col gap-2">
-          <Select
-            v-model="selectedBaselineEvidence"
-            :options="availableEvidence"
-            optionLabel="title"
-            filter
-            :filterFields="['title', 'searchText']"
-            placeholder="Select an evidence as baseline..."
-            :loading="evidenceLoading"
-            class="w-full"
-          >
-            <template #option="slotProps">
-              <div class="flex flex-col">
-                <span class="font-medium">{{ slotProps.option.title }}</span>
-                <span class="text-xs text-gray-500 dark:text-slate-400">
-                  {{
-                    slotProps.option.labels
-                      ?.map((l: EvidenceLabel) => `${l.name}=${l.value}`)
-                      .join(', ')
-                  }}
-                </span>
-              </div>
-            </template>
-          </Select>
-        </div>
-      </div>
-
-      <!-- Label Query Builder -->
-      <div class="mb-4" v-if="selectedBaselineEvidence">
-        <label class="inline-block pb-2 text-sm font-medium"
-          >Label Conditions</label
-        >
-
-        <!-- Current conditions -->
-        <div v-if="labelConditions.length > 0" class="mb-3 space-y-2">
-          <div
-            v-for="(condition, index) in labelConditions"
-            :key="index"
-            class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-800 rounded-md"
-          >
-            <span class="text-sm font-mono flex-1"
-              >{{ condition.name }}={{ condition.value }}</span
-            >
-            <Button
-              type="button"
-              severity="danger"
-              text
-              size="small"
-              @click="removeLabelCondition(index)"
-              class="text-red-500 hover:text-red-700"
-            >
-              Remove
-            </Button>
-          </div>
-        </div>
-
-        <!-- Add new condition -->
-        <div class="flex gap-2 items-end">
-          <div class="flex-1">
-            <label class="text-xs text-gray-500 dark:text-slate-400"
-              >Label Name</label
-            >
-            <Select
-              v-model="newLabelName"
-              :options="availableLabelNames"
-              placeholder="Select label..."
-              class="w-full"
-            />
-          </div>
-          <div class="flex-1">
-            <label class="text-xs text-gray-500 dark:text-slate-400"
-              >Value</label
-            >
-            <Select
-              v-model="newLabelValue"
-              :options="availableLabelValues"
-              placeholder="Select value..."
-              :disabled="!newLabelName"
-              class="w-full"
-            />
-          </div>
-          <Button
-            type="button"
-            severity="secondary"
-            @click="addLabelCondition"
-            :disabled="!newLabelName || !newLabelValue"
-          >
-            Add
-          </Button>
-        </div>
-      </div>
-
-      <!-- Generated Filter Preview -->
-      <div class="mb-4" v-if="computedFilter">
-        <label class="inline-block pb-2 text-sm font-medium"
-          >Generated Filter</label
-        >
-        <div
-          class="p-3 bg-gray-100 dark:bg-slate-800 rounded-md text-sm font-mono break-all"
-        >
-          {{ computedFilter }}
-        </div>
-      </div>
-
-      <div class="text-right">
-        <SecondaryButton @click="resetEvidenceLinkingForm"
-          >Cancel</SecondaryButton
-        >
-        <PrimaryButton type="submit" :disabled="!computedFilter"
-          >Create Evidence Filter</PrimaryButton
-        >
-      </div>
-    </form>
-  </div>
+  <Dialog v-model:open="showLinkExistingForm" title="Link evidence filter">
+    <DashboardLinkForm
+      v-if="showLinkExistingForm"
+      v-model:selected-dashboard="selectedDashboardToLink"
+      :dashboards="availableDashboardsToLink"
+      @submit="linkExistingDashboard"
+      @cancel="
+        setLinkExistingForm(false);
+        selectedDashboardToLink = null;
+      "
+    />
+  </Dialog>
+  <Dialog
+    v-model:open="showEvidenceLinkingForm"
+    title="New evidence filter"
+    size="l"
+  >
+    <EvidenceDashboardForm
+      v-if="showEvidenceLinkingForm"
+      v-model:name="evidenceDashboard.name"
+      v-model:selected-baseline-evidence="selectedBaselineEvidence"
+      v-model:new-label-name="newLabelName"
+      v-model:new-label-value="newLabelValue"
+      :unique-evidence-titles="availableEvidence"
+      :evidence-loading="evidenceLoading"
+      :label-conditions="labelConditions"
+      :available-label-names="availableLabelNames"
+      :available-label-values="availableLabelValues"
+      :computed-filter="computedFilter"
+      @submit="submitEvidenceLinking"
+      @cancel="resetEvidenceLinkingForm"
+      @add-condition="addLabelCondition"
+      @remove-condition="removeLabelCondition"
+    />
+  </Dialog>
 </template>

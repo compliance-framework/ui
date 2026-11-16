@@ -1,173 +1,108 @@
 <template>
-  <div class="mt-6 space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h4 class="text-sm font-semibold text-gray-700 dark:text-slate-200">
-        Risks
-      </h4>
-      <PrimaryButton
+  <PanelSection title="Risks" :level="4">
+    <template #actions>
+      <Button
+        icon="add"
         data-testid="create-risk"
-        :disabled="!props.sspId || !props.component.uuid"
-        @click="showCreateRiskDrawer = true"
-      >
-        Create Risk
-      </PrimaryButton>
-    </div>
-
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-      <div>
-        <Label
-          for="component-risk-status-filter"
-          class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
-        >
-          Status
-        </Label>
-        <Select
-          id="component-risk-status-filter"
-          v-model="statusFilter"
-          :options="statusFilterOptions"
-          optionLabel="label"
-          optionValue="value"
-          data-testid="status-filter"
-          class="w-full"
-        />
-      </div>
-
-      <div>
-        <Label
-          for="component-risk-sort-by"
-          class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
-        >
-          Sort By
-        </Label>
-        <Select
-          id="component-risk-sort-by"
-          v-model="sortBy"
-          :options="sortByOptions"
-          optionLabel="label"
-          optionValue="value"
-          data-testid="sort-by"
-          class="w-full"
-        />
-      </div>
-
-      <div>
-        <Label
-          for="component-risk-sort-direction"
-          class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
-        >
-          Direction
-        </Label>
-        <Select
-          id="component-risk-sort-direction"
-          v-model="sortDirection"
-          :options="sortDirectionOptions"
-          optionLabel="label"
-          optionValue="value"
-          data-testid="sort-direction"
-          class="w-full"
-        />
-      </div>
-    </div>
-
-    <p class="text-xs text-gray-500 dark:text-slate-400">
-      Showing {{ visibleRisks.length }} of {{ componentRisks.length }} risks for
-      this component
-    </p>
-
-    <p
-      v-if="props.loadingRisks"
-      class="text-sm text-gray-500 dark:text-slate-400"
-    >
-      Loading risks...
-    </p>
-
-    <p
-      v-else-if="!visibleRisks.length"
-      class="text-sm text-gray-500 dark:text-slate-400"
-    >
-      No risks associated with this component.
-    </p>
-
-    <div v-else class="space-y-2">
-      <button
-        v-for="risk in visibleRisks"
-        :key="riskRenderKey(risk)"
-        data-testid="risk-row"
-        :disabled="!canOpenRiskDetail(risk)"
-        class="w-full rounded-md border border-gray-300 bg-white p-4 text-left transition dark:border-slate-700 dark:bg-slate-900"
-        :class="
-          canOpenRiskDetail(risk)
-            ? 'hover:border-blue-300 hover:bg-blue-50/30 dark:hover:border-blue-700 dark:hover:bg-slate-800'
-            : 'cursor-not-allowed opacity-70'
+        :disabled-reason="
+          props.sspId && props.component.uuid
+            ? undefined
+            : 'This component has no ID yet, so risks can\'t be linked to it.'
         "
-        type="button"
-        @click="openRiskDetail(risk)"
+        @click="showCreateRiskDrawer = true"
+        >New risk</Button
       >
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="space-y-1">
-            <p class="font-medium text-gray-900 dark:text-slate-100">
-              {{ risk.title || 'Untitled Risk' }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-slate-400">
-              {{ riskIdentifier(risk) || 'Missing identifier' }}
-            </p>
-          </div>
+    </template>
+    <Stack gap="4">
+      <Grid min="sm" gap="3">
+        <FormField label="Status">
+          <Select
+            v-model="statusFilter"
+            :options="statusFilterOptions"
+            data-testid="status-filter"
+          />
+        </FormField>
+        <FormField label="Sort by">
+          <Select
+            v-model="sortBy"
+            :options="sortByOptions"
+            data-testid="sort-by"
+          />
+        </FormField>
+        <FormField label="Direction">
+          <Select
+            v-model="sortDirection"
+            :options="sortDirectionOptions"
+            data-testid="sort-direction"
+          />
+        </FormField>
+      </Grid>
+      <DataState
+        :status="listStatus"
+        subject="risks"
+        :empty-title="
+          statusFilter === 'all'
+            ? 'No risks for this component'
+            : 'No risks with this status'
+        "
+        empty-body="Risks linked to this component appear here."
+        icon="risks"
+      >
+        <DataTable
+          :caption="`Showing ${visibleRisks.length} of ${plural(componentRisks.length, 'risk')} for this component`"
+          :columns="columns"
+          :rows="visibleRisks"
+          :row-key="riskRenderKey"
+        >
+          <template #cell-title="{ row: risk }">
+            <Stack gap="1" data-testid="risk-row">
+              <TextLink
+                v-if="riskDetailLink(risk)"
+                :to="riskDetailLink(risk)!"
+                >{{ risk.title || 'Untitled risk' }}</TextLink
+              >
+              <Text v-else as="span">{{ risk.title || 'Untitled risk' }}</Text>
+              <Text as="span" variant="caption">{{
+                riskIdentifier(risk) || 'No identifier'
+              }}</Text>
+            </Stack>
+          </template>
+          <template #cell-status="{ row: risk }">
+            <StatusBadge
+              v-if="riskBadge(normalizedStatusForList(risk.status))"
+              :status="riskBadge(normalizedStatusForList(risk.status))!"
+            />
+            <template v-else>{{ riskStatusLabel(risk.status) }}</template>
+          </template>
+          <template #cell-severity="{ row: risk }">
+            <Stack gap="1">
+              <StatusBadge
+                v-if="riskBadge(severityLevel(risk))"
+                :status="riskBadge(severityLevel(risk))!"
+              />
+              <template v-else>{{ severityLabel(risk) }}</template>
+              <Text as="span" variant="caption"
+                >{{ severityScore(risk) }} ({{
+                  formatLabel(riskLikelihood(risk) || 'unknown')
+                }}
+                × {{ formatLabel(riskImpact(risk) || 'unknown') }})</Text
+              >
+            </Stack>
+          </template>
+          <template #cell-deadline="{ row: risk }">{{
+            formatDateTime(riskReviewDeadline(risk))
+          }}</template>
+          <template #cell-owner="{ row: risk }">{{
+            riskOwner(risk) || 'Unassigned'
+          }}</template>
+        </DataTable>
+      </DataState>
+    </Stack>
+  </PanelSection>
 
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span
-              class="inline-flex items-center rounded-full px-2.5 py-0.5 font-medium"
-              :class="statusBadgeClass(risk.status)"
-            >
-              {{ riskStatusLabel(risk.status) }}
-            </span>
-            <span
-              class="inline-flex items-center rounded-full px-2.5 py-0.5 font-medium"
-              :class="severityBadgeClass(risk)"
-            >
-              {{ severityLabel(risk) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-slate-400">Severity</p>
-            <p class="font-medium text-gray-700 dark:text-slate-200">
-              {{ severityScore(risk) }}
-              <span class="font-normal text-gray-500 dark:text-slate-400">
-                ({{ formatLabel(riskLikelihood(risk) || 'unknown') }} ×
-                {{ formatLabel(riskImpact(risk) || 'unknown') }})
-              </span>
-            </p>
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-500 dark:text-slate-400">
-              Review Deadline
-            </p>
-            <p class="font-medium text-gray-700 dark:text-slate-200">
-              {{ formatDateTime(riskReviewDeadline(risk)) }}
-            </p>
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-500 dark:text-slate-400">Owner</p>
-            <p class="font-medium text-gray-700 dark:text-slate-200">
-              {{ riskOwner(risk) || 'Unassigned' }}
-            </p>
-          </div>
-        </div>
-      </button>
-    </div>
-  </div>
-
-  <Drawer
-    v-model:visible="showCreateRiskDrawer"
-    header="Create Risk"
-    position="right"
-    class="w-full! md:w-1/2! lg:w-3/5!"
-  >
+  <Drawer v-model:open="showCreateRiskDrawer" title="New risk">
     <RiskCreateForm
+      v-if="showCreateRiskDrawer"
       :ssp-id="props.sspId"
       @cancel="showCreateRiskDrawer = false"
       @created="handleRiskCreated"
@@ -177,14 +112,24 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import Drawer from '@/volt/Drawer.vue';
-import Label from '@/volt/Label.vue';
-import Select from '@/volt/Select.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DataTable from '@/ds/components/DataTable/DataTable.vue';
+import type { DataTableColumn } from '@/ds/components/DataTable/types';
+import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
+import Grid from '@/ds/components/layout/Grid.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { plural } from '@/ds/format';
+import { riskBadge } from '@/screens/risks/risks';
 import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
 import {
   getRiskComponentIds,
@@ -224,7 +169,6 @@ type SelectOption<T extends string> = {
   value: T;
 };
 
-const router = useRouter();
 const toast = useToast();
 
 const showCreateRiskDrawer = ref(false);
@@ -421,29 +365,11 @@ function formatLabel(value?: string): string {
 }
 
 function formatDateTime(value?: string): string {
-  if (!value) return 'N/A';
+  if (!value) return 'Not set';
 
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
-}
-
-function statusBadgeClass(status?: string): string {
-  const normalized = normalizeRiskRegisterStatus(status);
-
-  if (isClosedStatus(status)) {
-    return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
-  }
-
-  if (normalized === 'risk-accepted') {
-    return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
-  }
-
-  if (normalized === 'open' || normalized === 'investigating') {
-    return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
-  }
-
-  return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
 }
 
 function severityLevel(risk: Risk): RiskSeverityLevel {
@@ -456,21 +382,6 @@ function severityScore(risk: Risk): number {
 
 function severityLabel(risk: Risk): string {
   return formatLabel(severityLevel(risk));
-}
-
-function severityBadgeClass(risk: Risk): string {
-  switch (severityLevel(risk)) {
-    case 'critical':
-      return 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200';
-    case 'high':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-    case 'medium':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
-    case 'low':
-      return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
-    default:
-      return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
-  }
 }
 
 function looksLikeUuid(value: string): boolean {
@@ -533,28 +444,27 @@ function riskReviewDeadline(risk: Risk): string | undefined {
   return getRiskReviewDeadline(risk);
 }
 
-function openRiskDetail(risk: Risk) {
-  if (!canOpenRiskDetail(risk)) {
-    return;
-  }
-
+function riskDetailLink(risk: Risk) {
   const riskId = riskIdentifier(risk);
-  if (!riskId) {
-    return;
-  }
-
-  void router.push({
+  if (!riskId || !props.sspId) return undefined;
+  return {
     name: 'system-security-plan-risk-detail',
-    params: {
-      id: props.sspId,
-      riskId,
-    },
-  });
+    params: { id: props.sspId, riskId },
+  };
 }
 
-function canOpenRiskDetail(risk: Risk): boolean {
-  return !!riskIdentifier(risk) && !!props.sspId;
-}
+const columns: DataTableColumn[] = [
+  { key: 'title', label: 'Risk', minWidth: 'sm' },
+  { key: 'status', label: 'Status' },
+  { key: 'severity', label: 'Severity' },
+  { key: 'deadline', label: 'Review deadline' },
+  { key: 'owner', label: 'Owner' },
+];
+
+const listStatus = computed(() => {
+  if (props.loadingRisks) return 'loading';
+  return visibleRisks.value.length ? 'ready' : 'empty';
+});
 
 function refreshRisks() {
   emit('risks-updated');

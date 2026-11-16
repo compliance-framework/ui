@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog, Group } from '@/oscal';
 import { reactive } from 'vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import Label from '@/volt/Label.vue';
-import InputText from '@/volt/InputText.vue';
-import Message from '@/volt/Message.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useFormSubmit } from '@/composables/useFormSubmit';
 import { usePermissions } from '@/composables/usePermissions';
@@ -109,64 +110,39 @@ async function createGroup(): Promise<void> {
 </script>
 
 <template>
-  <form @submit.prevent="createGroup" class="space-y-6">
-    <div>
-      <Label for="group-id" required>ID</Label>
-      <InputText
-        id="group-id"
-        v-model="group.id"
-        placeholder="e.g. ac"
-        class="w-full"
-        :invalid="!!errors.id"
-      />
-      <small v-if="errors.id" class="text-red-500">{{ errors.id }}</small>
-    </div>
-
-    <div>
-      <Label for="group-class">Class</Label>
-      <InputText
-        id="group-class"
-        v-model="group.class"
-        placeholder="Optional class"
-        class="w-full"
-      />
-    </div>
-
-    <div>
-      <Label for="group-title" required>Title</Label>
-      <InputText
-        id="group-title"
-        v-model="group.title"
-        placeholder="Enter group title"
-        class="w-full"
-        :invalid="!!errors.title"
-      />
-      <small v-if="errors.title" class="text-red-500">
-        {{ errors.title }}
-      </small>
-    </div>
-
-    <Message v-if="errorMessage" severity="error">
-      {{ errorMessage }}
-    </Message>
-
-    <div
-      class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-    >
-      <SecondaryButton type="button" @click="emit('cancel')">
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton
-        type="submit"
-        :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.CREATE)"
-        v-tooltip.top="{
-          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
-          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
-        }"
+  <form novalidate @submit.prevent="createGroup">
+    <Stack gap="4">
+      <FormField
+        label="ID"
+        required
+        hint="e.g. ac"
+        :error="errors.id || undefined"
       >
-        <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        Create Group
-      </PrimaryButton>
-    </div>
+        <TextInput v-model="group.id" />
+      </FormField>
+      <FormField label="Title" required :error="errors.title || undefined">
+        <TextInput v-model="group.title" />
+      </FormField>
+      <FormField label="Class" hint="Optional">
+        <TextInput v-model="group.class" />
+      </FormField>
+      <InlineMessage v-if="errorMessage" tone="error" title="Not saved">
+        <p>{{ errorMessage }}</p>
+      </InlineMessage>
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
+          type="submit"
+          :loading="isSubmitting"
+          :disabled-reason="
+            can(RESOURCES.CATALOG, ACTIONS.CREATE)
+              ? undefined
+              : permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE)
+          "
+          >Create group</Button
+        >
+      </Cluster>
+    </Stack>
   </form>
 </template>

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia } from 'pinia';
 import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import ComponentRisksList from '../ComponentRisksList.vue';
 
@@ -114,51 +115,38 @@ vi.mock('@/composables/axios', async () => {
   };
 });
 
-vi.mock('@/volt/PrimaryButton.vue', () => ({
-  default: {
-    name: 'PrimaryButton',
-    props: ['disabled'],
-    template: '<button :disabled="disabled" type="button"><slot /></button>',
-  },
-}));
-
-vi.mock('@/volt/Label.vue', () => ({
-  default: {
-    name: 'Label',
-    props: ['for'],
-    template: '<label :for="$props.for"><slot /></label>',
-  },
-}));
-
-vi.mock('@/volt/Select.vue', () => ({
+vi.mock('@/ds/components/Select/Select.vue', () => ({
   default: {
     name: 'Select',
-    props: ['id', 'modelValue', 'options', 'optionLabel', 'optionValue'],
+    props: ['modelValue', 'options'],
     emits: ['update:modelValue'],
     template: `
       <select
-        :id="id"
         :value="modelValue"
         @change="$emit('update:modelValue', $event.target.value)"
       >
-        <option
-          v-for="option in options"
-          :key="option[optionValue]"
-          :value="option[optionValue]"
-        >
-          {{ option[optionLabel] }}
+        <option v-for="option in options" :key="option.value" :value="option.value">
+          {{ option.label }}
         </option>
       </select>
     `,
   },
 }));
 
-vi.mock('@/volt/Drawer.vue', () => ({
+vi.mock('@/ds/components/Drawer/Drawer.vue', () => ({
   default: {
     name: 'Drawer',
-    props: ['visible'],
-    emits: ['update:visible'],
-    template: '<div v-if="visible"><slot /></div>',
+    props: ['open'],
+    emits: ['update:open'],
+    template: '<div v-if="open"><slot /></div>',
+  },
+}));
+
+vi.mock('@/ds/components/TextLink/TextLink.vue', () => ({
+  default: {
+    name: 'TextLink',
+    props: ['to'],
+    template: '<a data-testid="risk-link"><slot /></a>',
   },
 }));
 
@@ -215,6 +203,7 @@ async function mountView(risks: Risk[]) {
         } as SystemUser,
       ],
     },
+    global: { plugins: [createPinia()] },
   });
 
   await flushPromises();
@@ -355,7 +344,7 @@ describe('ComponentRisksList', () => {
     expect(rows[0].text()).toContain('Low Deadline');
   });
 
-  it('navigates to risk detail when clicking a risk row', async () => {
+  it('links each risk to its detail page', async () => {
     const wrapper = await mountView([
       makeRisk(
         { componentIds: ['comp-1'], title: 'Clickable Risk' },
@@ -363,9 +352,7 @@ describe('ComponentRisksList', () => {
       ),
     ]);
 
-    await wrapper.get('[data-testid="risk-row"]').trigger('click');
-
-    expect(pushMock).toHaveBeenCalledWith({
+    expect(wrapper.findComponent({ name: 'TextLink' }).props('to')).toEqual({
       name: 'system-security-plan-risk-detail',
       params: {
         id: 'ssp-1',

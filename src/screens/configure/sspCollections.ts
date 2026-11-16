@@ -34,7 +34,6 @@ export const SSP_USERS: CollectionKind = {
   ],
   createForm: () => import('./SystemUserForm.vue'),
   editForm: () => import('./SystemUserForm.vue'),
-  designSystemForms: true,
   download: true,
 };
 
@@ -56,6 +55,5 @@ export const SSP_LEVERAGED_AUTHORIZATIONS: CollectionKind = {
   ],
   createForm: () => import('./LeveragedAuthorizationForm.vue'),
   editForm: () => import('./LeveragedAuthorizationForm.vue'),
-  designSystemForms: true,
   download: true,
 };
