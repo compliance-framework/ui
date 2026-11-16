@@ -8,7 +8,9 @@ import Tooltip from '../Tooltip/Tooltip.vue';
 /**
  * An icon-only action. `label` is required: it is the accessible name and the tooltip (F-11, F-27).
  * Include the object in the label for repeated actions, e.g. "Delete risk Log retention gap".
+ * Other attributes (e.g. data-test) reach the button or link itself.
  */
+defineOptions({ inheritAttrs: false });
 const props = withDefaults(
   defineProps<{
     icon: IconName;
@@ -59,6 +61,7 @@ function onClick(event: MouseEvent): void {
   <Tooltip v-model:open="open" :text="tip">
     <RouterLink
       v-if="to && !disabledReason"
+      v-bind="$attrs"
       :to="to"
       :class="classes"
       :aria-label="label"
@@ -67,6 +70,7 @@ function onClick(event: MouseEvent): void {
     </RouterLink>
     <button
       v-else
+      v-bind="$attrs"
       type="button"
       :class="classes"
       :aria-label="label"

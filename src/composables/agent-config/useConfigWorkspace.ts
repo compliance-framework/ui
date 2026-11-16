@@ -24,7 +24,7 @@ import type {
   SaveResult,
 } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
-import { instanceErrorsBlock } from '@/components/agents/config/editor/review';
+import { instanceErrorsBlock } from '@/utils/agent-config/review';
 import { clone, deepEqual } from '@/utils/agent-config/merge-patch';
 import { useUserStore } from '@/stores/auth';
 import { hasBlocking, type ClientIssue } from '@/utils/agent-config/validation';

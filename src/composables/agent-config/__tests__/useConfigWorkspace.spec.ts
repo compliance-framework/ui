@@ -14,7 +14,7 @@ import {
   pagedListInstances,
   piniaWith,
   workspaceHost,
-} from '@/components/agents/config/__tests__/helpers';
+} from '@/screens/agents/config/__tests__/helpers';
 import {
   configRev7,
   detailFor,

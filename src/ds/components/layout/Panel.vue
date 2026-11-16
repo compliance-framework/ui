@@ -12,7 +12,8 @@ withDefaults(
     description?: string;
     level?: 2 | 3;
     dense?: boolean;
-    sticky?: boolean;
+    /** Sticks to the top of the scroller, or with 'bottom' to its foot (e.g. a pending-changes bar). */
+    sticky?: boolean | 'bottom';
   }>(),
   {
     title: undefined,
@@ -29,7 +30,11 @@ const headingId = useId();
 <template>
   <section
     class="panel"
-    :class="{ 'panel--dense': dense, 'panel--sticky': sticky }"
+    :class="{
+      'panel--dense': dense,
+      'panel--sticky': sticky === true,
+      'panel--sticky-bottom': sticky === 'bottom',
+    }"
     :aria-label="ariaLabel"
     :aria-labelledby="ariaLabel ? undefined : title ? headingId : undefined"
   >
@@ -75,6 +80,13 @@ const headingId = useId();
   position: sticky;
   top: 0;
   z-index: var(--ds-z-header);
+}
+
+.panel--sticky-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--ds-z-header);
+  box-shadow: var(--ds-shadow-raised);
 }
 
 .panel__header {

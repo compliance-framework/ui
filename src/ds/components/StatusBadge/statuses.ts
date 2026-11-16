@@ -228,6 +228,43 @@ export const statuses = {
   // notification providers
   'provider-enabled': { label: 'Enabled', tone: 'success', icon: 'success' },
   'provider-disabled': { label: 'Disabled', tone: 'neutral', icon: 'paused' },
+  // agent configuration: an instance's sync state (labels are usually overridden with the
+  // revision, e.g. "Pending r6 → r7")
+  'config-in-sync': { label: 'In sync', tone: 'success', icon: 'success' },
+  'config-pending': { label: 'Pending', tone: 'warning', icon: 'planned' },
+  'config-report-only': {
+    label: 'Report only',
+    tone: 'neutral',
+    icon: 'paused',
+  },
+  'config-not-reported': {
+    label: 'No report',
+    tone: 'neutral',
+    icon: 'unknown',
+  },
+  'config-rejected': { label: 'Rejected', tone: 'error', icon: 'error' },
+  'config-failed': { label: 'Failed', tone: 'error', icon: 'error' },
+  'config-unknown': { label: 'Unknown', tone: 'neutral', icon: 'unknown' },
+  // agent configuration: what a change does on an instance
+  'change-safe': { label: 'Safe', tone: 'success', icon: 'check' },
+  'change-unsafe': {
+    label: 'Needs apply_all',
+    tone: 'warning',
+    icon: 'warning',
+  },
+  'change-forbidden': { label: 'Forbidden', tone: 'error', icon: 'forbidden' },
+  'change-no-effect': {
+    label: 'No effect against the file',
+    tone: 'neutral',
+    icon: 'info',
+  },
+  'config-will-apply': { label: 'Will apply', tone: 'success', icon: 'check' },
+  'config-will-not-apply': {
+    label: 'Will not apply',
+    tone: 'warning',
+    icon: 'warning',
+  },
+  'config-blocks-save': { label: 'Blocks save', tone: 'error', icon: 'error' },
 } as const satisfies Record<string, StatusDefinition>;
 
 export type StatusKey = keyof typeof statuses;
