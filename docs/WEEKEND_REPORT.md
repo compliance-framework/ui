@@ -25,8 +25,7 @@ without a redesigned page around it. Pages fall into three kinds:
   Preferences (with the Slack link); the system template page; New evidence filter (and the
   edit dialog); Import; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
-  editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section and the diagram editor), workflow run (step graph and panel), Diagnostics,
+  editor and shared-responsibility panel), Configure System (the diagram editor), workflow run (step graph and panel), Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -762,7 +761,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   doesn't close the dialog when focus is in its classic select, which handles the key itself.
   **Test data:** three draft-or-revoked "Weekend offering"s on Payments Processing Platform
   (offerings can't be deleted).
-- **Configure System → Control Implementation: left classic, options for you.** It is the
+- **Configure System → Control Implementation: retired (option A, your call).** Its three old
+  URLs (Configure, `/system/control-implementation`, and the SSP editor's) now redirect to
+  Implementation, and the view and its four classic forms are deleted. **Lost:** editing the
+  control implementation's own description and set-parameters, and adding implemented
+  requirements for controls outside the profile; the API still accepts them. Every Configure
+  section is now design-system, so the section frame no longer wraps anything in `LegacyPage`.
+  The options as first written:
+- **(Superseded) Configure System → Control Implementation: left classic, options for you.** It is the
   last classic Configure section, a 980-line raw OSCAL editor (control implementation
   description, implemented requirements, statements, by-components, each with its own classic
   form). Nothing in the app links to it any more; only old SSP-editor URLs and typed URLs reach

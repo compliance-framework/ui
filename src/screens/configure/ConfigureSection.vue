@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import {
   CONFIGURE_SECTIONS,
   asyncSection,
@@ -9,8 +8,7 @@ import {
 } from './configureSections';
 
 /**
- * One section of Configure System: the classic SSP view for that section, as a legacy island,
- * given the system from the URL. Components also gets its dashboard drawer routes.
+ * One section of Configure System, given the system from the URL. Components also gets its dashboard drawer routes.
  */
 const route = useRoute();
 const systemId = computed(() => String(route.params.systemId));
@@ -31,12 +29,10 @@ const extra = computed(() =>
 </script>
 
 <template>
-  <LegacyPage>
-    <component
-      :is="component"
-      :key="`${section.suffix}:${systemId}`"
-      :ssp-id="systemId"
-      v-bind="extra"
-    />
-  </LegacyPage>
+  <component
+    :is="component"
+    :key="`${section.suffix}:${systemId}`"
+    :ssp-id="systemId"
+    v-bind="extra"
+  />
 </template>

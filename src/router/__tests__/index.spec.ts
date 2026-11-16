@@ -82,4 +82,22 @@ describe('router', () => {
       }).path,
     ).toBe('/dashboards/suggestions/ssp-1');
   });
+  it('sends the retired Control Implementation URLs to Implementation', () => {
+    const redirectOf = (name: string, params: Record<string, string>) => {
+      const route = router.getRoutes().find((route) => route.name === name);
+      const redirect = route?.redirect as (to: unknown) => unknown;
+      return redirect({ params });
+    };
+
+    expect(
+      redirectOf('system-configure-control-implementation', {
+        systemId: 'sys-1',
+      }),
+    ).toEqual({ name: 'system-implementation', params: { systemId: 'sys-1' } });
+    expect(
+      redirectOf('system-security-plan-control-implementation', {
+        id: 'sys-1',
+      }),
+    ).toEqual({ name: 'system-implementation', params: { systemId: 'sys-1' } });
+  });
 });

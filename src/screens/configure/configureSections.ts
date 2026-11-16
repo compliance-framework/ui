@@ -18,9 +18,6 @@ export interface ConfigureSection {
   component: () => Promise<Component>;
 }
 
-const view = (name: string) => () =>
-  import(`../../views/system-security-plans/SystemSecurityPlan${name}View.vue`);
-
 export const CONFIGURE_SECTIONS: ConfigureSection[] = [
   {
     suffix: '',
@@ -96,14 +93,6 @@ export const CONFIGURE_SECTIONS: ConfigureSection[] = [
     classic: 'authorizations',
     component: () =>
       import('@/screens/configure/SystemAuthorizationsSection.vue'),
-  },
-  {
-    suffix: 'control-implementation',
-    path: 'control-implementation',
-    label: 'Control Implementation',
-    tab: false,
-    classic: 'control-implementation',
-    component: view('ControlImplementation'),
   },
   {
     suffix: 'export-offerings',

@@ -1010,6 +1010,16 @@ const designSystemRoutes = [
             name: 'system-configure-component-dashboards',
             component: () => import('@/screens/configure/ConfigureSection.vue'),
           },
+          // The retired Control Implementation section: per-control statements live on
+          // Implementation.
+          {
+            path: 'control-implementation',
+            name: 'system-configure-control-implementation',
+            redirect: (to: RouteLocation) => ({
+              name: 'system-implementation',
+              params: { systemId: to.params.systemId },
+            }),
+          },
         ],
       },
       {
@@ -1132,6 +1142,11 @@ const designSystemRoutes = [
         },
       },
       {
+        path: 'control-implementation',
+        name: 'system:control-implementation',
+        redirect: toCurrentSystem('system-implementation'),
+      },
+      {
         path: 'risks',
         name: 'system:risks',
         redirect: toCurrentSystem('system-risks-register'),
@@ -1159,6 +1174,14 @@ const designSystemRoutes = [
           params: { systemId: to.params.id },
         }),
       })),
+      {
+        path: 'control-implementation',
+        name: 'system-security-plan-control-implementation',
+        redirect: (to: RouteLocation) => ({
+          name: 'system-implementation',
+          params: { systemId: to.params.id },
+        }),
+      },
       {
         path: 'risks',
         name: 'system-security-plan-risks',

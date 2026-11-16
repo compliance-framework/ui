@@ -22,7 +22,6 @@ export const SSP_SECTION_TABS: SspSectionTab[] = [
   { label: 'Components', suffix: 'components' },
   { label: 'Scope', suffix: 'scope' },
   // { label: 'Leveraged Authorizations', suffix: 'authorizations' },
-  // { label: 'Control Implementation', suffix: 'control-implementation' },
   // { label: 'Export Offerings', suffix: 'export-offerings' },
   // { label: 'Leverage', suffix: 'leverage' },
   // { label: 'Inherited Capabilities', suffix: 'inherited-capabilities' },
