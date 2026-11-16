@@ -88,7 +88,7 @@ large enough to rebuild separately. They work and keep their tests; they still l
 Replace each with a design-system version, then delete the classic component.
 
 - Configure System: the hidden Control Implementation section (reachable by link); inside
-  rebuilt sections, the draw.io editor and the system characteristics form.
+  rebuilt sections, the draw.io editor.
 - Implementation: `SharedResponsibilityPanel`, `InheritedResponsibilitiesSection`, and the
   shared-responsibility blocks inside each component statement.
 - Record tabs still classic: the

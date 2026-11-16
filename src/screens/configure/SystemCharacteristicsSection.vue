@@ -2,8 +2,7 @@
 /**
  * Configure System → Characteristics: the system's name, description, sensitivity and
  * authorization, how complete its characteristics are, and its architecture, boundary and data
- * flow descriptions. Edit opens the classic characteristics form (a legacy island) in a
- * design-system dialog. The script is the classic page's.
+ * flow descriptions. Edit opens the characteristics form in a dialog. The script is the classic page's.
  */
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -11,7 +10,6 @@ import type { SystemCharacteristics } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import type { Diagrammable } from '@/stores/system-security-plans';
 import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import { formatDate as formatDay, plural } from '@/ds/format';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
@@ -259,12 +257,12 @@ const architecture = computed(() => [
       title="Edit system characteristics"
       size="l"
     >
-      <LegacyPage>
-        <SystemCharacteristicsForm
-          :system-security-plan-id="sspId"
-          @updated="handleCharacteristicsUpdated"
-        />
-      </LegacyPage>
+      <SystemCharacteristicsForm
+        v-if="showEditCharacteristicsModal"
+        :system-security-plan-id="sspId"
+        @updated="handleCharacteristicsUpdated"
+        @cancel="showEditCharacteristicsModal = false"
+      />
     </Dialog>
   </Stack>
 </template>

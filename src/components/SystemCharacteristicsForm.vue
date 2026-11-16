@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import FormInput from '@/components/forms/FormInput.vue';
+/**
+ * The system's characteristics: its name and short name, sensitivity level, description and
+ * remarks. Loads them on mount (emitting `updated` with an empty object if they can't be loaded,
+ * so the parent can say so), saves the whole record, and emits `updated` once saved.
+ */
+import { computed, onMounted, ref } from 'vue';
 import { type SystemCharacteristics } from '@/oscal';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { onMounted, ref } from 'vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { getErrorDetail } from '@/utils/httpErrors';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Skeleton from '@/ds/components/Skeleton/Skeleton.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Grid from '@/ds/components/layout/Grid.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 
 const { can, permissionTooltip } = usePermissions();
 
@@ -17,19 +29,35 @@ const props = defineProps<{
 }>();
 
 const characteristics = ref<SystemCharacteristics>({} as SystemCharacteristics);
+const loading = ref(true);
+const saving = ref(false);
+const saveError = ref('');
 
-const emit = defineEmits({
-  updated(characteristics: SystemCharacteristics) {
-    return !!characteristics.description;
-  },
-});
+const emit = defineEmits<{
+  updated: [characteristics: SystemCharacteristics];
+  cancel: [];
+}>();
+
+const saveDenied = computed(() =>
+  can(RESOURCES.SSP, ACTIONS.UPDATE)
+    ? undefined
+    : permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+);
 
 async function updateCharacteristics() {
-  sspStore
-    .updateCharacteristics(props.systemSecurityPlanId, characteristics.value)
-    .then(() => {
-      emit('updated', characteristics.value);
-    });
+  saveError.value = '';
+  saving.value = true;
+  try {
+    await sspStore.updateCharacteristics(
+      props.systemSecurityPlanId,
+      characteristics.value,
+    );
+    emit('updated', characteristics.value);
+  } catch (error) {
+    saveError.value = await getErrorDetail(error, 'Try again.');
+  } finally {
+    saving.value = false;
+  }
 }
 
 onMounted(() => {
@@ -38,64 +66,49 @@ onMounted(() => {
     .then((data) => {
       characteristics.value = data.data;
     })
-    .catch(async () => {
+    .catch(() => {
       emit('updated', {} as SystemCharacteristics);
+    })
+    .finally(() => {
+      loading.value = false;
     });
 });
 </script>
 
 <template>
-  <form @submit.prevent="updateCharacteristics">
-    <div class="grid grid-cols-12 gap-y-4 items-start">
-      <label class="inline-block pt-2">System Name</label>
-      <div class="col-span-11">
-        <FormInput
-          v-model="characteristics.systemName"
-          class="field-sizing-content"
-        />
-      </div>
-
-      <label class="inline-block pt-2">Short Name</label>
-      <div class="col-span-11">
-        <FormInput
-          v-model="characteristics.systemNameShort"
-          class="field-sizing-content"
-        />
-      </div>
-
-      <label class="inline-block pt-2">Sensitivity Level</label>
-      <div class="col-span-11">
-        <FormInput
-          v-model="characteristics.securitySensitivityLevel"
-          class="field-sizing-content"
-        />
-      </div>
-
-      <label class="inline-block pt-2">Description</label>
-      <div class="col-span-11">
-        <FormTextarea
-          v-model="characteristics.description"
-          class="field-sizing-content"
-        />
-      </div>
-
-      <label class="inline-block pt-2">Remarks</label>
-      <div class="col-span-11">
-        <FormTextarea
-          v-model="characteristics.remarks"
-          class="field-sizing-content"
-        />
-      </div>
-    </div>
-
-    <PrimaryButton
-      type="submit"
-      :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
-      v-tooltip.top="{
-        value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
-        disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
-      }"
-      >Submit</PrimaryButton
-    >
+  <Skeleton v-if="loading" :count="5" />
+  <form v-else novalidate @submit.prevent="updateCharacteristics">
+    <Stack gap="4">
+      <Grid min="sm" gap="4">
+        <FormField label="System name">
+          <TextInput v-model="characteristics.systemName" />
+        </FormField>
+        <FormField label="Short name">
+          <TextInput v-model="characteristics.systemNameShort" />
+        </FormField>
+        <FormField label="Sensitivity level" hint="e.g. moderate">
+          <TextInput v-model="characteristics.securitySensitivityLevel" />
+        </FormField>
+      </Grid>
+      <FormField label="Description">
+        <Textarea v-model="characteristics.description" :rows="4" />
+      </FormField>
+      <FormField label="Remarks">
+        <Textarea v-model="characteristics.remarks" :rows="3" />
+      </FormField>
+      <InlineMessage v-if="saveError" tone="error" title="Not saved">
+        <p>{{ saveError }}</p>
+      </InlineMessage>
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
+          type="submit"
+          :loading="saving"
+          :disabled-reason="saveDenied"
+          >Save characteristics</Button
+        >
+      </Cluster>
+    </Stack>
   </form>
 </template>

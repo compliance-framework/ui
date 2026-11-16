@@ -26,7 +26,7 @@ without a redesigned page around it. Pages fall into three kinds:
   edit dialog); Import; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section, the diagram editor and the characteristics form), workflow run (step graph and panel), Compliance Map, Diagnostics,
+  section and the diagram editor), workflow run (step graph and panel), Compliance Map, Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -1204,3 +1204,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   create one. **Cleanup:** the record collections (POA&M items, observations, risks, findings;
   system users, leveraged authorizations) all use design-system forms, so their classic
   fallback frame is gone. Specs adapted (catalog forms, risks list, evidence filters).
+- **Configure System → Characteristics:** the edit form (name, short name, sensitivity,
+  description, remarks) is design-system, with Cancel, a loading state and save errors shown
+  in the dialog (the classic form ignored a failed save). New spec.
