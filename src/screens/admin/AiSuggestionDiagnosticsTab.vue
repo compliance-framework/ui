@@ -17,6 +17,7 @@ import Select from '@/ds/components/Select/Select.vue';
 import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
 import Tabs from '@/ds/components/Tabs/Tabs.vue';
 import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
 import Grid from '@/ds/components/layout/Grid.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
@@ -493,7 +494,7 @@ watch([statusFilter, limitFilter], () => void applyFilters());
             :heading-level="3"
             @retry="applyFilters"
           >
-            <Stack gap="4" align="start">
+            <Stack gap="4">
               <DataTable
                 caption="AI suggestion runs"
                 caption-hidden
@@ -543,12 +544,13 @@ watch([statusFilter, limitFilter], () => void applyFilters());
                   row.triggeredBy?.name ?? 'System'
                 }}</template>
               </DataTable>
-              <Button
-                v-if="nextCursor"
-                :loading="runsLoading || paginationLoading"
-                @click="loadMore"
-                >Load more</Button
-              >
+              <Cluster v-if="nextCursor">
+                <Button
+                  :loading="runsLoading || paginationLoading"
+                  @click="loadMore"
+                  >Load more</Button
+                >
+              </Cluster>
               <InlineMessage
                 v-if="paginationError"
                 tone="error"

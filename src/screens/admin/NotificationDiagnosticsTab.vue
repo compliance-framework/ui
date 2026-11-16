@@ -1421,7 +1421,7 @@ onUnmounted(() => {
           :heading-level="3"
           @retry="loadJobs()"
         >
-          <Stack gap="4" align="start">
+          <Stack gap="4">
             <DataTable
               caption="Delivery jobs"
               caption-hidden
@@ -1460,12 +1460,13 @@ onUnmounted(() => {
                 row.lastError ?? 'None'
               }}</template>
             </DataTable>
-            <Button
-              v-if="jobsNextCursor"
-              :loading="jobsLoading"
-              @click="loadJobs(jobsNextCursor ?? undefined)"
-              >Load more</Button
-            >
+            <Cluster v-if="jobsNextCursor">
+              <Button
+                :loading="jobsLoading"
+                @click="loadJobs(jobsNextCursor ?? undefined)"
+                >Load more</Button
+              >
+            </Cluster>
             <InlineMessage
               v-if="jobsPaginationError"
               tone="error"
