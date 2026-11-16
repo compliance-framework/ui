@@ -1,4 +1,7 @@
 <script setup lang="ts">
+/** How many risks are linked: a button that opens them when `clickable`, otherwise a tag. */
+import Button from '@/ds/components/Button/Button.vue';
+import Tag from '@/ds/components/Tag/Tag.vue';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -17,22 +20,6 @@ const displayCount = computed(() =>
   props.isCapped && props.riskCount >= 100 ? '99+' : `${props.riskCount}`,
 );
 
-const badgeColor = computed(() => {
-  if (!props.highestSeverity || props.riskCount === 0)
-    return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300';
-
-  switch (props.highestSeverity) {
-    case 'high':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-    case 'low':
-      return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300';
-    default:
-      return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300';
-  }
-});
-
 const tooltipText = computed(() => {
   if (displayCount.value === '1') return '1 risk associated';
   return `${displayCount.value} risks associated`;
@@ -47,19 +34,14 @@ function onClick(event: MouseEvent) {
 </script>
 
 <template>
-  <component
-    v-if="riskCount > 0"
-    :is="clickable ? 'button' : 'span'"
-    :type="clickable ? 'button' : undefined"
-    :class="[
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-      clickable ? 'cursor-pointer hover:opacity-90' : '',
-      badgeColor,
-    ]"
-    :title="tooltipText"
-    :aria-label="tooltipText"
-    @click="onClick"
-  >
-    ⚠️ {{ displayCount }}
-  </component>
+  <template v-if="riskCount > 0">
+    <Button
+      v-if="clickable"
+      icon="alert"
+      :aria-label="tooltipText"
+      @click="onClick"
+      >{{ displayCount }}</Button
+    >
+    <Tag v-else :label="tooltipText" />
+  </template>
 </template>

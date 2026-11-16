@@ -27,7 +27,8 @@ function mountForm(scopeFollowable: boolean) {
 describe('EvidenceDashboardForm', () => {
   it("offers to follow the SSP's scope, on by default, when the SSP has one", async () => {
     const wrapper = mountForm(true);
-    const follow = wrapper.find('[data-testid="follow-ssp-scope"]');
+    // The checkbox wrapper carries the test ID; the input is inside it.
+    const follow = wrapper.find('[data-testid="follow-ssp-scope"] input');
     expect((follow.element as HTMLInputElement).checked).toBe(true);
 
     await follow.setValue(false);

@@ -1,14 +1,16 @@
 <script setup lang="ts">
+/** Linking an existing evidence filter to a statement. Emits `submit` with the filter in `selectedDashboard`. */
+import { computed } from 'vue';
+import Button from '@/ds/components/Button/Button.vue';
+import Combobox from '@/ds/components/Combobox/Combobox.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { reactive, watch } from 'vue';
 import type { Dashboard } from '@/stores/filters';
-import Label from '@/volt/Label.vue';
-import Select from '@/volt/Select.vue';
-import FilterOriginBadges from '@/components/filters/FilterOriginBadges.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 
-defineProps<{
+const props = defineProps<{
   dashboards: Dashboard[];
   isSubmitting?: boolean;
   serverError?: string;
@@ -32,7 +34,7 @@ watch(selectedDashboard, () => {
 function validate(): boolean {
   Object.keys(errors).forEach((key) => delete errors[key]);
   if (!selectedDashboard.value) {
-    errors.dashboard = 'Please select an evidence filter.';
+    errors.dashboard = 'Choose an evidence filter.';
   }
   return Object.keys(errors).length === 0;
 }
@@ -41,50 +43,44 @@ function submit() {
   if (!validate()) return;
   emit('submit');
 }
+
+// The picker holds the filter's ID; the model keeps the filter.
+const dashboardOptions = computed(() =>
+  props.dashboards
+    .filter((d) => d.id)
+    .map((d) => ({ value: d.id!, label: d.name })),
+);
+const dashboardId = computed({
+  get: () => selectedDashboard.value?.id ?? '',
+  set: (id: string) =>
+    (selectedDashboard.value =
+      props.dashboards.find((d) => d.id === id) ?? null),
+});
 </script>
 
 <template>
-  <form class="space-y-4" @submit.prevent="submit">
-    <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-    <div class="flex justify-between items-center">
-      <h4 class="m-0">Link Existing Evidence Filter</h4>
-    </div>
-    <div>
-      <Label for="existing-dashboard" required>Select Evidence Filter</Label>
-      <Select
-        id="existing-dashboard"
-        v-model="selectedDashboard"
-        :options="dashboards"
-        optionLabel="name"
-        filter
-        placeholder="Select an evidence filter to link..."
-        class="w-full"
-        :invalid="!!errors.dashboard"
+  <form novalidate @submit.prevent="submit">
+    <Stack gap="4">
+      <FormField
+        label="Evidence filter"
+        required
+        :error="errors.dashboard || undefined"
       >
-        <template #option="slotProps">
-          <span>{{ slotProps.option.name }}</span>
-          <FilterOriginBadges :filter="slotProps.option" class="ml-2" />
-        </template>
-      </Select>
-      <small v-if="errors.dashboard" class="text-red-500">
-        {{ errors.dashboard }}
-      </small>
-    </div>
-
-    <Message v-if="serverError" severity="error">
-      {{ serverError }}
-    </Message>
-
-    <div
-      class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-    >
-      <SecondaryButton type="button" @click="emit('cancel')">
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton type="submit" :disabled="isSubmitting">
-        <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        Link Evidence Filter
-      </PrimaryButton>
-    </div>
+        <Combobox
+          v-model="dashboardId"
+          :options="dashboardOptions"
+          placeholder="Filter name"
+        />
+      </FormField>
+      <InlineMessage v-if="serverError" tone="error" title="Not linked"
+        ><p>{{ serverError }}</p></InlineMessage
+      >
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button variant="primary" type="submit" :loading="isSubmitting"
+          >Link evidence filter</Button
+        >
+      </Cluster>
+    </Stack>
   </form>
 </template>

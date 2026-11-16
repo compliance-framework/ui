@@ -1,14 +1,4 @@
-<template>
-  <ResultStatusBadge
-    v-if="counts.total"
-    :gray="counts.gray"
-    :red="counts.red"
-    :green="counts.green"
-  ></ResultStatusBadge>
-</template>
-
 <script lang="ts" setup>
-import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import type { Control } from '@/oscal';
 import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { useDataApi } from '@/composables/axios';
@@ -42,3 +32,12 @@ const counts = computed(() =>
   computeEvidenceStatusCounts(evidenceCounts.value || []),
 );
 </script>
+
+<template>
+  <EvidenceCounts
+    :green="counts.green"
+    :red="counts.red"
+    :gray="counts.gray"
+    quiet
+  />
+</template>

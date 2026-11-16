@@ -1,15 +1,18 @@
 <script setup lang="ts">
+/** A new component statement: the component, its description, and implementation status and remarks. Emits `submit`; Create a component asks the parent for a new one. */
+import { computed } from 'vue';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { reactive, watch } from 'vue';
 import type { SelectOption } from './form-options';
-import Label from '@/volt/Label.vue';
-import Select from '@/volt/Select.vue';
-import Textarea from '@/volt/Textarea.vue';
-import Message from '@/volt/Message.vue';
-import Button from '@/volt/Button.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 
-defineProps<{
+const props = defineProps<{
   componentItems: SelectOption[];
   statusOptions: SelectOption[];
   componentsLoading: boolean;
@@ -53,104 +56,64 @@ function submit() {
   if (!validate()) return;
   emit('submit');
 }
+
+// The native selects hold strings; the models keep the classic shapes.
+const toOption = (o: SelectOption) => ({
+  value: o.value,
+  label: o.name ?? o.label ?? o.value,
+});
+const componentOptions = computed(() => props.componentItems.map(toOption));
+const statusSelectOptions = computed(() => props.statusOptions.map(toOption));
+const componentValue = computed({
+  get: () => selectedComponent.value?.value ?? '',
+  set: (value: string) =>
+    (selectedComponent.value =
+      props.componentItems.find((o) => o.value === value) ?? null),
+});
+const descriptionText = computed({
+  get: () => description.value ?? '',
+  set: (value: string) => (description.value = value),
+});
 </script>
 
 <template>
-  <form class="space-y-4" @submit.prevent="submit">
-    <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-    <div class="flex justify-between items-center">
-      <h4 class="m-0">New Component Implementation</h4>
-      <Button
-        type="button"
-        label="Create New"
-        class="!text-xs !py-1 !px-2 !text-blue-600 hover:!text-blue-800 dark:!text-blue-400"
-        severity="secondary"
-        text
-        @click="emit('createComponent')"
-      />
-    </div>
-
-    <div>
-      <Label for="component-implementation-component" required>
-        Component
-      </Label>
-      <Select
-        id="component-implementation-component"
-        v-model="selectedComponent"
-        placeholder="Select a component"
-        :loading="componentsLoading"
-        checkmark
-        class="w-full"
-        :options="componentItems"
-        optionLabel="name"
-        :invalid="!!errors.component"
-      />
-      <small v-if="errors.component" class="text-red-500">
-        {{ errors.component }}
-      </small>
-    </div>
-
-    <div>
-      <Label for="component-implementation-description">Description</Label>
-      <Textarea
-        id="component-implementation-description"
-        v-model="description"
-        rows="5"
-        cols="30"
-        class="resize-none w-full"
-        placeholder="Description"
-        @keyup.ctrl.enter="submit"
-      />
-    </div>
-
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <div>
-        <Label for="component-implementation-status">
-          Implementation Status
-        </Label>
-        <Select
-          id="component-implementation-status"
-          v-model="statusState"
-          :options="statusOptions"
-          optionLabel="label"
-          optionValue="value"
-          class="w-full"
-        />
-      </div>
-      <div>
-        <Label for="component-implementation-status-remarks">
-          Status Remarks
-        </Label>
-        <Textarea
-          id="component-implementation-status-remarks"
-          v-model="statusRemarks"
-          rows="2"
-          class="resize-none w-full"
-          :disabled="!statusState"
-          placeholder="Implementation status remarks"
-        />
-      </div>
-    </div>
-
-    <Message v-if="serverError" severity="error">
-      {{ serverError }}
-    </Message>
-
-    <div
-      class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-    >
-      <SecondaryButton type="button" @click="emit('cancel')">
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton
-        type="submit"
-        :disabled="isSubmitting"
-        v-tooltip.bottom="'ctrl + enter to create'"
+  <form novalidate @submit.prevent="submit">
+    <Stack gap="4">
+      <Cluster justify="between" gap="2">
+        <Text as="span" variant="label">New component statement</Text>
+        <Button icon="add" @click="emit('createComponent')"
+          >Create a component</Button
+        >
+      </Cluster>
+      <FormField
+        label="Component"
+        required
+        :error="errors.component || undefined"
       >
-        <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        Create
-      </PrimaryButton>
-    </div>
+        <Select
+          v-model="componentValue"
+          :options="componentOptions"
+          :placeholder="componentsLoading ? 'Loading…' : 'Choose a component'"
+        />
+      </FormField>
+      <FormField label="Description">
+        <Textarea v-model="descriptionText" :rows="5" />
+      </FormField>
+      <FormField label="Implementation status">
+        <Select v-model="statusState" :options="statusSelectOptions" />
+      </FormField>
+      <FormField v-if="statusState" label="Status remarks">
+        <Textarea v-model="statusRemarks" :rows="2" />
+      </FormField>
+      <InlineMessage v-if="serverError" tone="error" title="Not created"
+        ><p>{{ serverError }}</p></InlineMessage
+      >
+      <Cluster justify="end" gap="2">
+        <Button @click="emit('cancel')">Cancel</Button>
+        <Button variant="primary" type="submit" :loading="isSubmitting"
+          >Create statement</Button
+        >
+      </Cluster>
+    </Stack>
   </form>
-  <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
 </template>

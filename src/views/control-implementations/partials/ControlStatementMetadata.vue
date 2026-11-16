@@ -1,7 +1,9 @@
 <script setup lang="ts">
+/** A statement's ID, remarks, properties and links, with Edit statement. */
+import Button from '@/ds/components/Button/Button.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { Statement } from '@/oscal';
-import TooltipTitle from '@/components/TooltipTitle.vue';
-import Button from '@/volt/Button.vue';
 
 defineProps<{
   statement: Statement;
@@ -36,48 +38,23 @@ function formatLinks(links: Statement['links']): string {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-    <div>
-      <TooltipTitle
-        text="Statement ID"
-        tooltip-key="statement.id"
-        underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-      />
-      <p class="text-sm">{{ statement.statementId }}</p>
-    </div>
-    <div v-if="statement.remarks">
-      <TooltipTitle
-        text="Remarks"
-        tooltip-key="statement.remarks"
-        underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-      />
-      <p class="text-sm">{{ statement.remarks }}</p>
-    </div>
-    <div v-if="statement.props">
-      <TooltipTitle
-        text="Props"
-        tooltip-key="statement.props"
-        underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-      />
-      <p class="text-sm">{{ formatProps(statement.props) }}</p>
-    </div>
-    <div v-if="statement.links">
-      <TooltipTitle
-        text="Links"
-        tooltip-key="statement.links"
-        underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-      />
-      <p class="text-sm">{{ formatLinks(statement.links) }}</p>
-    </div>
-  </div>
-
-  <div class="flex items-center mb-4 gap-x-4">
-    <Button
-      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-      @click="emit('edit')"
-    >
-      Edit
-    </Button>
-  </div>
-  <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
+  <Stack gap="3">
+    <DescriptionList
+      :items="[
+        { key: 'id', label: 'Statement ID', value: statement.statementId },
+        { key: 'remarks', label: 'Remarks', value: statement.remarks },
+        {
+          key: 'props',
+          label: 'Properties',
+          value: statement.props ? formatProps(statement.props) : '',
+        },
+        {
+          key: 'links',
+          label: 'Links',
+          value: statement.links ? formatLinks(statement.links) : '',
+        },
+      ]"
+    />
+    <div><Button icon="edit" @click="emit('edit')">Edit statement</Button></div>
+  </Stack>
 </template>

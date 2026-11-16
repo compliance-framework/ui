@@ -1168,3 +1168,15 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Specs: the score history spec is updated; the tasks panel has a new one (including the save).
   Checked live on a throwaway POA&M risk: create a plan, add a task, mark it in progress (the
   plan and risk were deleted afterwards).
+- **Implementation statement editor, part 1 (its smaller pieces):** the evidence counters (now a
+  shared `EvidenceCounts`, the same status badges as the catalog tree), the risk count badge, the
+  statement's facts, the components list and its menu, suggested components, the inherited
+  responsibility rows, and the forms to link an evidence filter, create one from baseline
+  evidence and create a component statement are design-system, transplanted in place (scripts
+  kept). **Decisions:** the editor's classic component statement (`StatementByComponent`) is
+  retired in favour of the drawer's design-system `ByComponentStatement`, which already did the
+  same job; the "?" help tooltips on field names are dropped; an inherited block opens the
+  statement from a "Manage responsibilities" button instead of a click anywhere on it. Pickers
+  that held whole objects (an evidence filter, a component, baseline evidence) now hold IDs and
+  map back, so the editor's script is unchanged. Specs adapted. The editor itself, its drawer and
+  its four classic forms are next.

@@ -1,9 +1,14 @@
 <script setup lang="ts">
+/** A statement's components, each with its statement, and a menu to add, create or inherit one. */
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { computed } from 'vue';
 import type { ByComponent, Risk } from '@/oscal';
-import BurgerMenu from '@/components/BurgerMenu.vue';
-import TooltipTitle from '@/components/TooltipTitle.vue';
-import StatementByComponent from './StatementByComponent.vue';
+import ByComponentStatement from '@/screens/implementation/ByComponentStatement.vue';
+import { useSystemStore } from '@/stores/system';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -43,32 +48,35 @@ const menuItems = computed(() => [
     command: () => emit('inheritFromSsp'),
   },
 ]);
+const systemStore = useSystemStore();
+
+// The menu, as design-system entries; inheriting stays hidden without the access it needs.
+const actions = computed<MenuEntry[]>(() =>
+  menuItems.value
+    .filter((item) => item.visible !== false)
+    .map((item) => ({ label: item.label, onSelect: item.command })),
+);
 </script>
 
 <template>
-  <div class="flex items-center mb-4 gap-x-4">
-    <TooltipTitle
-      text="Components"
-      tooltip-key="control.implementation.components"
-      position="bottom"
-      underline-class="font-medium text-xl underline decoration-dotted cursor-help"
-    />
-    <BurgerMenu :items="menuItems" />
-  </div>
-
-  <div
-    v-if="byComponents.length === 0"
-    class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"
-  ></div>
-  <div v-for="byComponent in byComponents" :key="byComponent.uuid">
-    <StatementByComponent
+  <Stack gap="3">
+    <Cluster justify="between" gap="2">
+      <Text as="span" variant="label">Components</Text>
+      <Menu label="Component actions" :items="actions" />
+    </Cluster>
+    <Text v-if="byComponents.length === 0" variant="caption"
+      >No components implement this statement yet.</Text
+    >
+    <ByComponentStatement
+      v-for="byComponent in byComponents"
+      :key="byComponent.uuid"
       :by-component="byComponent"
+      :ssp-id="systemStore.system.securityPlan?.uuid"
       :control-id="controlId"
       :ssp-risks="sspRisks"
       :risk-fetch-limit="riskFetchLimit"
       @save="emit('save', $event)"
       @delete="emit('delete', $event)"
     />
-    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"></div>
-  </div>
+  </Stack>
 </template>

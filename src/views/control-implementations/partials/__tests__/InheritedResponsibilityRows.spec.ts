@@ -143,7 +143,7 @@ describe('InheritedResponsibilityRows', () => {
 
     expect(wrapper.text()).toContain('Needs review');
     expect(wrapper.text()).toContain('Implemented');
-    expect(wrapper.text()).toContain('✓ handled');
+    expect(wrapper.text()).toContain('Handled by your team');
   });
 
   it('renders one evidence counter per attached filter', () => {
@@ -176,9 +176,12 @@ describe('InheritedResponsibilityRows', () => {
     expect(wrapper.text()).not.toContain('Not covered');
   });
 
-  it('emits select when the block is clicked (the drawer shortcut)', async () => {
+  it('emits select from Manage responsibilities (the drawer shortcut)', async () => {
     const wrapper = mountRows(makeContext([makeLink()]));
-    await wrapper.find('.cursor-pointer').trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Manage responsibilities')!
+      .trigger('click');
     expect(wrapper.emitted('select')).toHaveLength(1);
   });
 });

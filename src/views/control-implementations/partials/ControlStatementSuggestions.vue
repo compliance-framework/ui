@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import Button from '@/volt/Button.vue';
-import Message from '@/volt/Message.vue';
+/** A statement's suggested components, each with Add, and Apply all suggestions. */
+import { computed } from 'vue';
+import Button from '@/ds/components/Button/Button.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import type { SuggestedComponent } from './component-suggestions';
 
-defineProps<{
+const props = defineProps<{
   statementReady: boolean;
   sspReady: boolean;
   suggestionsLoading: boolean;
@@ -27,86 +32,89 @@ function formatRelevanceScore(score: number | undefined): string {
   }
   return score.toFixed(2);
 }
+
+// Why a button can't be used yet, or undefined when it can.
+const notReady = () =>
+  !props.statementReady
+    ? 'The statement is still being created.'
+    : !props.sspReady
+      ? 'Choose a system first.'
+      : undefined;
+const applyAllDenied = computed(
+  () =>
+    notReady() ??
+    (props.suggestionsLoading
+      ? 'Suggestions are loading.'
+      : props.unappliedSuggestions.length === 0
+        ? 'Every suggestion is applied.'
+        : undefined),
+);
+const addDenied = (suggestion: SuggestedComponent) =>
+  props.appliedUuids.has(suggestion.componentUuid)
+    ? 'Already added.'
+    : props.applyingUuids.has(suggestion.componentUuid)
+      ? 'Being added.'
+      : props.applyingAllSuggestions
+        ? 'Applying all suggestions.'
+        : notReady();
 </script>
 
 <template>
-  <div class="mb-6">
-    <div class="flex items-center justify-between gap-4 mb-3">
-      <h4 class="m-0 font-medium text-base">Suggested Components</h4>
+  <Stack gap="3">
+    <Cluster justify="between" gap="2">
+      <Text as="span" variant="label">Suggested components</Text>
       <Button
-        type="button"
-        severity="secondary"
-        :disabled="
-          !statementReady ||
-          !sspReady ||
-          applyingAllSuggestions ||
-          suggestionsLoading ||
-          unappliedSuggestions.length === 0
-        "
-        :label="
-          applyingAllSuggestions ? 'Applying...' : 'Apply All Suggestions'
-        "
+        :loading="applyingAllSuggestions"
+        :disabled-reason="applyAllDenied"
         @click="emit('applyAll')"
-      />
-    </div>
-
-    <Message v-if="suggestionsLoading" severity="info" variant="simple">
-      <span class="flex items-center gap-2">
-        <i class="pi pi-spin pi-spinner"></i>
-        Loading suggested components...
-      </span>
-    </Message>
-    <Message v-else-if="suggestionsError" severity="error">
-      Failed to load suggestions. You can still add components manually.
-    </Message>
-    <Message v-else-if="displayedSuggestions.length === 0" severity="secondary">
-      No suggestions available for this statement.
-    </Message>
-    <div v-else class="space-y-3">
-      <div class="flex flex-wrap gap-2">
-        <Button
-          v-for="suggestion in displayedSuggestions"
-          :key="suggestion.componentUuid"
-          type="button"
-          size="small"
-          class="!text-left"
-          severity="secondary"
-          :outlined="!appliedUuids.has(suggestion.componentUuid)"
-          :disabled="
-            !statementReady ||
-            !sspReady ||
-            appliedUuids.has(suggestion.componentUuid) ||
-            applyingUuids.has(suggestion.componentUuid) ||
-            applyingAllSuggestions
-          "
-          @click="emit('applySuggestion', suggestion)"
-        >
-          <div class="flex flex-col items-start gap-1">
-            <span class="text-xs font-semibold">{{ suggestion.title }}</span>
-            <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
-            <span
-              v-if="
-                typeof suggestion.relevanceScore === 'number' &&
-                !Number.isNaN(suggestion.relevanceScore)
-              "
-              class="text-xs text-gray-500"
+        >Apply all suggestions</Button
+      >
+    </Cluster>
+    <Text v-if="suggestionsLoading" variant="caption"
+      >Loading suggested components…</Text
+    >
+    <InlineMessage
+      v-else-if="suggestionsError"
+      tone="error"
+      title="Suggestions not loaded"
+      ><p>You can still add components yourself.</p></InlineMessage
+    >
+    <Text v-else-if="displayedSuggestions.length === 0" variant="caption"
+      >No suggestions for this statement.</Text
+    >
+    <Stack v-else gap="2" as="ul">
+      <li
+        v-for="suggestion in displayedSuggestions"
+        :key="suggestion.componentUuid"
+      >
+        <Cluster justify="between" gap="2">
+          <Stack gap="1">
+            <Text as="span">{{ suggestion.title }}</Text>
+            <Text as="span" variant="caption"
+              >{{ suggestion.type
+              }}<template
+                v-if="
+                  typeof suggestion.relevanceScore === 'number' &&
+                  !Number.isNaN(suggestion.relevanceScore)
+                "
+              >
+                · Relevance
+                {{ formatRelevanceScore(suggestion.relevanceScore) }}</template
+              ></Text
             >
-              Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
-            </span>
-            <span
-              v-if="appliedUuids.has(suggestion.componentUuid)"
-              class="text-xs text-green-600"
-            >
-              Added
-            </span>
-          </div>
-        </Button>
-      </div>
-
-      <Message v-if="allSuggestionsApplied" severity="success" variant="simple">
-        All suggestions applied.
-      </Message>
-    </div>
-    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
-  </div>
+          </Stack>
+          <Button
+            :disabled-reason="addDenied(suggestion)"
+            @click="emit('applySuggestion', suggestion)"
+            >{{
+              appliedUuids.has(suggestion.componentUuid) ? 'Added' : 'Add'
+            }}</Button
+          >
+        </Cluster>
+      </li>
+    </Stack>
+    <Text v-if="allSuggestionsApplied" variant="caption"
+      >All suggestions applied.</Text
+    >
+  </Stack>
 </template>

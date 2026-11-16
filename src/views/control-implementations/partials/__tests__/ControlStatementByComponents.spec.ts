@@ -7,6 +7,10 @@ const { permState } = vi.hoisted(() => ({
   permState: { can: true },
 }));
 
+vi.mock('@/stores/system', () => ({
+  useSystemStore: () => ({ system: { securityPlan: { uuid: 'ssp-1' } } }),
+}));
+
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({
     can: () => permState.can,
@@ -28,16 +32,12 @@ const byComponents = [
 ] as ByComponent[];
 
 const stubs = {
-  TooltipTitle: {
-    props: ['text'],
-    template: '<h2>{{ text }}</h2>',
-  },
-  BurgerMenu: {
-    props: ['items'],
+  Menu: {
+    props: ['items', 'label'],
     template:
-      '<div data-test="burger-menu"><template v-for="item in items" :key="item.label"><button v-if="item.visible !== false" type="button" @click="item.command()">{{ item.label }}</button></template></div>',
+      '<div data-test="burger-menu"><button v-for="item in items" :key="item.label" type="button" @click="item.onSelect()">{{ item.label }}</button></div>',
   },
-  StatementByComponent: {
+  ByComponentStatement: {
     props: ['byComponent'],
     emits: ['save', 'delete'],
     template:

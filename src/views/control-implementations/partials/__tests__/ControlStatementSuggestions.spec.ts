@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { defineComponent, h } from 'vue';
+import { TooltipProvider } from 'reka-ui';
 import ControlStatementSuggestions from '../ControlStatementSuggestions.vue';
 import type { SuggestedComponent } from '../component-suggestions';
 
@@ -17,101 +19,87 @@ const suggestions = [
   },
 ] as SuggestedComponent[];
 
-const stubs = {
-  Button: {
-    props: ['disabled', 'label'],
-    emits: ['click'],
-    template:
-      '<button type="button" :disabled="disabled" @click="!disabled && $emit(\'click\', $event)"><slot />{{ label }}</button>',
-  },
-  Message: {
-    template: '<div data-test="message"><slot /></div>',
-  },
-};
+function mountComponent(props: Record<string, unknown> = {}) {
+  const events: Record<string, unknown[][]> = {};
+  const record =
+    (name: string) =>
+    (...args: unknown[]) =>
+      (events[name] ??= []).push(args);
+  const wrapper = mount(
+    defineComponent({
+      render: () =>
+        h(TooltipProvider, null, () =>
+          h(ControlStatementSuggestions, {
+            statementReady: true,
+            sspReady: true,
+            suggestionsLoading: false,
+            suggestionsError: '',
+            displayedSuggestions: suggestions,
+            unappliedSuggestions: suggestions,
+            allSuggestionsApplied: false,
+            applyingAllSuggestions: false,
+            appliedUuids: new Set<string>(),
+            applyingUuids: new Set<string>(),
+            onApplyAll: record('applyAll'),
+            onApplySuggestion: record('applySuggestion'),
+            ...props,
+          }),
+        ),
+    }),
+  );
+  return { wrapper, events };
+}
+
+// The Add button in a suggestion's row.
+const addButton = (wrapper: ReturnType<typeof mount>, title: string) =>
+  wrapper
+    .findAll('li')
+    .find((li) => li.text().includes(title))!
+    .find('button');
 
 describe('ControlStatementSuggestions', () => {
-  function mountComponent(
-    props: Partial<
-      InstanceType<typeof ControlStatementSuggestions>['$props']
-    > = {},
-  ) {
-    return mount(ControlStatementSuggestions, {
-      props: {
-        statementReady: true,
-        sspReady: true,
-        suggestionsLoading: false,
-        suggestionsError: '',
-        displayedSuggestions: suggestions,
-        unappliedSuggestions: suggestions,
-        allSuggestionsApplied: false,
-        applyingAllSuggestions: false,
-        appliedUuids: new Set<string>(),
-        applyingUuids: new Set<string>(),
-        ...props,
-      },
-      global: { stubs },
-    });
-  }
-
-  it('renders loading, error, empty, and all-applied states', () => {
-    expect(mountComponent({ suggestionsLoading: true }).text()).toContain(
-      'Loading suggested components...',
-    );
-    expect(mountComponent({ suggestionsError: 'Failed' }).text()).toContain(
-      'Failed to load suggestions.',
-    );
-    expect(mountComponent({ displayedSuggestions: [] }).text()).toContain(
-      'No suggestions available for this statement.',
-    );
+  it('shows loading, error, empty and all-applied states', () => {
+    expect(
+      mountComponent({ suggestionsLoading: true }).wrapper.text(),
+    ).toContain('Loading suggested components');
+    expect(
+      mountComponent({ suggestionsError: 'Failed' }).wrapper.text(),
+    ).toContain('Suggestions not loaded');
+    expect(
+      mountComponent({ displayedSuggestions: [] }).wrapper.text(),
+    ).toContain('No suggestions for this statement.');
     expect(
       mountComponent({
         unappliedSuggestions: [],
         allSuggestionsApplied: true,
-      }).text(),
+      }).wrapper.text(),
     ).toContain('All suggestions applied.');
   });
 
-  it('disables applied and applying suggestions and labels applied suggestions', async () => {
-    const wrapper = mountComponent({
+  it('disables applied and applying suggestions, saying why', async () => {
+    const { wrapper, events } = mountComponent({
       appliedUuids: new Set(['component-1']),
       applyingUuids: new Set(['component-2']),
     });
-    const componentOneButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Component One'));
-    const componentTwoButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Component Two'));
-
-    expect(wrapper.text()).toContain('Added');
-    expect(wrapper.text()).toContain('Relevance: 0.99');
-    expect(componentOneButton).toBeTruthy();
-    expect(componentTwoButton).toBeTruthy();
-    expect(componentOneButton!.attributes('disabled')).toBeDefined();
-    expect(componentTwoButton!.attributes('disabled')).toBeDefined();
-
-    await componentOneButton!.trigger('click');
-    await componentTwoButton!.trigger('click');
-
-    expect(wrapper.emitted('applySuggestion')).toBeUndefined();
+    expect(wrapper.text()).toContain('Relevance 0.99');
+    const one = addButton(wrapper, 'Component One');
+    const two = addButton(wrapper, 'Component Two');
+    expect(one.text()).toContain('Added');
+    expect(one.attributes('aria-disabled')).toBe('true');
+    expect(two.attributes('aria-disabled')).toBe('true');
+    await one.trigger('click');
+    await two.trigger('click');
+    expect(events.applySuggestion).toBeUndefined();
   });
 
-  it('emits applyAll and applySuggestion when enabled suggestion buttons are clicked', async () => {
-    const wrapper = mountComponent();
-    const applyAllButton = wrapper
+  it('applies all, or one suggestion', async () => {
+    const { wrapper, events } = mountComponent();
+    await wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Apply All Suggestions'));
-    const componentOneButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Component One'));
-
-    expect(applyAllButton).toBeTruthy();
-    expect(componentOneButton).toBeTruthy();
-
-    await applyAllButton!.trigger('click');
-    await componentOneButton!.trigger('click');
-
-    expect(wrapper.emitted('applyAll')).toHaveLength(1);
-    expect(wrapper.emitted('applySuggestion')?.[0]).toEqual([suggestions[0]]);
+      .find((b) => b.text().startsWith('Apply all suggestions'))!
+      .trigger('click');
+    await addButton(wrapper, 'Component One').trigger('click');
+    expect(events.applyAll).toHaveLength(1);
+    expect(events.applySuggestion?.[0]).toEqual([suggestions[0]]);
   });
 });
