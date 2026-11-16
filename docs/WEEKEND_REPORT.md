@@ -1180,3 +1180,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   that held whole objects (an evidence filter, a component, baseline evidence) now hold IDs and
   map back, so the editor's script is unchanged. Specs adapted. The editor itself, its drawer and
   its four classic forms are next.
+- **Implementation statement editor, part 2:** the per-control editor itself
+  (`ControlStatementImplementation`), the implementation index around it, the statement create
+  and edit forms, Import from SSP and Export statement are design-system, transplanted in place
+  (scripts kept), and the control tree node no longer wraps them in `LegacyPage`. The unused
+  `SystemImplementationComponentCreateForm` and `PartDisplay` are deleted. Still classic inside
+  the editor: the shared-responsibility panel and blocks and the inherited-responsibilities
+  section. Specs adapted (Export, Import, index). Checked live: the drawer opens the editor and
+  saves.

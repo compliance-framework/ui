@@ -1,186 +1,78 @@
 <template>
-  <div class="px-12 py-8">
-    <form @submit.prevent="updateStatement()">
-      <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-        <div
-          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
-        >
-          <span class="text-gray-600 dark:text-slate-400 font-mono">{{
-            statementData.uuid
-          }}</span>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300"
-          >Statement ID <span class="text-red-500">*</span></label
-        >
-        <InputText
-          v-model="statementData.statementId"
-          placeholder="e.g., au-1_smt"
-          required
-          class="w-full"
-        />
-      </div>
-
-      <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <Textarea v-model="statementData.remarks" rows="3" class="w-full" />
-      </div>
-
-      <!-- Properties -->
-      <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
-        <div class="space-y-3">
-          <div
-            v-for="(prop, index) in statementData.props"
-            :key="index"
-            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
-          >
-            <div class="flex justify-between items-start mb-2">
-              <h4 class="text-sm font-medium dark:text-slate-300">
-                Property {{ index + 1 }}
-              </h4>
-              <button
-                type="button"
-                @click="removeProperty(index)"
-                class="text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300"
-                  >Name</label
-                >
-                <InputText
-                  v-model="prop.name"
-                  placeholder="Property name"
-                  class="w-full"
-                />
-              </div>
-              <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300"
-                  >Value</label
-                >
-                <InputText
-                  v-model="prop.value"
-                  placeholder="Property value"
-                  class="w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            @click="addProperty"
-            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-          >
-            Add Property
-          </button>
-        </div>
-      </div>
-
-      <!-- Links -->
-      <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Links</label>
-        <div class="space-y-3">
-          <div
-            v-for="(link, index) in statementData.links"
-            :key="index"
-            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
-          >
-            <div class="flex justify-between items-start mb-2">
-              <h4 class="text-sm font-medium dark:text-slate-300">
-                Link {{ index + 1 }}
-              </h4>
-              <button
-                type="button"
-                @click="removeLink(index)"
-                class="text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300"
-                  >Href</label
-                >
-                <InputText
-                  v-model="link.href"
-                  placeholder="URL or reference"
-                  class="w-full"
-                />
-              </div>
-              <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300"
-                  >Rel</label
-                >
-                <InputText
-                  v-model="link.rel"
-                  placeholder="Relationship"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="mt-2">
-              <label class="inline-block pb-1 text-sm dark:text-slate-300"
-                >Text</label
-              >
-              <InputText
-                v-model="link.text"
-                placeholder="Link text"
-                class="w-full"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            @click="addLink"
-            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-          >
-            Add Link
-          </button>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-4">
-        <button
-          type="button"
-          @click="$emit('cancel')"
-          class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
+  <form novalidate @submit.prevent="updateStatement()">
+    <Stack gap="4">
+      <FormField label="Statement ID" required hint="e.g. au-1_smt">
+        <TextInput v-model="statementData.statementId" />
+      </FormField>
+      <FormField label="Remarks">
+        <Textarea v-model="statementData.remarks" :rows="3" />
+      </FormField>
+      <FieldList
+        v-model="statementData.props!"
+        legend="Properties"
+        item-label="property"
+        add-label="Add property"
+        empty-text="No properties."
+        :new-item="newProperty"
+      >
+        <template #item="{ item }">
+          <Grid min="sm" gap="2">
+            <FormField label="Name"
+              ><TextInput v-model="item.name"
+            /></FormField>
+            <FormField label="Value"
+              ><TextInput v-model="item.value"
+            /></FormField>
+          </Grid>
+        </template>
+      </FieldList>
+      <FieldList
+        v-model="statementData.links!"
+        legend="Links"
+        item-label="link"
+        add-label="Add link"
+        empty-text="No links."
+        :new-item="newLink"
+      >
+        <template #item="{ item }">
+          <Grid min="sm" gap="2">
+            <FormField label="URL"><TextInput v-model="item.href" /></FormField>
+            <FormField label="Relation"
+              ><TextInput v-model="item.rel"
+            /></FormField>
+            <FormField label="Text"
+              ><TextInput v-model="item.text"
+            /></FormField>
+          </Grid>
+        </template>
+      </FieldList>
+      <Cluster justify="end" gap="2">
+        <Button @click="$emit('cancel')">Cancel</Button>
+        <Button
+          variant="primary"
           type="submit"
-          :disabled="saving || !can(RESOURCES.SSP, ACTIONS.UPDATE)"
-          v-tooltip.top="{
-            value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
-            disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
-          }"
-          class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+          :loading="saving"
+          :disabled-reason="saveDenied()"
+          >Save statement</Button
         >
-          {{ saving ? 'Saving...' : 'Save Statement' }}
-        </button>
-      </div>
-    </form>
-  </div>
+      </Cluster>
+    </Stack>
+  </form>
 </template>
 
 <script setup lang="ts">
+/** Editing a control statement's ID, remarks, properties and links. The script is the classic form's. */
+import Button from '@/ds/components/Button/Button.vue';
+import FieldList from '@/ds/components/FieldList/FieldList.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Grid from '@/ds/components/layout/Grid.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { reactive, onMounted } from 'vue';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
-import InputText from '@/volt/InputText.vue';
-import Textarea from '@/volt/Textarea.vue';
 import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -188,7 +80,22 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
-const { can, permissionTooltip } = usePermissions();
+const { can } = usePermissions();
+// New rows for the field lists, typed as the statement's own.
+type StatementProperty = NonNullable<typeof statementData.props>[number];
+type StatementLink = NonNullable<typeof statementData.links>[number];
+const newProperty = (): StatementProperty => ({
+  name: '',
+  value: '',
+  class: '',
+  ns: '',
+  uuid: uuid(),
+});
+const newLink = (): StatementLink => ({ href: '', rel: '', text: '' });
+const saveDenied = () =>
+  can(RESOURCES.SSP, ACTIONS.UPDATE)
+    ? undefined
+    : "Your access doesn't include changing this system's statements.";
 
 const props = defineProps<{
   sspId: string;
@@ -233,32 +140,6 @@ onMounted(() => {
     byComponents: props.statement.byComponents,
   });
 });
-
-const addProperty = () => {
-  statementData.props?.push({
-    name: '',
-    value: '',
-    class: '',
-    ns: '',
-    uuid: uuid(),
-  });
-};
-
-const removeProperty = (index: number) => {
-  statementData.props?.splice(index, 1);
-};
-
-const addLink = () => {
-  statementData.links?.push({
-    href: '',
-    rel: '',
-    text: '',
-  });
-};
-
-const removeLink = (index: number) => {
-  statementData.links?.splice(index, 1);
-};
 
 const updateStatement = async () => {
   if (!statementData.statementId.trim()) {

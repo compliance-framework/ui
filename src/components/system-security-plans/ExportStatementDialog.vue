@@ -1,219 +1,173 @@
 <template>
-  <Dialog
-    v-model:visible="visible"
-    size="xl"
-    modal
-    header="Share this implementation"
-  >
-    <div class="space-y-1 mb-4">
-      <div class="text-sm font-medium dark:text-slate-300">
-        {{ controlId }} · Statement {{ statementId }}
-      </div>
-      <p
-        v-if="statementText"
-        class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2"
-      >
-        {{ statementText }}
-      </p>
-    </div>
-
-    <div
-      v-if="loading"
-      class="py-6 text-sm text-gray-500 dark:text-slate-400 flex items-center gap-2"
-    >
-      <i class="pi pi-spin pi-spinner"></i>
-      Loading what this system currently shares…
-    </div>
-
-    <Message
-      v-else-if="stepError && stepError.step === 'load'"
-      severity="error"
-      variant="outlined"
-    >
-      <div class="flex items-center justify-between gap-3">
-        <span>{{ stepErrorCopy(stepError) }}</span>
-        <SecondaryButton type="button" size="small" @click="reload">
-          Retry
-        </SecondaryButton>
-      </div>
-    </Message>
-
-    <form v-else-if="ready" class="space-y-6" @submit.prevent="share">
-      <!-- What this system provides -->
-      <section>
-        <h4 class="text-sm font-medium dark:text-slate-300">
-          What this system provides
-        </h4>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-          Describe what downstream systems get when they inherit this. Leave
-          empty to share the full implementation.
-        </p>
-        <div
-          v-if="!providedDrafts.length"
-          class="mb-2 p-3 border border-dashed border-ccf-200 dark:border-slate-600 rounded text-xs text-gray-500 dark:text-slate-400"
+  <Dialog v-model:open="visible" title="Share this implementation" size="l">
+    <Stack gap="4">
+      <Stack gap="1">
+        <Text as="span" variant="label"
+          >{{ controlId }} · Statement {{ statementId }}</Text
         >
-          Nothing specific listed — the full implementation of this statement
-          will be shared as:
-          <span class="italic">“{{ fullScopePreview }}”</span>
-        </div>
-        <div
-          v-for="(entry, index) in providedDrafts"
-          :key="entry.uuid ?? `new-provided-${index}`"
-          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded space-y-2"
-        >
-          <Textarea
-            v-model="entry.description"
-            class="w-full"
-            rows="2"
-            placeholder="e.g. Org-wide MFA is enforced for every consumer of this platform"
-          />
-          <div class="flex justify-end">
-            <button
-              type="button"
-              class="text-red-500 hover:text-red-700 text-sm"
-              @click="removeProvided(index)"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-        <SecondaryButton type="button" size="small" @click="addProvided">
-          Add a capability
-        </SecondaryButton>
-      </section>
-
-      <!-- What consumers remain responsible for -->
-      <section>
-        <h4 class="text-sm font-medium dark:text-slate-300">
-          What consumers remain responsible for
-        </h4>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-          Anything a downstream system must still do themselves.
-        </p>
-        <div
-          v-for="(entry, index) in responsibilityDrafts"
-          :key="entry.uuid ?? `new-responsibility-${index}`"
-          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded space-y-2"
-        >
-          <Textarea
-            v-model="entry.description"
-            class="w-full"
-            rows="2"
-            placeholder="e.g. Enforce MFA for any local accounts outside our SSO"
-          />
-          <div class="flex items-center justify-between gap-2">
-            <div v-if="providedDrafts.length > 1" class="flex-1">
-              <Label :for="`responsibility-applies-${index}`">
-                Applies to
-              </Label>
-              <Select
-                :id="`responsibility-applies-${index}`"
-                v-model="entry.providedIndex"
-                :options="providedOptions"
-                option-label="label"
-                option-value="index"
-                class="w-full"
-              />
-            </div>
-            <button
-              type="button"
-              class="text-red-500 hover:text-red-700 text-sm shrink-0 ml-auto"
-              @click="removeResponsibility(index)"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-        <SecondaryButton type="button" size="small" @click="addResponsibility">
-          Add a responsibility
-        </SecondaryButton>
-      </section>
-
-      <!-- Who can import this -->
-      <section>
-        <h4 class="text-sm font-medium dark:text-slate-300 mb-1">
-          Who can import this
-        </h4>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-          Applies to everything this system shares, not just this statement.
-        </p>
-        <SelectButton
-          v-model="visibilityMode"
-          :options="visibilityOptions"
-          option-label="label"
-          option-value="value"
-          :allow-empty="false"
-        />
-        <p
-          v-if="visibilityMode === 'anyone'"
-          class="text-xs text-gray-500 dark:text-slate-400 mt-2"
-        >
-          Any other system in this workspace can import this capability.
-        </p>
-        <div v-else class="mt-2">
-          <MultiSelect
-            v-model="selectedSspIds"
-            :options="state?.sspOptions ?? []"
-            option-label="label"
-            option-value="id"
-            placeholder="Select a system security plan"
-            class="w-full"
-            filter
-          />
-        </div>
-      </section>
-
-      <Message v-if="validationError" severity="error">
-        {{ validationError }}
-      </Message>
-
-      <Message
-        v-if="stepError && stepError.step !== 'load'"
-        severity="error"
-        variant="outlined"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <span>{{ stepErrorCopy(stepError) }}</span>
-          <SecondaryButton
-            type="button"
-            size="small"
-            :disabled="saving"
-            @click="share"
+        <Text v-if="statementText" variant="caption">{{ statementText }}</Text>
+      </Stack>
+      <DataState
+        v-if="loading || (stepError && stepError.step === 'load')"
+        :status="loading ? 'loading' : 'error'"
+        subject="what this system shares"
+        skeleton="text"
+        @retry="reload"
+      />
+      <form v-else-if="ready" novalidate @submit.prevent="share">
+        <Stack gap="5">
+          <Panel
+            title="What this system provides"
+            description="What other systems get when they inherit this. Leave it empty to share the whole implementation."
+            :level="3"
           >
-            Retry
-          </SecondaryButton>
-        </div>
-      </Message>
-
-      <div
-        class="flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-slate-700"
-      >
-        <SecondaryButton type="button" @click="visible = false">
-          Cancel
-        </SecondaryButton>
-        <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-          <PrimaryButton type="submit" :disabled="saving">
-            {{ saving ? 'Sharing…' : 'Share' }}
-          </PrimaryButton>
-        </PermissionGate>
-      </div>
-    </form>
+            <Stack gap="3">
+              <Text v-if="!providedDrafts.length" variant="caption"
+                >Nothing listed: the whole implementation is shared as “{{
+                  fullScopePreview
+                }}”.</Text
+              >
+              <Stack
+                v-for="(entry, index) in providedDrafts"
+                :key="entry.uuid ?? `new-provided-${index}`"
+                gap="1"
+              >
+                <Cluster justify="between" gap="2" align="start">
+                  <FormField :label="`Capability ${index + 1}`">
+                    <Textarea v-model="entry.description" :rows="2" />
+                  </FormField>
+                  <IconButton
+                    icon="close"
+                    :label="`Remove capability ${index + 1}`"
+                    @click="removeProvided(index)"
+                  />
+                </Cluster>
+              </Stack>
+              <div>
+                <Button icon="add" size="sm" @click="addProvided"
+                  >Add a capability</Button
+                >
+              </div>
+            </Stack>
+          </Panel>
+          <Panel
+            title="What consumers stay responsible for"
+            description="Anything another system must still do itself."
+            :level="3"
+          >
+            <Stack gap="3">
+              <Stack
+                v-for="(entry, index) in responsibilityDrafts"
+                :key="entry.uuid ?? `new-responsibility-${index}`"
+                gap="2"
+              >
+                <Cluster justify="between" gap="2" align="start">
+                  <FormField :label="`Responsibility ${index + 1}`">
+                    <Textarea v-model="entry.description" :rows="2" />
+                  </FormField>
+                  <IconButton
+                    icon="close"
+                    :label="`Remove responsibility ${index + 1}`"
+                    @click="removeResponsibility(index)"
+                  />
+                </Cluster>
+                <FormField v-if="providedDrafts.length > 1" label="Applies to">
+                  <Select
+                    :model-value="String(entry.providedIndex)"
+                    :options="appliesToOptions"
+                    @update:model-value="
+                      (value: string) => (entry.providedIndex = Number(value))
+                    "
+                  />
+                </FormField>
+              </Stack>
+              <div>
+                <Button icon="add" size="sm" @click="addResponsibility"
+                  >Add a responsibility</Button
+                >
+              </div>
+            </Stack>
+          </Panel>
+          <Panel
+            title="Who can import this"
+            description="This applies to everything this system shares, not just this statement."
+            :level="3"
+          >
+            <Stack gap="3">
+              <RadioGroup
+                v-model="visibility"
+                legend="Who can import"
+                legend-hidden
+                variant="segmented"
+                :options="[
+                  { value: 'anyone', label: 'Anyone' },
+                  { value: 'selected', label: 'Only chosen systems' },
+                ]"
+              />
+              <Text v-if="visibilityMode === 'anyone'" variant="caption"
+                >Any other system in this workspace can import it.</Text
+              >
+              <CheckboxGroup
+                v-else
+                v-model="selectedSspIds"
+                legend="Systems"
+                :options="sspChoices"
+              />
+            </Stack>
+          </Panel>
+          <InlineMessage v-if="validationError" tone="error" title="Not shared"
+            ><p>{{ validationError }}</p></InlineMessage
+          >
+          <InlineMessage
+            v-if="stepError && stepError.step !== 'load'"
+            tone="error"
+            title="Not shared"
+          >
+            <p>{{ stepErrorCopy(stepError) }}</p>
+            <template #actions>
+              <Button :loading="saving" @click="share">Retry</Button>
+            </template>
+          </InlineMessage>
+          <Cluster justify="end" gap="2">
+            <Button @click="visible = false">Cancel</Button>
+            <Button
+              variant="primary"
+              type="submit"
+              :loading="saving"
+              :disabled-reason="shareDenied"
+              >Share</Button
+            >
+          </Cluster>
+        </Stack>
+      </form>
+    </Stack>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/**
+ * Sharing a statement's implementation with other systems: what this system provides (or the
+ * whole implementation), what consumers stay responsible for (each tied to a capability when
+ * there are several), and who may import it (anyone, or chosen systems). The script is the
+ * classic dialog's.
+ */
+import Button from '@/ds/components/Button/Button.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import RadioGroup from '@/ds/components/RadioGroup/RadioGroup.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { usePermissions } from '@/composables/usePermissions';
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import Dialog from '@/volt/Dialog.vue';
-import Label from '@/volt/Label.vue';
-import Message from '@/volt/Message.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import Select from '@/volt/Select.vue';
-import SelectButton from '@/volt/SelectButton.vue';
-import Textarea from '@/volt/Textarea.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import {
   fullScopeProvidedDescription,
@@ -263,11 +217,6 @@ const ready = computed(() => !loading.value && state.value !== null);
 const fullScopePreview = computed(() =>
   fullScopeProvidedDescription(props.sspTitle),
 );
-
-const visibilityOptions = [
-  { label: 'Anyone', value: 'anyone' },
-  { label: 'Only selected systems', value: 'selected' },
-];
 
 const providedOptions = computed(() =>
   providedDrafts.value.map((entry, index) => ({
@@ -374,4 +323,24 @@ async function share() {
   visible.value = false;
   emit('saved');
 }
+const { can } = usePermissions();
+const shareDenied = computed(() =>
+  can(RESOURCES.SSP, ACTIONS.UPDATE)
+    ? undefined
+    : "Your access doesn't include changing this system's sharing.",
+);
+const appliesToOptions = computed(() =>
+  providedOptions.value.map((o) => ({
+    value: String(o.index),
+    label: o.label,
+  })),
+);
+const visibility = computed({
+  get: () => visibilityMode.value,
+  set: (value: string) =>
+    (visibilityMode.value = value as 'anyone' | 'selected'),
+});
+const sspChoices = computed(() =>
+  (state.value?.sspOptions ?? []).map((o) => ({ value: o.id, label: o.label })),
+);
 </script>

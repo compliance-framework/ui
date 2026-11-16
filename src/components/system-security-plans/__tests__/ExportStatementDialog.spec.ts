@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => permState.can }),
+}));
+
 import ExportStatementDialog from '../ExportStatementDialog.vue';
 import type { StatementExportState } from '@/composables/useStatementExport';
 
@@ -41,51 +46,24 @@ vi.mock('@/composables/useStatementExport', async (importOriginal) => {
 });
 
 const stubs = {
+  // Inline, so the dialog's content is in the wrapper.
   Dialog: {
-    props: ['visible', 'header'],
-    template:
-      '<div v-if="visible" :data-header="header"><slot name="header" /><slot /></div>',
+    props: ['open', 'title'],
+    template: '<div v-if="open" :data-header="title"><slot /></div>',
   },
-  Textarea: {
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
-    template:
-      '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-  },
-  SelectButton: {
+  RadioGroup: {
     props: ['modelValue', 'options'],
     emits: ['update:modelValue'],
     template:
       '<div data-testid="visibility-mode"><button v-for="o in options" :key="o.value" type="button" :data-value="o.value" @click="$emit(\'update:modelValue\', o.value)">{{ o.label }}</button></div>',
   },
-  MultiSelect: {
+  CheckboxGroup: {
     props: ['modelValue', 'options'],
     emits: ['update:modelValue'],
     template: '<div data-testid="ssp-picker" />',
   },
-  Select: {
-    props: ['modelValue', 'options'],
-    emits: ['update:modelValue'],
-    template: '<select />',
-  },
-  Label: { template: '<label><slot /></label>' },
-  Message: { template: '<div class="message"><slot /></div>' },
-  PrimaryButton: {
-    props: ['disabled', 'type'],
-    template:
-      '<button :type="type ?? \'button\'" :disabled="disabled"><slot /></button>',
-  },
-  SecondaryButton: {
-    emits: ['click'],
-    template:
-      '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>',
-  },
-  PermissionGate: {
-    template: '<span v-if="allowed"><slot /></span>',
-    computed: {
-      allowed: () => permState.can,
-    },
-  },
+  // A disabled button's reason tooltip needs a provider; the text is enough here.
+  Tooltip: { template: '<slot />' },
 };
 
 function baseState(): StatementExportState {
@@ -129,6 +107,7 @@ function findButton(
 
 describe('ExportStatementDialog', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     permState.can = true;
     composableState.current = baseState();
@@ -157,7 +136,9 @@ describe('ExportStatementDialog', () => {
     // The provided section renders first, so its Remove buttons lead. Remove A.
     const removeButtons = wrapper
       .findAll('button')
-      .filter((b) => b.text() === 'Remove');
+      .filter((b) =>
+        b.attributes('aria-label')?.startsWith('Remove capability'),
+      );
     await removeButtons[0].trigger('click');
 
     await wrapper.find('form').trigger('submit');
@@ -186,7 +167,9 @@ describe('ExportStatementDialog', () => {
 
     const removeButtons = wrapper
       .findAll('button')
-      .filter((b) => b.text() === 'Remove');
+      .filter((b) =>
+        b.attributes('aria-label')?.startsWith('Remove capability'),
+      );
     // Remove B — the very block this responsibility points at.
     await removeButtons[1].trigger('click');
 
@@ -203,7 +186,7 @@ describe('ExportStatementDialog', () => {
 
     const text = wrapper.text();
     expect(text).toContain('What this system provides');
-    expect(text).toContain('What consumers remain responsible for');
+    expect(text).toContain('What consumers stay responsible for');
     expect(text).toContain('Who can import this');
     // The whole point of the dialog: none of the OSCAL machinery leaks through.
     for (const jargon of [
@@ -219,16 +202,14 @@ describe('ExportStatementDialog', () => {
 
   it('previews the full-scope block while the provided section is empty', async () => {
     const wrapper = await mountDialog();
-    expect(wrapper.text()).toContain(
-      'the full implementation of this statement will be shared',
-    );
+    expect(wrapper.text()).toContain('the whole implementation is shared as');
     expect(wrapper.text()).toContain(
       "Full scope of this statement's implementation is provided by Meridian Platform.",
     );
 
     await findButton(wrapper, 'Add a capability').trigger('click');
     expect(wrapper.text()).not.toContain(
-      'the full implementation of this statement will be shared',
+      'the whole implementation is shared as',
     );
   });
 
@@ -282,11 +263,13 @@ describe('ExportStatementDialog', () => {
     expect(wrapper.props('visible')).toBe(false);
   });
 
-  it('hides the Share button without ssp:update', async () => {
+  it('disables Share without ssp:update, saying why', async () => {
     permState.can = false;
     const wrapper = await mountDialog();
-    expect(wrapper.findAll('button').map((b) => b.text())).not.toContain(
-      'Share',
-    );
+    const share = wrapper
+      .findAll('button')
+      .find((b) => b.text().startsWith('Share'))!;
+    expect(share.attributes('aria-disabled')).toBe('true');
+    expect(share.text()).toContain("doesn't include");
   });
 });

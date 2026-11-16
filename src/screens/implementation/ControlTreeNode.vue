@@ -5,7 +5,6 @@ import type { TreeNode } from '@/composables/useCatalogTree';
 import type { Control } from '@/oscal';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
@@ -97,14 +96,12 @@ const groupOpen = computed({
         >Details</Button
       >
     </Cluster>
-    <LegacyPage>
-      <ControlEvidenceCounter :control="control" :ssp-id="tree.sspId()" />
-      <IndexControlImplementation
-        :control="control"
-        :implementation="tree.implementation(id)"
-        @exported="tree.onExported"
-        @imported="tree.onImported"
-      />
-    </LegacyPage>
+    <ControlEvidenceCounter :control="control" :ssp-id="tree.sspId()" />
+    <IndexControlImplementation
+      :control="control"
+      :implementation="tree.implementation(id)"
+      @exported="tree.onExported"
+      @imported="tree.onImported"
+    />
   </Stack>
 </template>

@@ -1,196 +1,142 @@
 <template>
-  <Dialog
-    v-model:visible="visible"
-    size="xl"
-    modal
-    header="Inherit from another system"
-  >
-    <div
-      v-if="loading"
-      class="py-6 text-sm text-gray-500 dark:text-slate-400 flex items-center gap-2"
-    >
-      <i class="pi pi-spin pi-spinner"></i>
-      Loading what other systems share…
-    </div>
-
-    <Message v-else-if="loadError" severity="error" variant="outlined">
-      <div class="flex items-center justify-between gap-3">
-        <span>Could not load the shared implementations catalog.</span>
-        <SecondaryButton type="button" size="small" @click="reload">
-          Retry
-        </SecondaryButton>
-      </div>
-    </Message>
-
-    <div
-      v-else-if="!groups.length"
-      class="py-6 text-sm text-gray-500 dark:text-slate-400"
-    >
-      No shared implementations are published yet. Ask the owning team to share
-      theirs from their Controls page.
-    </div>
-
-    <form v-else class="space-y-4" @submit.prevent="importSelected">
-      <Message
-        v-if="currentControlId && hasCurrentControlMatches"
-        severity="info"
-        variant="simple"
-      >
-        Items matching {{ currentControlId }} — the control you have open — are
-        listed first and preselected.
-      </Message>
-
-      <!-- This form's only text input, so HTML implicit submission means Enter here would
-           run importSelected() and fire the subscribe POSTs — a path that never touches the
-           Import button or the gate around it. Enter in a search box should filter, not
-           import. -->
-      <InputText
-        v-model="search"
-        class="w-full"
-        placeholder="Search by control, statement, or system…"
-        @keydown.enter.prevent
-      />
-
-      <div v-for="group in filteredGroups" :key="group.sspId" class="space-y-3">
-        <h4 class="text-sm font-semibold dark:text-slate-200">
-          {{ group.title }}
-        </h4>
-
-        <div
-          v-for="offering in group.offerings"
-          :key="offering.id"
-          class="p-3 border border-ccf-200 dark:border-slate-600 rounded space-y-2"
+  <Dialog v-model:open="visible" title="Inherit from another system" size="l">
+    <DataState
+      v-if="loading || loadError || !groups.length"
+      :status="loading ? 'loading' : loadError ? 'error' : 'empty'"
+      subject="what other systems share"
+      empty-title="Nothing shared yet"
+      empty-body="No shared implementations are published. Ask the owning team to share theirs from their Implementation page."
+      skeleton="text"
+      @retry="reload"
+    />
+    <form v-else novalidate @submit.prevent="importSelected">
+      <Stack gap="4">
+        <InlineMessage
+          v-if="currentControlId && hasCurrentControlMatches"
+          tone="info"
+          :title="`Items for ${currentControlId} come first`"
+          ><p>
+            They are the control you have open, and start chosen.
+          </p></InlineMessage
         >
-          <div class="flex items-center justify-between gap-2">
-            <div class="text-sm font-medium dark:text-slate-300">
-              {{ offering.title }} · v{{ offering.version }}
-            </div>
-            <Message
-              v-if="offeringErrors.get(offering.id)"
-              severity="error"
-              variant="simple"
+        <!-- The form's only text input, so Enter here would submit (and subscribe) by
+             implicit submission. Enter in a search box should filter, not import. -->
+        <FormField label="Search" hint="Control, statement or system">
+          <TextInput
+            v-model="search"
+            type="search"
+            icon="search"
+            @keydown.enter.prevent
+          />
+        </FormField>
+        <Panel
+          v-for="group in filteredGroups"
+          :key="group.sspId"
+          :title="group.title"
+          :level="3"
+        >
+          <Stack gap="4">
+            <Stack
+              v-for="offering in group.offerings"
+              :key="offering.id"
+              gap="2"
             >
-              {{ offeringErrors.get(offering.id) }}
-            </Message>
-          </div>
-
-          <div
-            v-for="item in offering.visibleItems"
-            :key="item.id"
-            class="ml-1"
-            :class="{
-              'rounded bg-blue-50/60 dark:bg-blue-950/20 p-1':
-                isCurrentControlItem(item),
-            }"
-          >
-            <label class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                :checked="selectedItemIds.has(item.id)"
-                :disabled="isAlreadyImported(item)"
-                @change="toggleItem(item.id)"
-              />
-              <span
-                class="text-sm dark:text-slate-300"
-                :class="{
-                  'text-gray-400 dark:text-slate-500': isAlreadyImported(item),
-                }"
+              <Text as="span" variant="label"
+                >{{ offering.title }} · v{{ offering.version }}</Text
               >
-                {{ item.controlId
-                }}<span v-if="item.statementId">
-                  · Statement {{ item.statementId }}</span
-                >
-              </span>
-              <Badge v-if="isAlreadyImported(item)" severity="secondary">
-                Already imported
-              </Badge>
-            </label>
-
-            <div
-              v-if="providedDescriptionFor(item)"
-              class="ml-6 text-xs text-green-600 dark:text-green-400"
-            >
-              {{ providedDescriptionFor(item) }}
-            </div>
-
-            <div
-              v-if="
-                selectedItemIds.has(item.id) && item.responsibilities?.length
-              "
-              class="mt-1 ml-6 space-y-1"
-            >
-              <div class="text-xs text-gray-500 dark:text-slate-400">
-                You take these on — tick anything you already handle:
-              </div>
-              <label
-                v-for="responsibility in item.responsibilities ?? []"
-                :key="responsibility.responsibilityUuid"
-                class="flex items-center gap-2"
+              <InlineMessage
+                v-if="offeringErrors.get(offering.id)"
+                tone="error"
+                title="Not imported"
+                ><p>{{ offeringErrors.get(offering.id) }}</p></InlineMessage
               >
-                <input
-                  type="checkbox"
-                  :checked="
-                    isSatisfied(item.id, responsibility.responsibilityUuid)
+              <Stack
+                v-for="item in offering.visibleItems"
+                :key="item.id"
+                gap="2"
+              >
+                <Checkbox
+                  :model-value="selectedItemIds.has(item.id)"
+                  :label="itemLabel(item)"
+                  :description="providedDescriptionFor(item) || undefined"
+                  :disabled-reason="
+                    isAlreadyImported(item) ? 'Already imported.' : undefined
                   "
-                  @change="
-                    toggleSatisfied(item.id, responsibility.responsibilityUuid)
-                  "
+                  @update:model-value="toggleItem(item.id)"
                 />
-                <span class="text-sm dark:text-slate-300">
-                  {{ responsibility.description }}
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-if="!filteredGroups.length"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        Nothing matches “{{ search }}”.
-      </div>
-
-      <p class="text-xs text-gray-500 dark:text-slate-400">
-        Imported capabilities stay linked to the providing system — you'll be
-        notified when it changes what it shares.
-      </p>
-
-      <div
-        class="flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-slate-700"
-      >
-        <SecondaryButton type="button" @click="visible = false">
-          {{ importedAnything ? 'Close' : 'Cancel' }}
-        </SecondaryButton>
-        <PermissionGate
-          :resource="RESOURCES.SSP_EXPORT_OFFERING"
-          :action="ACTIONS.SUBSCRIBE"
+                <Stack
+                  v-if="
+                    selectedItemIds.has(item.id) &&
+                    item.responsibilities?.length
+                  "
+                  gap="1"
+                >
+                  <Text variant="caption"
+                    >You take these on. Tick anything you already handle:</Text
+                  >
+                  <Checkbox
+                    v-for="responsibility in item.responsibilities ?? []"
+                    :key="responsibility.responsibilityUuid"
+                    :model-value="
+                      isSatisfied(item.id, responsibility.responsibilityUuid)
+                    "
+                    :label="responsibility.description"
+                    @update:model-value="
+                      toggleSatisfied(
+                        item.id,
+                        responsibility.responsibilityUuid,
+                      )
+                    "
+                  />
+                </Stack>
+              </Stack>
+            </Stack>
+          </Stack>
+        </Panel>
+        <Text v-if="!filteredGroups.length" variant="caption"
+          >Nothing matches “{{ search }}”.</Text
         >
-          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-            <PrimaryButton
-              type="submit"
-              :disabled="importing || !selectedItemIds.size"
-            >
-              {{ importing ? 'Importing…' : 'Import selected' }}
-            </PrimaryButton>
-          </PermissionGate>
-        </PermissionGate>
-      </div>
+        <Text variant="caption"
+          >Inherited capabilities stay linked to the providing system, and
+          you'll be told when it changes what it shares.</Text
+        >
+        <Cluster justify="end" gap="2">
+          <Button @click="visible = false">{{
+            importedAnything ? 'Close' : 'Cancel'
+          }}</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            :loading="importing"
+            :disabled-reason="importDenied"
+            >Import selected</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/**
+ * Inheriting another system's shared implementations: every published export offering, grouped
+ * by system, with the items for the open control first and preselected, a search, and for each
+ * chosen item the responsibilities this system already handles. Import selected subscribes to
+ * each offering. The script is the classic dialog's.
+ */
+import Button from '@/ds/components/Button/Button.vue';
+import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { computed, ref, watch } from 'vue';
 import type { AxiosError } from 'axios';
-import Badge from '@/volt/Badge.vue';
-import Dialog from '@/volt/Dialog.vue';
-import InputText from '@/volt/InputText.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
@@ -583,4 +529,13 @@ async function importSelected() {
     }
   }
 }
+const itemLabel = (item: CatalogOfferingItem) =>
+  `${item.controlId}${item.statementId ? ` · Statement ${item.statementId}` : ''}`;
+const importDenied = computed(() =>
+  !mayImport.value
+    ? "Your access doesn't include inheriting into this system."
+    : selectedItemIds.value.size
+      ? undefined
+      : 'Choose at least one item first.',
+);
 </script>

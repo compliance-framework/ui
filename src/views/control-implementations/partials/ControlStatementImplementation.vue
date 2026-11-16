@@ -1,4 +1,19 @@
 <script setup lang="ts">
+/**
+ * One control statement's implementation, in the Implementation tree's statement drawer: its
+ * facts (Edit statement), suggested components, the components implementing it (with forms to add
+ * one or create a component, or inherit from another system), inherited responsibilities, and the
+ * evidence filters linked to it (create or link one). Without a statement yet, Create statement.
+ * The script is the classic editor's.
+ */
+import Button from '@/ds/components/Button/Button.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import SystemComponentForm from '@/screens/configure/SystemComponentForm.vue';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   ByComponent,
@@ -13,7 +28,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
 import { useSystemStore } from '@/stores/system.ts';
-import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import {
   useAuthenticatedInstance,
@@ -21,19 +35,14 @@ import {
   decamelizeKeys,
 } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
-import Dialog from '@/volt/Dialog.vue';
-import Button from '@/volt/Button.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
-import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import ImportFromSspDialog from '@/components/system-security-plans/ImportFromSspDialog.vue';
 import type {
   SSPLeverageLink,
   SubscribeResponseMeta,
 } from '@/types/ssp-leverage';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
-import TooltipTitle from '@/components/TooltipTitle.vue';
-import Message from '@/volt/Message.vue';
 import { useAiConfigStore } from '@/stores/ai-config';
 import ControlStatementMetadata from './ControlStatementMetadata.vue';
 import ControlStatementSuggestions from './ControlStatementSuggestions.vue';
@@ -158,11 +167,6 @@ const showInheritedSection = computed(() =>
 );
 const showCreateStatementAction = computed(() =>
   activeDisplaySections.value.includes('create'),
-);
-const createOnlySection = computed(
-  () =>
-    activeDisplaySections.value.length === 1 &&
-    activeDisplaySections.value[0] === 'create',
 );
 
 const resolvedSspId = computed(() => {
@@ -1326,252 +1330,196 @@ async function submitEvidenceLinking() {
 }
 </script>
 
+<style scoped></style>
+
 <template>
-  <div :class="createOnlySection ? '' : 'pb-24'">
-    <div v-if="localStatement">
-      <ControlStatementMetadata
-        v-if="showMetadataSection"
-        :statement="localStatement"
-        @edit="showEditStatementModal = true"
-      />
-
-      <ControlStatementSuggestions
-        v-if="showComponentsSection"
-        :statement-ready="!!localStatement"
-        :ssp-ready="!!resolvedSspId"
-        :suggestions-loading="suggestionsLoading"
-        :suggestions-error="suggestionsError"
-        :displayed-suggestions="displayedSuggestions"
-        :unapplied-suggestions="unappliedSuggestions"
-        :all-suggestions-applied="allSuggestionsApplied"
-        :applying-all-suggestions="applyingAllSuggestions"
-        :applied-uuids="appliedSuggestionUuids"
-        :applying-uuids="applyingSuggestionUuids"
-        @apply-all="applyAllSuggestedComponents"
-        @apply-suggestion="applySuggestedComponent"
-      />
-
-      <div
-        v-if="showComponentsSection && aiConfig.dashboardSuggestionsEnabled"
-        class="mt-6"
+  <Stack v-if="localStatement" gap="6">
+    <ControlStatementMetadata
+      v-if="showMetadataSection"
+      :statement="localStatement"
+      @edit="showEditStatementModal = true"
+    />
+    <ControlStatementSuggestions
+      v-if="showComponentsSection"
+      :statement-ready="!!localStatement"
+      :ssp-ready="!!resolvedSspId"
+      :suggestions-loading="suggestionsLoading"
+      :suggestions-error="suggestionsError"
+      :displayed-suggestions="displayedSuggestions"
+      :unapplied-suggestions="unappliedSuggestions"
+      :all-suggestions-applied="allSuggestionsApplied"
+      :applying-all-suggestions="applyingAllSuggestions"
+      :applied-uuids="appliedSuggestionUuids"
+      :applying-uuids="applyingSuggestionUuids"
+      @apply-all="applyAllSuggestedComponents"
+      @apply-suggestion="applySuggestedComponent"
+    />
+    <div v-if="showComponentsSection && aiConfig.dashboardSuggestionsEnabled">
+      <Button
+        :disabled-reason="resolvedSspId ? undefined : 'Choose a system first.'"
+        @click="openDashboardSuggestions"
+        >AI evidence filter suggestions</Button
       >
-        <PrimaryButton
-          :disabled="!resolvedSspId"
-          @click="openDashboardSuggestions"
-        >
-          AI evidence filter suggestions
-        </PrimaryButton>
-      </div>
-
-      <Message
-        v-if="
-          showComponentsSection &&
-          aiConfig.dashboardSuggestionsConfigFetched &&
-          !aiConfig.dashboardSuggestionsEnabled
+    </div>
+    <InlineMessage
+      v-if="
+        showComponentsSection &&
+        aiConfig.dashboardSuggestionsConfigFetched &&
+        !aiConfig.dashboardSuggestionsEnabled
+      "
+      tone="info"
+      title="AI isn't configured"
+      ><p>Evidence filter suggestions can't be generated.</p></InlineMessage
+    >
+    <ControlStatementByComponents
+      v-if="showComponentsSection && localStatement"
+      :by-components="localStatement.byComponents || []"
+      :control-id="implementation.controlId"
+      :ssp-risks="sspRisks || []"
+      :risk-fetch-limit="RISK_FETCH_LIMIT"
+      @add-component="setCreateComponentForm(true)"
+      @create-component="showCreateComponentModal = true"
+      @inherit-from-ssp="showImportFromSspDialog = true"
+      @save="updateByComponent"
+      @delete="deleteByComponent"
+    />
+    <CreateByComponentForm
+      v-if="showComponentsSection && showCreateComponentForm"
+      v-model:selected-component="selectedComponent"
+      v-model:description="newByComponent.description"
+      v-model:status-state="newByComponentStatusState"
+      v-model:status-remarks="newByComponentStatusRemarks"
+      :component-items="componentItems"
+      :status-options="implementationStatusOptionsWithNone"
+      :components-loading="componentsLoading"
+      :is-submitting="creatingByComponent"
+      :server-error="createByComponentError"
+      @submit="createByComponent"
+      @cancel="resetCreateComponentForm"
+      @create-component="showCreateComponentModal = true"
+    />
+    <!-- Inherited responsibilities: what this statement takes on from upstream systems -->
+    <InheritedResponsibilitiesSection
+      v-if="showInheritedSection && localStatement && resolvedSspId"
+      :statement="localStatement"
+      :implementation="implementation"
+      :ssp-id="resolvedSspId"
+      @changed="syncStatementAfterSuggestionApply()"
+    />
+    <Stack v-if="showEvidenceSection" gap="3">
+      <Cluster justify="between" gap="2">
+        <Text as="span" variant="label">Evidence filters</Text>
+        <Menu
+          label="Evidence filter actions"
+          :items="[
+            {
+              label: 'Create an evidence filter',
+              icon: 'add',
+              onSelect: () => {
+                setLinkExistingForm(false);
+                setEvidenceLinkingForm(true);
+              },
+            },
+            {
+              label: 'Link an existing evidence filter',
+              icon: 'link',
+              onSelect: () => {
+                setEvidenceLinkingForm(false);
+                setLinkExistingForm(true);
+              },
+            },
+          ]"
+        />
+      </Cluster>
+      <Stack v-if="existingDashboards.length > 0" gap="2" as="ul">
+        <li v-for="dashboard in existingDashboards" :key="dashboard.id">
+          <Cluster justify="between" gap="2">
+            <Cluster gap="2">
+              <Text as="span">{{ dashboard.name }}</Text>
+              <DashboardEvidenceCounter :dashboard-id="dashboard.id!" />
+            </Cluster>
+            <Cluster gap="2">
+              <Button size="sm" @click="viewDashboardEvidence(dashboard)"
+                >View evidence</Button
+              >
+              <Button
+                size="sm"
+                variant="danger"
+                @click="unlinkDashboard(dashboard)"
+                >Unlink</Button
+              >
+            </Cluster>
+          </Cluster>
+        </li>
+      </Stack>
+      <Text v-else-if="dashboardsLoading" variant="caption"
+        >Loading evidence filters…</Text
+      >
+      <Text
+        v-else-if="!showEvidenceLinkingForm && !showLinkExistingForm"
+        variant="caption"
+        >No evidence filters are linked to this statement yet.</Text
+      >
+      <DashboardLinkForm
+        v-if="showLinkExistingForm"
+        v-model:selected-dashboard="selectedDashboardToLink"
+        :dashboards="availableDashboardsToLink"
+        :is-submitting="linkingDashboard"
+        :server-error="linkDashboardError"
+        @submit="linkExistingDashboard"
+        @cancel="
+          setLinkExistingForm(false);
+          selectedDashboardToLink = null;
+          linkDashboardError = '';
         "
-        severity="warn"
-        variant="outlined"
-        class="mt-6"
+      />
+      <EvidenceDashboardForm
+        v-if="showEvidenceLinkingForm"
+        v-model:name="evidenceDashboardName"
+        v-model:selected-baseline-evidence="selectedBaselineEvidence"
+        v-model:new-label-name="newLabelName"
+        v-model:new-label-value="newLabelValue"
+        v-model:follow-ssp-scope="followSspScope"
+        :unique-evidence-titles="uniqueEvidenceTitles"
+        :evidence-loading="evidenceLoading"
+        :label-conditions="labelConditions"
+        :available-label-names="availableLabelNames"
+        :available-label-values="availableLabelValues"
+        :computed-filter="computedFilter"
+        :scope-followable="scopeFollowable"
+        :is-submitting="creatingEvidenceDashboard"
+        :server-error="createEvidenceDashboardError"
+        @submit="submitEvidenceLinking"
+        @cancel="resetEvidenceLinkingForm"
+        @add-condition="addLabelCondition"
+        @remove-condition="removeLabelCondition"
+      />
+    </Stack>
+  </Stack>
+  <Stack v-else gap="4">
+    <div v-if="showCreateStatementAction">
+      <Button
+        variant="primary"
+        icon="add"
+        @click="showCreateStatementModal = true"
+        >Create statement</Button
       >
-        AI is not configured, so evidence filter suggestions cannot be
-        generated.
-      </Message>
-      <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
-
-      <ControlStatementByComponents
-        v-if="showComponentsSection && localStatement"
-        :by-components="localStatement.byComponents || []"
-        :control-id="implementation.controlId"
-        :ssp-risks="sspRisks || []"
-        :risk-fetch-limit="RISK_FETCH_LIMIT"
-        @add-component="setCreateComponentForm(true)"
-        @create-component="showCreateComponentModal = true"
-        @inherit-from-ssp="showImportFromSspDialog = true"
-        @save="updateByComponent"
-        @delete="deleteByComponent"
-      />
-
-      <CreateByComponentForm
-        v-if="showComponentsSection && showCreateComponentForm"
-        v-model:selected-component="selectedComponent"
-        v-model:description="newByComponent.description"
-        v-model:status-state="newByComponentStatusState"
-        v-model:status-remarks="newByComponentStatusRemarks"
-        :component-items="componentItems"
-        :status-options="implementationStatusOptionsWithNone"
-        :components-loading="componentsLoading"
-        :is-submitting="creatingByComponent"
-        :server-error="createByComponentError"
-        @submit="createByComponent"
-        @cancel="resetCreateComponentForm"
-        @create-component="showCreateComponentModal = true"
-      />
-
-      <!-- Inherited responsibilities: what this statement takes on from upstream SSPs -->
-      <InheritedResponsibilitiesSection
-        v-if="showInheritedSection && localStatement && resolvedSspId"
-        :statement="localStatement"
-        :implementation="implementation"
-        :ssp-id="resolvedSspId"
-        @changed="syncStatementAfterSuggestionApply()"
-      />
-
-      <!-- Evidence Linking Section -->
-      <div v-if="showEvidenceSection" class="mt-8">
-        <div class="flex items-center mb-4 gap-x-4">
-          <TooltipTitle
-            text="Evidence Linking"
-            tooltip-key="control.implementation.evidence"
-            position="bottom"
-            underline-class="font-medium text-xl underline decoration-dotted cursor-help"
-          />
-          <BurgerMenu
-            :items="[
-              {
-                label: 'Create New Evidence Filter',
-                command: () => {
-                  setLinkExistingForm(false);
-                  setEvidenceLinkingForm(true);
-                },
-              },
-              {
-                label: 'Link Existing Evidence Filter',
-                command: () => {
-                  setEvidenceLinkingForm(false);
-                  setLinkExistingForm(true);
-                },
-              },
-            ]"
-          />
-        </div>
-
-        <!-- Existing Dashboards List -->
-        <div v-if="existingDashboards.length > 0" class="mb-6">
-          <h6 class="text-sm font-medium text-gray-500 mb-2">
-            Linked Evidence Filters
-          </h6>
-          <div class="space-y-2">
-            <div
-              v-for="dashboard in existingDashboards"
-              :key="dashboard.id"
-              class="p-3 bg-gray-50 dark:bg-slate-800 rounded-md flex items-center justify-between gap-4"
-            >
-              <span class="font-medium">{{ dashboard.name }}</span>
-              <div class="flex items-center gap-3">
-                <DashboardEvidenceCounter :dashboard-id="dashboard.id!" />
-                <Button
-                  type="button"
-                  severity="secondary"
-                  text
-                  size="small"
-                  @click="viewDashboardEvidence(dashboard)"
-                  class="text-blue-600 hover:text-blue-800"
-                >
-                  View Evidence
-                </Button>
-                <Button
-                  type="button"
-                  severity="danger"
-                  text
-                  size="small"
-                  @click="unlinkDashboard(dashboard)"
-                  class="text-red-500 hover:text-red-700"
-                >
-                  Unlink
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <Message v-else-if="dashboardsLoading" severity="info" variant="simple">
-          <span class="flex items-center gap-2">
-            <i class="pi pi-spin pi-spinner"></i>
-            Loading evidence filters...
-          </span>
-        </Message>
-        <div
-          v-else-if="
-            showEvidenceLinkingForm === false && showLinkExistingForm === false
-          "
-          class="mb-6"
-        >
-          <Message severity="secondary">
-            No evidence filters linked to this control yet.
-          </Message>
-        </div>
-
-        <DashboardLinkForm
-          v-if="showLinkExistingForm"
-          v-model:selected-dashboard="selectedDashboardToLink"
-          :dashboards="availableDashboardsToLink"
-          :is-submitting="linkingDashboard"
-          :server-error="linkDashboardError"
-          @submit="linkExistingDashboard"
-          @cancel="
-            setLinkExistingForm(false);
-            selectedDashboardToLink = null;
-            linkDashboardError = '';
-          "
-        />
-
-        <EvidenceDashboardForm
-          v-if="showEvidenceLinkingForm"
-          v-model:name="evidenceDashboardName"
-          v-model:selected-baseline-evidence="selectedBaselineEvidence"
-          v-model:new-label-name="newLabelName"
-          v-model:new-label-value="newLabelValue"
-          :unique-evidence-titles="uniqueEvidenceTitles"
-          :evidence-loading="evidenceLoading"
-          :label-conditions="labelConditions"
-          :available-label-names="availableLabelNames"
-          :available-label-values="availableLabelValues"
-          :computed-filter="computedFilter"
-          :scope-followable="scopeFollowable"
-          v-model:follow-ssp-scope="followSspScope"
-          :is-submitting="creatingEvidenceDashboard"
-          :server-error="createEvidenceDashboardError"
-          @submit="submitEvidenceLinking"
-          @cancel="resetEvidenceLinkingForm"
-          @add-condition="addLabelCondition"
-          @remove-condition="removeLabelCondition"
-        />
-        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
-      </div>
     </div>
-    <div v-else>
-      <template v-if="showCreateStatementAction">
-        <Button
-          label="Create Statement"
-          @click="showCreateStatementModal = true"
-          class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-        </Button>
-      </template>
-      <div v-if="showComponentsSection" class="mt-6">
-        <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
-        <Message severity="secondary">
-          Suggested components will be available after you create this
-          statement.
-        </Message>
-      </div>
-      <div v-if="showEvidenceSection" class="mt-6">
-        <h4 class="m-0 mb-2 font-medium text-base">Evidence Linking</h4>
-        <Message severity="secondary">
-          Evidence filters can be linked after you create this statement.
-        </Message>
-      </div>
-    </div>
-  </div>
+    <Text v-if="showComponentsSection" variant="caption"
+      >Suggested components are offered once the statement exists.</Text
+    >
+    <Text v-if="showEvidenceSection" variant="caption"
+      >Evidence filters can be linked once the statement exists.</Text
+    >
+  </Stack>
 
-  <Dialog v-model:visible="showCreateStatementModal" size="lg" modal>
-    <template #header>
-      <TooltipTitle
-        text="Create New Statement"
-        tooltip-key="control.implementation.statement"
-        position="bottom"
-      />
-    </template>
+  <Dialog
+    v-model:open="showCreateStatementModal"
+    title="New statement"
+    size="l"
+  >
     <StatementCreateForm
+      v-if="showCreateStatementModal"
       :ssp-id="system.securityPlan?.uuid || ''"
       :req-id="implementation.uuid || ''"
       :smt-id="partid || ''"
@@ -1579,16 +1527,9 @@ async function submitEvidenceLinking() {
       @created="updateStatement"
     />
   </Dialog>
-  <Dialog v-model:visible="showEditStatementModal" size="lg" modal>
-    <template #header>
-      <TooltipTitle
-        text="Edit Statement"
-        tooltip-key="control.implementation.statement"
-        position="bottom"
-      />
-    </template>
+  <Dialog v-model:open="showEditStatementModal" title="Edit statement" size="l">
     <StatementEditForm
-      v-if="localStatement"
+      v-if="showEditStatementModal && localStatement"
       :ssp-id="system.securityPlan?.uuid || ''"
       :req-id="implementation.uuid || ''"
       :statement="localStatement"
@@ -1597,11 +1538,12 @@ async function submitEvidenceLinking() {
     />
   </Dialog>
   <Dialog
-    v-model:visible="showCreateComponentModal"
-    modal
-    header="Create System Component"
+    v-model:open="showCreateComponentModal"
+    title="New system component"
+    size="l"
   >
-    <SystemImplementationComponentCreateForm
+    <SystemComponentForm
+      v-if="showCreateComponentModal"
       :ssp-id="resolvedSspId || ''"
       @cancel="showCreateComponentModal = false"
       @created="handleComponentCreated"
@@ -1615,5 +1557,3 @@ async function submitEvidenceLinking() {
     @imported="handleImportedFromSsp"
   />
 </template>
-
-<style scoped></style>

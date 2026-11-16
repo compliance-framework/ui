@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import ImportFromSspDialog from '../ImportFromSspDialog.vue';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 
@@ -170,35 +171,24 @@ function installGetMock(overrides?: {
 }
 
 const stubs = {
+  // Inline, so the dialog's content is in the wrapper.
   Dialog: {
-    props: ['visible', 'header'],
-    template: '<div v-if="visible" :data-header="header"><slot /></div>',
+    props: ['open', 'title'],
+    template: '<div v-if="open" :data-header="title"><slot /></div>',
   },
-  InputText: {
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
-    template:
-      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-  },
-  Badge: { template: '<span><slot /></span>' },
-  Message: { template: '<div class="message"><slot /></div>' },
-  PrimaryButton: {
-    props: ['disabled', 'type'],
-    template:
-      '<button :type="type ?? \'button\'" :disabled="disabled"><slot /></button>',
-  },
-  SecondaryButton: {
-    emits: ['click'],
-    template:
-      '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>',
-  },
-  PermissionGate: {
-    template: '<span v-if="allowed"><slot /></span>',
-    computed: {
-      allowed: () => permState.can,
-    },
-  },
+  // A disabled button's reason tooltip needs a provider; the text is enough here.
+  Tooltip: { template: '<slot />' },
 };
+
+// A checkbox by its label (the label points at the input).
+function checkboxFor(
+  wrapper: Awaited<ReturnType<typeof mountDialog>>,
+  text: string,
+) {
+  const label = wrapper.findAll('label').find((l) => l.text().includes(text));
+  expect(label, `No checkbox labelled ${text}`).toBeDefined();
+  return wrapper.find(`[id="${label!.attributes('for')}"]`);
+}
 
 async function mountDialog(currentControlId?: string) {
   const wrapper = mount(ImportFromSspDialog, {
@@ -218,6 +208,7 @@ async function mountDialog(currentControlId?: string) {
 
 describe('ImportFromSspDialog', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     permState.can = true;
     installGetMock();
@@ -299,22 +290,11 @@ describe('ImportFromSspDialog', () => {
       text.indexOf('Other System'),
     );
 
-    const checkboxes = wrapper.findAll('input[type="checkbox"]');
     // item-1 preselected (match), item-2 disabled (already imported), item-other unchecked.
-    const byLabel = new Map(
-      checkboxes.map((c) => {
-        const label = c.element.closest('label')?.textContent?.trim() ?? '';
-        return [label, c] as const;
-      }),
-    );
-    const item1 = [...byLabel.entries()].find(([label]) =>
-      label.includes('AC-2 · Statement AC-2_smt.a'),
-    )?.[1];
-    const item2 = [...byLabel.entries()].find(([label]) =>
-      label.includes('AC-2 · Statement AC-2_smt.b'),
-    )?.[1];
-    expect((item1!.element as HTMLInputElement).checked).toBe(true);
-    expect((item2!.element as HTMLInputElement).disabled).toBe(true);
+    const item1 = checkboxFor(wrapper, 'AC-2 · Statement AC-2_smt.a');
+    const item2 = checkboxFor(wrapper, 'AC-2 · Statement AC-2_smt.b');
+    expect((item1.element as HTMLInputElement).checked).toBe(true);
+    expect(item2.attributes('aria-disabled')).toBe('true');
     expect(wrapper.text()).toContain('Already imported');
   });
 
@@ -354,10 +334,7 @@ describe('ImportFromSspDialog', () => {
 
     const wrapper = await mountDialog('ac-2');
     // Also select the other upstream's cm-5 item.
-    const otherCheckbox = wrapper
-      .findAll('input[type="checkbox"]')
-      .find((c) => c.element.closest('label')?.textContent?.includes('cm-5'));
-    await otherCheckbox!.setValue(true);
+    await checkboxFor(wrapper, 'cm-5').setValue(true);
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();
@@ -407,10 +384,7 @@ describe('ImportFromSspDialog', () => {
     });
 
     const wrapper = await mountDialog('ac-2');
-    const otherCheckbox = wrapper
-      .findAll('input[type="checkbox"]')
-      .find((c) => c.element.closest('label')?.textContent?.includes('cm-5'));
-    await otherCheckbox!.setValue(true);
+    await checkboxFor(wrapper, 'cm-5').setValue(true);
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();

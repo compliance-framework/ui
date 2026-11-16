@@ -1,10 +1,19 @@
 <script setup lang="ts">
+/**
+ * A control's statements in the Implementation tree: each statement part with its components
+ * count, uniform implementation status, Inherited, Export (share it) and Open statement, which
+ * opens the statement editor in a drawer (creating the control's implementation first if there
+ * isn't one). The script is the classic view's.
+ */
+import Button from '@/ds/components/Button/Button.vue';
+import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import Tag from '@/ds/components/Tag/Tag.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { usePermissions } from '@/composables/usePermissions';
 import { v4 as uuidv4 } from 'uuid';
-import Drawer from '@/volt/Drawer.vue';
-import Message from '@/volt/Message.vue';
-import Badge from '@/volt/Badge.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
-import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
 import { computed, ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
@@ -13,9 +22,6 @@ import InheritedResponsibilityRows from './InheritedResponsibilityRows.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
-import TooltipTitle from '@/components/TooltipTitle.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
 import type {
@@ -48,11 +54,6 @@ const showCreateStatementModal = ref(false);
 const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
 
-const neutralCountClass =
-  'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
-const neutralPanelClass =
-  'border-transparent bg-transparent dark:border-transparent dark:bg-transparent';
-
 const statementStatusCuesByPartId = computed(() => {
   const cues = new Map<string, ImplementationStatusCue>();
   for (const [statementId, statement] of Object.entries(statements.value)) {
@@ -71,10 +72,6 @@ const selectedStatementStatusCue = computed(() => {
 
   return statementStatusCuesByPartId.value.get(selectedPart.value.id) ?? null;
 });
-
-// Purple to match the Inherited convention in SharedResponsibilityBlocks.
-const inheritedChipClass =
-  'rounded px-2 py-0.5 text-xs font-medium bg-purple-600 text-white dark:bg-purple-400 dark:text-purple-950';
 
 const controlDescription = computed(() => {
   const statementPart = control.parts?.find(
@@ -138,24 +135,6 @@ function getText(_part: Part): string | null {
   }
 
   return `${label ? label + ' ' : ''}${_part.prose ?? ''}`;
-}
-
-function onMouseOver(e: MouseEvent) {
-  const { target } = e;
-  if (target instanceof HTMLElement) {
-    if (target.closest("*[data-type='part']") instanceof HTMLElement) {
-      target.closest("*[data-type='part']")?.classList.add('hover');
-    }
-  }
-}
-
-function onMouseLeave(e: MouseEvent) {
-  const { target } = e;
-  if (target instanceof HTMLElement) {
-    if (target.closest("*[data-type='part']") instanceof HTMLElement) {
-      target.closest("*[data-type='part']")?.classList.remove('hover');
-    }
-  }
 }
 
 function updateStatement(statement: Statement) {
@@ -222,171 +201,24 @@ async function onPartSelect(e: Event, part: Part) {
   setStatementDrawer(true);
   drawerLoading.set(false);
 }
+// Statement parts, depth first, as one list: their labels (a., 1.) carry the nesting.
+const statementParts = computed(() => {
+  const out: Part[] = [];
+  const walk = (parts: Part[] | undefined) => {
+    for (const part of parts ?? []) {
+      out.push(part);
+      walk(part.parts);
+    }
+  };
+  walk(control.parts?.filter((part) => part.name == 'statement'));
+  return out;
+});
+const { can } = usePermissions();
+const mayExport = computed(
+  () =>
+    can(RESOURCES.SSP, ACTIONS.UPDATE) && can(RESOURCES.SSP, ACTIONS.EXPORT),
+);
 </script>
-
-<template>
-  <div class="part-display">
-    <div
-      class="rounded-lg border border-ccf-300 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-    >
-      <PartDisplay
-        v-for="part in control.parts?.filter(
-          (part) => part.name == 'statement',
-        ) || []"
-        :key="part.id"
-        :part="part"
-        @mouseover="onMouseOver"
-        @mouseout="onMouseLeave"
-        @selected="onPartSelect"
-      >
-        <template #default="{ part }">
-          <template
-            v-for="statusCue in [statementStatusCuesByPartId.get(part.id)]"
-            :key="`${part.id}-${statusCue?.label ?? 'none'}`"
-          >
-            <div
-              class="rounded-md border p-2"
-              :class="statusCue?.panelClass ?? neutralPanelClass"
-            >
-              <p
-                v-if="getText(part)"
-                class="prose prose-slate dark:prose-invert"
-              >
-                {{ getText(part) ?? '' }}
-              </p>
-              <div
-                v-if="statements[part.id]?.byComponents"
-                class="mt-2 flex flex-wrap items-center gap-2"
-              >
-                <span
-                  class="rounded px-2 py-0.5 text-xs font-bold"
-                  :class="statusCue?.countClass ?? neutralCountClass"
-                >
-                  {{ statements[part.id].byComponents?.length }}
-                </span>
-                <span
-                  v-if="statusCue"
-                  class="rounded px-2 py-0.5 text-xs font-medium"
-                  :class="statusCue.countClass"
-                >
-                  {{ statusCue.label }}
-                </span>
-                <span
-                  v-if="
-                    statementInheritedCount(statements[part.id]?.byComponents) >
-                    0
-                  "
-                  :class="inheritedChipClass"
-                >
-                  Inherited
-                </span>
-                <PermissionGate
-                  :resource="RESOURCES.SSP"
-                  :action="ACTIONS.UPDATE"
-                >
-                  <PermissionGate
-                    :resource="RESOURCES.SSP"
-                    :action="ACTIONS.EXPORT"
-                  >
-                    <SecondaryButton
-                      v-if="
-                        isExportableStatement(statusCue, statements[part.id])
-                      "
-                      type="button"
-                      size="small"
-                      class="ml-auto"
-                      title="Share this implementation with other systems"
-                      @click.stop="openExportDialog(part)"
-                    >
-                      Export
-                    </SecondaryButton>
-                  </PermissionGate>
-                </PermissionGate>
-              </div>
-              <InheritedResponsibilityRows
-                :control-id="control.id"
-                :statement-id="part.id"
-                :statement="statements[part.id]"
-                @select="onPartSelect($event, part)"
-              />
-            </div>
-          </template>
-        </template>
-      </PartDisplay>
-    </div>
-  </div>
-
-  <Drawer
-    v-model:visible="statementDrawerOpen"
-    position="right"
-    class="w-full! md:w-1/2! lg:w-3/5!"
-  >
-    <template #header>
-      <div class="min-w-0">
-        <div class="flex flex-wrap items-center gap-2">
-          <TooltipTitle
-            text="Implementation Statement"
-            tooltip-key="system.implementation.statement.drawer"
-            position="bottom"
-          />
-          <span
-            v-if="selectedStatementStatusCue"
-            class="rounded px-2 py-0.5 text-xs font-medium"
-            :class="selectedStatementStatusCue.countClass"
-          >
-            {{ selectedStatementStatusCue.label }}
-          </span>
-          <span v-if="selectedStatementInherited" :class="inheritedChipClass">
-            Inherited
-          </span>
-        </div>
-        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
-        <div class="mt-2 flex items-center gap-x-3">
-          <Badge class="text-base">{{ control.id }}</Badge>
-          <h4 class="font-medium truncate">{{ control.title }}</h4>
-        </div>
-        <p
-          v-if="controlDescription"
-          class="mt-1 text-sm text-gray-500 dark:text-slate-400"
-        >
-          {{ controlDescription }}
-        </p>
-        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
-      </div>
-    </template>
-    <ControlStatementImplementation
-      v-if="selectedPart && selectedImplementation"
-      @updated="updateStatement"
-      @imported="emit('imported', $event)"
-      :implementation="selectedImplementation"
-      :ssp-id="system.securityPlan?.uuid"
-      :statement="statements[selectedPart.id]"
-      :partid="selectedPart.id"
-    />
-    <div v-else-if="selectedPart && !selectedImplementation" class="p-4">
-      <Message severity="info" variant="simple">
-        <span class="flex items-center gap-2">
-          <i class="pi pi-spin pi-spinner"></i>
-          Loading implementation...
-        </span>
-      </Message>
-    </div>
-    <div v-else class="p-4">
-      <Message severity="secondary">No part selected.</Message>
-    </div>
-  </Drawer>
-
-  <ExportStatementDialog
-    v-if="exportTarget && system.securityPlan"
-    v-model:visible="showExportDialog"
-    :ssp-id="system.securityPlan.uuid"
-    :ssp-title="system.securityPlan.metadata?.title ?? 'This system'"
-    :control-id="control.id"
-    :statement-id="exportTarget.statementId"
-    :statement-text="exportTarget.statementText"
-    @saved="emit('exported')"
-  />
-</template>
 
 <style>
 .part-display .hover {
@@ -411,3 +243,90 @@ async function onPartSelect(e: Event, part: Part) {
   border-top-color: rgb(51 65 85);
 }
 </style>
+
+<template>
+  <Stack gap="3" as="ul">
+    <li v-for="part in statementParts" :key="part.id">
+      <Stack gap="2">
+        <Text v-if="getText(part)">{{ getText(part) }}</Text>
+        <Cluster gap="2">
+          <Tag
+            v-if="statements[part.id]?.byComponents"
+            :label="`${statements[part.id]!.byComponents!.length} component${statements[part.id]!.byComponents!.length === 1 ? '' : 's'}`"
+          />
+          <Tag
+            v-if="statementStatusCuesByPartId.get(part.id)"
+            :label="statementStatusCuesByPartId.get(part.id)!.label"
+          />
+          <Tag
+            v-if="
+              statementInheritedCount(statements[part.id]?.byComponents) > 0
+            "
+            label="Inherited"
+          />
+          <Button size="sm" icon="next" @click="onPartSelect($event, part)"
+            >Open statement</Button
+          >
+          <Button
+            v-if="
+              mayExport &&
+              isExportableStatement(
+                statementStatusCuesByPartId.get(part.id),
+                statements[part.id],
+              )
+            "
+            size="sm"
+            icon="share"
+            @click="openExportDialog(part)"
+            >Export</Button
+          >
+        </Cluster>
+        <InheritedResponsibilityRows
+          :control-id="control.id"
+          :statement-id="part.id"
+          :statement="statements[part.id]"
+          @select="onPartSelect($event, part)"
+        />
+      </Stack>
+    </li>
+  </Stack>
+  <Drawer
+    v-model:open="statementDrawerOpen"
+    :title="`${control.id} ${control.title ?? ''}`.trim()"
+    :description="controlDescription || undefined"
+  >
+    <Stack gap="4">
+      <Cluster gap="2">
+        <Text as="span" variant="label">Implementation statement</Text>
+        <Tag
+          v-if="selectedStatementStatusCue"
+          :label="selectedStatementStatusCue.label"
+        />
+        <Tag v-if="selectedStatementInherited" label="Inherited" />
+      </Cluster>
+      <ControlStatementImplementation
+        v-if="selectedPart && selectedImplementation"
+        :implementation="selectedImplementation"
+        :statement="statements[selectedPart.id]"
+        :ssp-id="system.securityPlan?.uuid"
+        :partid="selectedPart.id"
+        @updated="updateStatement"
+        @imported="emit('imported', $event)"
+      />
+      <Text v-else-if="selectedPart" variant="caption"
+        >Loading the implementation…</Text
+      >
+      <Text v-else variant="caption">No statement chosen.</Text>
+    </Stack>
+  </Drawer>
+  <ExportStatementDialog
+    v-if="exportTarget && system.securityPlan"
+    v-model:visible="showExportDialog"
+    :ssp-id="system.securityPlan.uuid"
+    :ssp-title="system.securityPlan.metadata?.title ?? 'This system'"
+    :control-id="control.id"
+    :statement-id="exportTarget.statementId"
+    :statement-text="exportTarget.statementText"
+    @saved="emit('exported')"
+  />
+</template>

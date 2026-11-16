@@ -20,6 +20,10 @@ vi.mock('@/stores/system.ts', () => ({
   }),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => permState.can }),
+}));
+
 vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
   useDataApi: () => ({
@@ -36,9 +40,8 @@ const stubs = {
     template: '<div data-testid="responsibility-rows" />',
   },
   Drawer: {
-    props: ['visible'],
-    template:
-      '<div v-if="visible" data-testid="statement-drawer"><slot /></div>',
+    props: ['open', 'title'],
+    template: '<div v-if="open" data-testid="statement-drawer"><slot /></div>',
   },
   Message: { template: '<div><slot /></div>' },
   TooltipTitle: { props: ['text'], template: '<span>{{ text }}</span>' },
