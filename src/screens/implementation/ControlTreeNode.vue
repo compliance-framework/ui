@@ -17,7 +17,7 @@ import { useControlTree } from './controlTree';
 /**
  * One node of the Implementation tree: a group (a disclosure holding its groups and controls) or
  * a control with its counts, risk and suggestion markers, evidence, and its implementation
- * editor. The editor is the classic one, embedded as a legacy island until it is rebuilt.
+ * editor (IndexControlImplementation).
  */
 defineOptions({ name: 'ControlTreeNode' });
 const props = defineProps<{ node: TreeNode }>();

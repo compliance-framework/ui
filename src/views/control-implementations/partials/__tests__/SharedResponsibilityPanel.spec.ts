@@ -181,17 +181,9 @@ vi.mock('@/composables/axios', async () => {
 
 const stubs = {
   RouterLink: { props: ['to'], template: '<a><slot /></a>' },
-  Badge: {
-    props: ['severity'],
-    template: '<span :data-severity="severity"><slot /></span>',
-  },
   Dialog: {
-    props: ['visible'],
-    template: '<div v-if="visible"><slot /></div>',
-  },
-  SecondaryButton: {
-    emits: ['click'],
-    template: '<button @click="$emit(\'click\', $event)"><slot /></button>',
+    props: ['open'],
+    template: '<div v-if="open"><slot /></div>',
   },
   SubscribeOfferingForm: {
     props: ['sspId', 'offering', 'scopedItemIds', 'preselectedItemIds'],
@@ -255,7 +247,8 @@ describe('SharedResponsibilityPanel', () => {
     expect(text).toContain('You approve requests');
     expect(text).toContain('Platform provides IdP');
     expect(text).toContain('From Meridian Platform · v2');
-    expect(text).toContain('drifted');
+    expect(text).toContain('Drifted');
+    expect(text).toContain('Action needed');
     expect(text).toContain('We review IdP access quarterly');
     expect(text).toContain('requirement-anchored export');
     expect(text).toContain('shared responsibility is tracked per statement');

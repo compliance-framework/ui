@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   inheritedResponsibilityRows,
   postureLabel,
-  postureSeverity,
+  responsibilityBadge,
+  satisfactionBadge,
   satisfactionLabel,
-  satisfactionSeverity,
 } from '../responsibility-posture';
 import type { LeveragedControl } from '@/types/ssp-leverage';
 import type { Statement } from '@/oscal';
@@ -31,18 +31,21 @@ function makeLink(overrides: Partial<LeveragedControl> = {}): LeveragedControl {
 }
 
 describe('responsibility posture helpers', () => {
-  it('renders plain-language posture labels and severities', () => {
+  it('renders plain-language posture labels and badges', () => {
     expect(postureLabel('satisfied')).toBe('Covered');
     expect(postureLabel('not-satisfied')).toBe('Not covered');
     expect(postureLabel('unknown')).toBe('No evidence yet');
     expect(postureLabel(undefined)).toBe('No evidence yet');
-    expect(postureSeverity('satisfied')).toBe('success');
-    expect(postureSeverity('not-satisfied')).toBe('danger');
-    expect(postureSeverity(undefined)).toBe('secondary');
+    expect(responsibilityBadge('satisfied').status).toBe('satisfied');
+    expect(responsibilityBadge('not-satisfied').status).toBe('not-satisfied');
+    expect(responsibilityBadge(undefined).status).toBe('unknown');
     expect(satisfactionLabel('full')).toBe('Implemented');
     expect(satisfactionLabel('partial')).toBe('Action needed');
-    expect(satisfactionSeverity('full')).toBe('success');
-    expect(satisfactionSeverity('partial')).toBe('warn');
+    expect(satisfactionBadge('full').status).toBe('implemented');
+    expect(satisfactionBadge('partial')).toEqual({
+      status: 'needs-evidence',
+      label: 'Action needed',
+    });
   });
 });
 

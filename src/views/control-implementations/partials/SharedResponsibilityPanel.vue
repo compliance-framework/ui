@@ -1,326 +1,24 @@
-<template>
-  <div class="space-y-4">
-    <div class="flex items-center gap-x-4">
-      <h4 class="font-medium text-xl">Shared Responsibility</h4>
-      <Badge v-if="rollupLoading" severity="secondary">Loading…</Badge>
-    </div>
-
-    <!-- A failed fetch must never render as "this system exports nothing": in a compliance
-         tool a reassuring negative that is really a broken request is the wrong way to fail.
-         Only a successful, empty response reaches the empty copy below. -->
-    <Message v-if="rollupError" severity="error" variant="outlined">
-      <div class="flex items-center justify-between gap-3">
-        <span>Could not load shared responsibility for this control.</span>
-        <SecondaryButton
-          type="button"
-          size="small"
-          :disabled="rollupLoading"
-          @click="refresh"
-        >
-          Retry
-        </SecondaryButton>
-      </div>
-    </Message>
-
-    <template v-else>
-      <!-- Provides -->
-      <section>
-        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-          Provides
-        </h5>
-        <div
-          v-if="!providesByStatement.length"
-          class="text-sm text-gray-500 dark:text-slate-400"
-        >
-          This system exports nothing for this control.
-        </div>
-        <div
-          v-for="group in providesByStatement"
-          :key="group.statementId"
-          class="mb-3 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-        >
-          <div class="text-sm font-medium dark:text-slate-300">
-            Statement {{ group.statementId }}
-          </div>
-          <!-- One entry per by-component: a statement can export from several components,
-             and each Edit has to open the by-component its rows actually belong to. -->
-          <div
-            v-for="component in group.components"
-            :key="component.byComponentUuid"
-            class="mt-2"
-          >
-            <div class="flex justify-between items-start">
-              <div class="text-xs text-gray-500 dark:text-slate-400">
-                {{ component.componentTitle || component.componentUuid }}
-                <Badge
-                  v-if="!component.offered"
-                  severity="secondary"
-                  class="ml-1"
-                >
-                  Not yet importable
-                </Badge>
-              </div>
-              <!-- Authoring is reachable from here too, not only from the SSP editor: this is
-                 the day-to-day surface, and the export editor was previously reachable from
-                 exactly one place. -->
-              <PermissionGate
-                :resource="RESOURCES.SSP"
-                :action="ACTIONS.UPDATE"
-              >
-                <SecondaryButton
-                  type="button"
-                  size="small"
-                  @click="emit('editProvides', component)"
-                >
-                  Edit
-                </SecondaryButton>
-              </PermissionGate>
-            </div>
-            <div
-              v-for="capability in component.provided"
-              :key="capability.uuid"
-              class="mt-1 text-xs"
-            >
-              <Badge severity="success">Provided</Badge>
-              <div class="ml-2 text-green-600 dark:text-green-400">
-                {{ capability.description }}
-              </div>
-              <div
-                v-for="responsibility in responsibilitiesFor(
-                  component,
-                  capability.uuid,
-                )"
-                :key="responsibility.uuid"
-                class="ml-2 text-orange-600 dark:text-orange-400"
-              >
-                Consumer responsibility: {{ responsibility.description }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Inherits -->
-      <section>
-        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-          Inherits
-        </h5>
-        <div
-          v-if="!inherits.length"
-          class="text-sm text-gray-500 dark:text-slate-400"
-        >
-          Nothing inherited for this control.
-        </div>
-        <div
-          v-for="row in inherits"
-          :key="row.inheritedUuid"
-          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-        >
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-sm dark:text-slate-300">
-              Statement {{ row.statementId }}
-            </span>
-            <Badge
-              v-if="row.satisfaction"
-              :severity="satisfactionSeverity(row)"
-            >
-              {{ row.satisfaction }}
-            </Badge>
-            <Badge v-if="row.status" :severity="statusSeverity(row.status)">
-              {{ row.status }}
-            </Badge>
-          </div>
-          <div class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-            From {{ row.upstreamSspTitle || row.upstreamSspId }} · v{{
-              row.offeringVersion
-            }}
-          </div>
-          <div class="text-xs text-purple-600 dark:text-purple-400 mt-1">
-            {{ row.description }}
-          </div>
-        </div>
-      </section>
-
-      <!-- Satisfies -->
-      <section>
-        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-          Satisfies
-        </h5>
-        <div
-          v-if="!satisfies.length"
-          class="text-sm text-gray-500 dark:text-slate-400"
-        >
-          No upstream responsibilities discharged for this control.
-        </div>
-        <div
-          v-for="row in satisfies"
-          :key="row.satisfiedUuid"
-          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-        >
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-sm dark:text-slate-300">
-              Statement {{ row.statementId }}
-            </span>
-          </div>
-          <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-            {{ row.description }}
-          </div>
-        </div>
-      </section>
-
-      <!-- Legacy -->
-      <section v-if="legacy.length">
-        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-          Legacy
-        </h5>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-          Legacy — shared responsibility is tracked per statement. These
-          requirement-level rows are read-only; delete them once their exports
-          live on a statement.
-        </p>
-        <div
-          v-for="row in legacy"
-          :key="row.byComponentUuid"
-          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded flex justify-between items-start"
-        >
-          <div class="text-xs dark:text-slate-300">
-            <div class="font-medium">{{ row.controlId }}</div>
-            <div class="text-gray-500 dark:text-slate-400">
-              {{ row.reason }}
-            </div>
-          </div>
-          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.DELETE">
-            <button
-              type="button"
-              class="text-red-500 hover:text-red-700 text-sm shrink-0 ml-2"
-              @click="
-                confirmDeleteDialog(() => deleteLegacy(row), {
-                  itemName: `${row.controlId} legacy row`,
-                  itemType: 'legacy component implementation',
-                })
-              "
-            >
-              Delete
-            </button>
-          </PermissionGate>
-        </div>
-      </section>
-    </template>
-
-    <!-- Available to import — its own fetch, so its own failure state. -->
-    <section>
-      <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-        Available to import
-      </h5>
-      <Message v-if="offersError" severity="error" variant="outlined">
-        <div class="flex items-center justify-between gap-3">
-          <span>Could not load the offerings available to import.</span>
-          <SecondaryButton
-            type="button"
-            size="small"
-            :disabled="offersLoading"
-            @click="refresh"
-          >
-            Retry
-          </SecondaryButton>
-        </div>
-      </Message>
-      <!-- Ahead of the empty copy: this is a cross-SSP read, and until it lands we do not
-           know whether anything exports this control. Claiming "no upstream system" for the
-           duration of the fetch is a reassuring negative produced by latency. -->
-      <div
-        v-else-if="offersLoading"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        Looking for upstream systems that export this control…
-      </div>
-      <div
-        v-else-if="!offers?.length"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        No upstream system exports this control.
-      </div>
-      <div
-        v-for="offer in offers ?? []"
-        :key="`${offer.offeringId}:${offer.itemId}`"
-        class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-      >
-        <div class="flex justify-between items-start gap-2">
-          <div class="text-sm dark:text-slate-300">
-            <div class="font-medium">
-              {{ offer.offeringTitle }} v{{ offer.offeringVersion }}
-            </div>
-            <div class="text-xs text-gray-500 dark:text-slate-400">
-              {{ offer.upstreamSspTitle || offer.upstreamSspId }} · Statement
-              {{ offer.statementId }}
-            </div>
-            <div
-              v-if="offer.provided"
-              class="text-xs text-green-600 dark:text-green-400 mt-1"
-            >
-              {{ offer.provided.description }}
-            </div>
-            <div
-              v-for="responsibility in offer.responsibilities ?? []"
-              :key="responsibility.uuid"
-              class="text-xs text-orange-600 dark:text-orange-400"
-            >
-              You would take on: {{ responsibility.description }}
-            </div>
-          </div>
-          <!-- Same double gate as the Leverage catalog: subscribing writes to this SSP. -->
-          <PermissionGate
-            :resource="RESOURCES.SSP_EXPORT_OFFERING"
-            :action="ACTIONS.SUBSCRIBE"
-          >
-            <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-              <SecondaryButton
-                type="button"
-                size="small"
-                @click="openImport(offer)"
-              >
-                Import implementation
-              </SecondaryButton>
-            </PermissionGate>
-          </PermissionGate>
-        </div>
-      </div>
-    </section>
-
-    <Dialog
-      v-model:visible="showImportModal"
-      size="xl"
-      modal
-      :header="`Import — ${importingOffer?.offeringTitle ?? ''}`"
-    >
-      <div
-        v-if="importingOffer && !importingOffering"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        Loading the offering…
-      </div>
-      <SubscribeOfferingForm
-        v-else-if="importingOffer && importingOffering"
-        :ssp-id="sspId"
-        :offering="importingOffering"
-        :scoped-item-ids="[importingOffer.itemId]"
-        :preselected-item-ids="[importingOffer.itemId]"
-        @cancel="closeImport"
-        @subscribed="handleSubscribed"
-      />
-    </Dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * A control's shared responsibility, in the Implementation drawer: what this system provides to
+ * importers (with Edit, per component), what it inherits and satisfies, legacy requirement-level
+ * rows (delete only), and upstream offerings available to import for this control.
+ */
 import { computed, ref, toRef } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
-import Badge from '@/volt/Badge.vue';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
+import Tag from '@/ds/components/Tag/Tag.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { satisfactionBadge } from './responsibility-posture';
 import SubscribeOfferingForm from '@/screens/configure/SubscribeOfferingForm.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
@@ -328,6 +26,7 @@ import { useSharedResponsibility } from '@/composables/useSharedResponsibility';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { latestRequest } from '@/utils/latest-request';
 import type { ControlImplementation } from '@/oscal';
+import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
   CatalogOffering,
@@ -354,6 +53,15 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const { can } = usePermissions();
+const canEdit = computed(() => can(RESOURCES.SSP, ACTIONS.UPDATE));
+const canDelete = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
+// Same double gate as the Leverage catalog: subscribing writes to this SSP.
+const canImport = computed(
+  () =>
+    can(RESOURCES.SSP_EXPORT_OFFERING, ACTIONS.SUBSCRIBE) &&
+    can(RESOURCES.SSP, ACTIONS.UPDATE),
+);
 const axiosInstance = useAuthenticatedInstance();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
@@ -407,21 +115,20 @@ function responsibilitiesFor(
   );
 }
 
-function satisfactionSeverity(row: { satisfaction?: string }) {
-  return row.satisfaction === 'full' ? 'success' : 'warn';
+function componentTitle(component: SharedResponsibilityProvided) {
+  return component.componentTitle || component.componentUuid;
 }
 
-function statusSeverity(status: SSPLeverageStatus) {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'drifted':
-      return 'warn';
-    case 'revoked':
-      return 'danger';
-    default:
-      return 'secondary';
-  }
+const LINK_STATUSES: Partial<Record<SSPLeverageStatus, StatusKey>> = {
+  active: 'capability-active',
+  drifted: 'capability-drifted',
+  revoked: 'capability-revoked',
+  superseded: 'capability-superseded',
+};
+
+function statusBadge(status: SSPLeverageStatus) {
+  const key = LINK_STATUSES[status];
+  return key ? { status: key } : { status: 'unknown' as const, label: status };
 }
 
 function errorDetail(error: unknown, fallback: string): string {
@@ -526,3 +233,249 @@ async function handleSubscribed(payload: {
   emit('imported', payload);
 }
 </script>
+
+<template>
+  <Panel title="Shared responsibility" :level="3">
+    <template v-if="rollupLoading" #actions>
+      <Text as="span" variant="caption">Loading…</Text>
+    </template>
+
+    <!-- A failed fetch must never render as "this system exports nothing": in a compliance
+         tool a reassuring negative that is really a broken request is the wrong way to fail.
+         Only a successful, empty response reaches the empty copy below. -->
+    <InlineMessage
+      v-if="rollupError"
+      tone="error"
+      title="Could not load shared responsibility for this control."
+    >
+      <template #actions>
+        <Button size="sm" :loading="rollupLoading" @click="refresh"
+          >Retry</Button
+        >
+      </template>
+    </InlineMessage>
+
+    <template v-else>
+      <PanelSection title="Provides" :level="4">
+        <Text v-if="!providesByStatement.length" variant="secondary"
+          >This system exports nothing for this control.</Text
+        >
+        <Stack v-else gap="4">
+          <Stack
+            v-for="group in providesByStatement"
+            :key="group.statementId"
+            gap="3"
+          >
+            <Text as="span" variant="label"
+              >Statement {{ group.statementId }}</Text
+            >
+            <!-- One entry per by-component: a statement can export from several components,
+                 and each Edit has to open the by-component its rows actually belong to. -->
+            <Stack
+              v-for="component in group.components"
+              :key="component.byComponentUuid"
+              gap="2"
+            >
+              <Cluster justify="between" gap="2">
+                <Cluster gap="2">
+                  <Text as="span" variant="secondary">{{
+                    componentTitle(component)
+                  }}</Text>
+                  <Tag v-if="!component.offered" label="Not yet importable" />
+                </Cluster>
+                <Button
+                  v-if="canEdit"
+                  size="sm"
+                  icon="edit"
+                  :aria-label="`Edit what ${componentTitle(component)} provides`"
+                  @click="emit('editProvides', component)"
+                  >Edit</Button
+                >
+              </Cluster>
+              <Stack as="ul" gap="2">
+                <li
+                  v-for="capability in component.provided"
+                  :key="capability.uuid"
+                >
+                  <Stack gap="1">
+                    <Text>{{ capability.description }}</Text>
+                    <Text
+                      v-for="responsibility in responsibilitiesFor(
+                        component,
+                        capability.uuid,
+                      )"
+                      :key="responsibility.uuid"
+                      variant="secondary"
+                      >Consumer responsibility:
+                      {{ responsibility.description }}</Text
+                    >
+                  </Stack>
+                </li>
+              </Stack>
+            </Stack>
+          </Stack>
+        </Stack>
+      </PanelSection>
+
+      <PanelSection title="Inherits" :level="4">
+        <Text v-if="!inherits.length" variant="secondary"
+          >Nothing inherited for this control.</Text
+        >
+        <Stack v-else as="ul" gap="4">
+          <li v-for="row in inherits" :key="row.inheritedUuid">
+            <Stack gap="1">
+              <Cluster gap="2">
+                <Text as="span" variant="label"
+                  >Statement {{ row.statementId }}</Text
+                >
+                <StatusBadge
+                  v-if="row.satisfaction"
+                  v-bind="satisfactionBadge(row.satisfaction)"
+                />
+                <StatusBadge
+                  v-if="row.status"
+                  v-bind="statusBadge(row.status)"
+                />
+              </Cluster>
+              <Text variant="caption"
+                >From {{ row.upstreamSspTitle || row.upstreamSspId }} · v{{
+                  row.offeringVersion
+                }}</Text
+              >
+              <Text>{{ row.description }}</Text>
+            </Stack>
+          </li>
+        </Stack>
+      </PanelSection>
+
+      <PanelSection title="Satisfies" :level="4">
+        <Text v-if="!satisfies.length" variant="secondary"
+          >No upstream responsibilities discharged for this control.</Text
+        >
+        <Stack v-else as="ul" gap="3">
+          <li v-for="row in satisfies" :key="row.satisfiedUuid">
+            <Stack gap="1">
+              <Text as="span" variant="label"
+                >Statement {{ row.statementId }}</Text
+              >
+              <Text>{{ row.description }}</Text>
+            </Stack>
+          </li>
+        </Stack>
+      </PanelSection>
+
+      <PanelSection v-if="legacy.length" title="Legacy" :level="4">
+        <Stack gap="3">
+          <Text variant="secondary"
+            >Legacy — shared responsibility is tracked per statement. These
+            requirement-level rows are read-only; delete them once their exports
+            live on a statement.</Text
+          >
+          <Stack as="ul" gap="3">
+            <li v-for="row in legacy" :key="row.byComponentUuid">
+              <Cluster justify="between" gap="2">
+                <Stack gap="1">
+                  <Text as="span" variant="label">{{ row.controlId }}</Text>
+                  <Text variant="secondary">{{ row.reason }}</Text>
+                </Stack>
+                <Button
+                  v-if="canDelete"
+                  size="sm"
+                  variant="danger"
+                  icon="delete"
+                  :aria-label="`Delete the ${row.controlId} legacy row`"
+                  @click="
+                    confirmDeleteDialog(() => deleteLegacy(row), {
+                      itemName: `${row.controlId} legacy row`,
+                      itemType: 'legacy component implementation',
+                    })
+                  "
+                  >Delete</Button
+                >
+              </Cluster>
+            </li>
+          </Stack>
+        </Stack>
+      </PanelSection>
+    </template>
+
+    <!-- Available to import — its own fetch, so its own failure state. -->
+    <PanelSection title="Available to import" :level="4">
+      <InlineMessage
+        v-if="offersError"
+        tone="error"
+        title="Could not load the offerings available to import."
+      >
+        <template #actions>
+          <Button size="sm" :loading="offersLoading" @click="refresh"
+            >Retry</Button
+          >
+        </template>
+      </InlineMessage>
+      <!-- Ahead of the empty copy: this is a cross-SSP read, and until it lands we do not
+           know whether anything exports this control. Claiming "no upstream system" for the
+           duration of the fetch is a reassuring negative produced by latency. -->
+      <Text v-else-if="offersLoading" variant="secondary"
+        >Looking for upstream systems that export this control…</Text
+      >
+      <Text v-else-if="!offers?.length" variant="secondary"
+        >No upstream system exports this control.</Text
+      >
+      <Stack v-else as="ul" gap="4">
+        <li
+          v-for="offer in offers"
+          :key="`${offer.offeringId}:${offer.itemId}`"
+        >
+          <Cluster justify="between" align="start" gap="2">
+            <Stack gap="1">
+              <Text as="span" variant="label"
+                >{{ offer.offeringTitle }} v{{ offer.offeringVersion }}</Text
+              >
+              <Text variant="caption"
+                >{{ offer.upstreamSspTitle || offer.upstreamSspId }} · Statement
+                {{ offer.statementId }}</Text
+              >
+              <Text v-if="offer.provided">{{
+                offer.provided.description
+              }}</Text>
+              <Text
+                v-for="responsibility in offer.responsibilities ?? []"
+                :key="responsibility.uuid"
+                variant="secondary"
+                >You would take on: {{ responsibility.description }}</Text
+              >
+            </Stack>
+            <!-- Same double gate as the Leverage catalog: subscribing writes to this SSP. -->
+            <Button
+              v-if="canImport"
+              size="sm"
+              :aria-label="`Import ${offer.offeringTitle} for statement ${offer.statementId}`"
+              @click="openImport(offer)"
+              >Import implementation</Button
+            >
+          </Cluster>
+        </li>
+      </Stack>
+    </PanelSection>
+
+    <Dialog
+      v-model:open="showImportModal"
+      size="l"
+      :title="`Import ${importingOffer?.offeringTitle ?? 'implementation'}`"
+      @update:open="(open) => open || closeImport()"
+    >
+      <Text v-if="importingOffer && !importingOffering" variant="secondary"
+        >Loading the offering…</Text
+      >
+      <SubscribeOfferingForm
+        v-else-if="importingOffer && importingOffering"
+        :ssp-id="sspId"
+        :offering="importingOffering"
+        :scoped-item-ids="[importingOffer.itemId]"
+        :preselected-item-ids="[importingOffer.itemId]"
+        @cancel="closeImport"
+        @subscribed="handleSubscribed"
+      />
+    </Dialog>
+  </Panel>
+</template>

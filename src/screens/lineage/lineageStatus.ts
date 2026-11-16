@@ -11,10 +11,6 @@ import type {
   LineageNode,
   LineageRisk,
 } from '@/composables/useLineage/types';
-import type {
-  ResponsibilityPostureValue,
-  SSPLeverageSatisfaction,
-} from '@/types/ssp-leverage';
 
 /**
  * The Compliance Map's badges in the shared status vocabulary: open-risk heat, risk status and
@@ -138,22 +134,10 @@ export function leverageBadge(
   return { status: 'inherited' };
 }
 
-/** How fully an inherited capability is implemented downstream. */
-export function satisfactionBadge(value: SSPLeverageSatisfaction): MapBadge {
-  return value === 'full'
-    ? { status: 'implemented' }
-    : { status: 'needs-evidence', label: 'Action needed' };
-}
-
-/** Whether evidence covers one inherited responsibility. */
-export function responsibilityBadge(
-  value?: ResponsibilityPostureValue,
-): MapBadge {
-  if (value === 'satisfied') return { status: 'satisfied', label: 'Covered' };
-  if (value === 'not-satisfied')
-    return { status: 'not-satisfied', label: 'Not covered' };
-  return { status: 'unknown', label: 'No evidence yet' };
-}
+export {
+  responsibilityBadge,
+  satisfactionBadge,
+} from '@/views/control-implementations/partials/responsibility-posture';
 
 const SEGMENT_STATUS: Record<string, StatusKey> = {
   satisfied: 'satisfied',

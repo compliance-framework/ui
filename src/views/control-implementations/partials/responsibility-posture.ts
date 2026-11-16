@@ -1,3 +1,4 @@
+import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 import type {
   LeveragedControl,
   ResponsibilityPostureValue,
@@ -19,27 +20,29 @@ export function postureLabel(value?: ResponsibilityPostureValue): string {
   }
 }
 
-export function postureSeverity(
-  value?: ResponsibilityPostureValue,
-): 'success' | 'danger' | 'secondary' {
-  switch (value) {
-    case 'satisfied':
-      return 'success';
-    case 'not-satisfied':
-      return 'danger';
-    default:
-      return 'secondary';
-  }
+/** Whether evidence covers one inherited responsibility, as a status badge. */
+export function responsibilityBadge(value?: ResponsibilityPostureValue): {
+  status: StatusKey;
+  label: string;
+} {
+  if (value === 'satisfied') return { status: 'satisfied', label: 'Covered' };
+  if (value === 'not-satisfied')
+    return { status: 'not-satisfied', label: 'Not covered' };
+  return { status: 'unknown', label: 'No evidence yet' };
 }
 
 export function satisfactionLabel(value: SSPLeverageSatisfaction): string {
   return value === 'full' ? 'Implemented' : 'Action needed';
 }
 
-export function satisfactionSeverity(
-  value: SSPLeverageSatisfaction,
-): 'success' | 'warn' {
-  return value === 'full' ? 'success' : 'warn';
+/** How fully an inherited capability is implemented downstream, as a status badge. */
+export function satisfactionBadge(value: SSPLeverageSatisfaction): {
+  status: StatusKey;
+  label?: string;
+} {
+  return value === 'full'
+    ? { status: 'implemented' }
+    : { status: 'needs-evidence', label: 'Action needed' };
 }
 
 export interface InheritedResponsibilityRow {

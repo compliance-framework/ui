@@ -3,11 +3,9 @@
  * This System > Implementation (/systems/:systemId/implementation): which profiles the system
  * implements, every control they bring in (grouped as in the catalog, searchable), how each is
  * implemented, and a drawer with a control's component statements, AI suggestions and shared
- * responsibilities. The data logic is the classic page's, unchanged; the per-control editors are
- * classic components embedded as legacy islands until they are rebuilt.
+ * responsibilities. The data logic is the classic page's, unchanged.
  */
 import { computed as dsComputed, ref as dsRef } from 'vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
@@ -1361,26 +1359,24 @@ provideControlTree({
           @save="(next) => saveByComponent(next, statementId)"
           @delete="(next) => deleteByComponent(next, statementId)"
         />
-        <LegacyPage>
-          <SharedResponsibilityPanel
-            v-if="selectedSspId && selectedDrawerControlId"
-            :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
-            :ssp-id="selectedSspId"
-            :control-id="selectedDrawerControlId"
-            @edit-provides="openProvidesEditor"
-            @imported="handleImported"
-          />
-          <ExportStatementDialog
-            v-if="selectedSspId && providesEditTarget"
-            v-model:visible="showProvidesEditDialog"
-            :ssp-id="selectedSspId"
-            :ssp-title="selectedSspTitle"
-            :control-id="providesEditTarget.controlId"
-            :statement-id="providesEditTarget.statementId"
-            :by-component-uuid="providesEditTarget.byComponentUuid"
-            @saved="handleProvidesSaved"
-          />
-        </LegacyPage>
+        <SharedResponsibilityPanel
+          v-if="selectedSspId && selectedDrawerControlId"
+          :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
+          :ssp-id="selectedSspId"
+          :control-id="selectedDrawerControlId"
+          @edit-provides="openProvidesEditor"
+          @imported="handleImported"
+        />
+        <ExportStatementDialog
+          v-if="selectedSspId && providesEditTarget"
+          v-model:visible="showProvidesEditDialog"
+          :ssp-id="selectedSspId"
+          :ssp-title="selectedSspTitle"
+          :control-id="providesEditTarget.controlId"
+          :statement-id="providesEditTarget.statementId"
+          :by-component-uuid="providesEditTarget.byComponentUuid"
+          @saved="handleProvidesSaved"
+        />
       </Stack>
     </Stack>
   </Drawer>

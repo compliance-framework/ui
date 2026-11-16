@@ -24,8 +24,7 @@ without a redesigned page around it. Pages fall into three kinds:
   the component definition, POA&M and assessment plan records (every tab, form and dialog);
   Preferences (with the Slack link); the system template page; New evidence filter (and the
   edit dialog); Import; About; and every signed-out page.
-- **Design-system page with classic islands inside**: Implementation (the per-control statement
-  editor and shared-responsibility panel), Configure System (the diagram editor), workflow run (step graph and panel), Diagnostics,
+- **Design-system page with classic islands inside**: Configure System (the diagram editor), workflow run (step graph and panel), Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -181,10 +180,20 @@ page structurally migrated, say so and I'll switch.
   before) rather than a multi-select; the attached profiles are listed above it.
 - **Decision:** a control with suggestions but no implementation has an enabled **Details**
   button and a "N suggestions" note, replacing the classic separate suggestion badge.
-- **Gap (island):** the inline implementation editor, evidence counter, component statements,
-  suggestions panel, shared responsibilities and export dialog are classic islands.
-- **Decision:** island-heavy pages are not in the axe browser checks yet (the islands would fail
-  on classic issues that their rebuild will fix).
+- **Update: no islands left.** The statement editor, evidence counter, component statements,
+  suggestions and export dialog were rebuilt earlier; now the drawer's Shared responsibility
+  panel (Provides, Inherits, Satisfies, Legacy, Available to import, and the import dialog), each
+  component statement's provided, left-to-importers and inherited lists, and the statement
+  editor's Inherited responsibilities (satisfaction, drift with Re-attest, "How we handle this",
+  linked evidence filters with link and create) are design-system too. The page joins the axe
+  checks. Their classic specs are ported (stubs only; every case kept). Checked live: the panel
+  renders in the drawer with no page errors. Local-dev has no exports or leverage links, so the
+  populated states are checked by the specs only. **Decisions:** badges use the shared status
+  vocabulary (satisfaction as Implemented/Action needed, link status as Active/Drifted/Revoked,
+  posture as Covered/Not covered/No evidence yet); the inherited section's heading tooltip pointed
+  at a tooltip key that didn't exist, so it is a caption instead; without update access the "How
+  we handle this" field is read-only rather than editable with no Save. Three classic export
+  editors left unused by the Control Implementation retirement are deleted.
 
 ### Configure System and the SSP Editor (`/systems/:id/configure/...`)
 

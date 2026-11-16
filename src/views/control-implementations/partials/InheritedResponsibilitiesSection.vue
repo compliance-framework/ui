@@ -3,281 +3,238 @@
        `?? []`, so a broken request and a genuinely empty result are indistinguishable by the
        time they get here. The error state is checked first and carries the Retry — the same
        rule the rollup follows in SharedResponsibilityPanel. -->
-  <div v-if="controlsError" class="mt-8">
-    <Message severity="error" variant="outlined">
-      <div class="flex items-center justify-between gap-3">
-        <span>Could not load inherited responsibilities for this control.</span>
-        <SecondaryButton type="button" size="small" @click="leveraged.refresh">
-          Retry
-        </SecondaryButton>
-      </div>
-    </Message>
-  </div>
+  <InlineMessage
+    v-if="controlsError"
+    tone="error"
+    title="Could not load inherited responsibilities for this control."
+  >
+    <template #actions>
+      <Button size="sm" @click="leveraged.refresh">Retry</Button>
+    </template>
+  </InlineMessage>
 
-  <div v-else-if="links.length" class="mt-8">
-    <div class="flex items-center mb-4 gap-x-4">
-      <TooltipTitle
-        text="Inherited responsibilities"
-        tooltip-key="control.implementation.inherited-responsibilities"
-        position="bottom"
-        underline-class="font-medium text-xl underline decoration-dotted cursor-help"
-      />
-    </div>
+  <Stack v-else-if="links.length" gap="4">
+    <Stack gap="1">
+      <Text as="span" variant="label">Inherited responsibilities</Text>
+      <Text variant="caption"
+        >What upstream systems leave to your team for this statement, and how
+        you handle it.</Text
+      >
+    </Stack>
 
-    <div
+    <Panel
       v-for="link in links"
       :key="link.id"
-      class="mb-4 rounded border border-purple-200 p-3 dark:border-purple-900"
+      :aria-label="`Inherited from ${link.inheritedFrom.offeringTitle}`"
+      dense
     >
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm font-medium dark:text-slate-300">
-          {{ link.inheritedFrom.offeringTitle }} v{{
-            link.inheritedFrom.offeringVersion
-          }}
-        </span>
-        <Badge :severity="satisfactionSeverity(link.satisfaction)">
-          {{ satisfactionLabel(link.satisfaction) }}
-        </Badge>
-      </div>
-      <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-        {{ link.inheritedFrom.offeringTitle }} covers part of this control.
-        These are the parts your team still handles.
-      </p>
+      <Stack gap="3">
+        <Cluster gap="2">
+          <Text as="span" variant="label"
+            >{{ link.inheritedFrom.offeringTitle }} v{{
+              link.inheritedFrom.offeringVersion
+            }}</Text
+          >
+          <StatusBadge v-bind="satisfactionBadge(link.satisfaction)" />
+        </Cluster>
+        <Text variant="secondary"
+          >{{ link.inheritedFrom.offeringTitle }} covers part of this control.
+          These are the parts your team still handles.</Text
+        >
 
-      <Message
-        v-if="link.status === 'drifted'"
-        severity="warn"
-        variant="outlined"
-        class="mt-2"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <span>
-            The provider's implementation changed since you imported it.
-          </span>
-          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-            <SecondaryButton
-              type="button"
-              size="small"
-              :disabled="reattestingLinkId === link.id"
+        <InlineMessage
+          v-if="link.status === 'drifted'"
+          tone="warning"
+          title="The provider's implementation changed since you imported it."
+        >
+          <template v-if="canUpdate" #actions>
+            <Button
+              size="sm"
+              :loading="reattestingLinkId === link.id"
               @click="reAttest(link)"
+              >Re-attest</Button
             >
-              {{
-                reattestingLinkId === link.id ? 'Re-attesting…' : 'Re-attest'
-              }}
-            </SecondaryButton>
-          </PermissionGate>
-        </div>
-      </Message>
-      <Message
-        v-else-if="link.status === 'revoked'"
-        severity="error"
-        variant="outlined"
-        class="mt-2"
-      >
-        The provider revoked this capability — its inherited coverage no longer
-        applies.
-      </Message>
+          </template>
+        </InlineMessage>
+        <InlineMessage
+          v-else-if="link.status === 'revoked'"
+          tone="error"
+          title="The provider revoked this capability — its inherited coverage no longer applies."
+        />
 
-      <div
-        v-for="row in rowsFor(link)"
-        :key="row.responsibilityUuid"
-        class="mt-3 rounded border border-ccf-200 p-3 dark:border-slate-600"
-      >
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- Once a dashboard is linked below, its evidence count carries the
-               coverage signal; the posture badge would just duplicate it. -->
-          <Badge
-            v-if="!filtersFor(row.responsibilityUuid).length"
-            :severity="postureSeverity(row.posture)"
-          >
-            {{ postureLabel(row.posture) }}
-          </Badge>
-          <span class="text-sm dark:text-slate-300">
-            {{ row.description }}
-          </span>
-        </div>
+        <Stack as="ul" gap="4">
+          <li v-for="row in rowsFor(link)" :key="row.responsibilityUuid">
+            <Stack gap="3">
+              <Cluster gap="2">
+                <!-- Once an evidence filter is linked below, its evidence count carries the
+                     coverage signal; the posture badge would just duplicate it. -->
+                <StatusBadge
+                  v-if="!filtersFor(row.responsibilityUuid).length"
+                  v-bind="responsibilityBadge(row.posture)"
+                />
+                <Text as="span">{{ row.description }}</Text>
+              </Cluster>
 
-        <template v-if="anchorFor(link)">
-          <!-- How we handle this → the statement's satisfied entry for this responsibility -->
-          <div class="mt-2">
-            <Label :for="`handled-${row.responsibilityUuid}`">
-              How we handle this
-            </Label>
-            <Textarea
-              :id="`handled-${row.responsibilityUuid}`"
-              :model-value="draftFor(row)"
-              class="w-full"
-              rows="2"
-              placeholder="Describe what your team does to meet this responsibility…"
-              @update:model-value="setDraft(row.responsibilityUuid, $event)"
-            />
-            <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-              <div class="mt-1 flex justify-end gap-2">
-                <button
-                  v-if="row.satisfiedUuid"
-                  type="button"
-                  class="text-red-500 hover:text-red-700 text-sm"
-                  @click="removeSatisfied(link, row)"
+              <!-- How we handle this → the statement's satisfied entry for this responsibility -->
+              <Stack v-if="anchorFor(link)" gap="2">
+                <FormField label="How we handle this">
+                  <Textarea
+                    :model-value="draftFor(row)"
+                    :rows="2"
+                    :readonly="!canUpdate"
+                    placeholder="Describe what your team does to meet this responsibility…"
+                    @update:model-value="
+                      setDraft(row.responsibilityUuid, $event)
+                    "
+                  />
+                </FormField>
+                <Cluster v-if="canUpdate" justify="end" gap="2">
+                  <Button
+                    v-if="row.satisfiedUuid"
+                    size="sm"
+                    variant="danger"
+                    @click="removeSatisfied(link, row)"
+                    >Remove</Button
+                  >
+                  <Button
+                    size="sm"
+                    :loading="savingResponsibility === row.responsibilityUuid"
+                    @click="saveSatisfied(link, row)"
+                    >Save</Button
+                  >
+                </Cluster>
+              </Stack>
+              <Text v-else variant="caption"
+                >This inherited entry is missing its component record —
+                re-import the capability to manage it here.</Text
+              >
+
+              <!-- Evidence filters attached to this responsibility -->
+              <Stack gap="2">
+                <Text as="span" variant="label">Evidence filters</Text>
+                <Stack
+                  v-if="filtersFor(row.responsibilityUuid).length"
+                  as="ul"
+                  gap="2"
                 >
-                  Remove
-                </button>
-                <SecondaryButton
-                  type="button"
-                  size="small"
-                  :disabled="savingResponsibility === row.responsibilityUuid"
-                  @click="saveSatisfied(link, row)"
+                  <li
+                    v-for="filter in filtersFor(row.responsibilityUuid)"
+                    :key="filter.filterId"
+                  >
+                    <Cluster gap="2">
+                      <Text as="span">{{ filter.filterName }}</Text>
+                      <DashboardEvidenceCounter
+                        :dashboard-id="filter.filterId"
+                      />
+                      <Button
+                        v-if="canUpdate"
+                        size="sm"
+                        variant="danger"
+                        :aria-label="`Unlink ${filter.filterName}`"
+                        @click="detachFilter(row.responsibilityUuid, filter)"
+                        >Unlink</Button
+                      >
+                    </Cluster>
+                    <Text
+                      v-if="canUpdate && filter.controlLinkCreated"
+                      variant="caption"
+                      >Unlinking also stops counting it toward the
+                      control.</Text
+                    >
+                  </li>
+                </Stack>
+                <!-- `filtersByResponsibility` is built from `responsibilityFilters ?? []`, so a
+                     failed filters fetch is empty exactly as "genuinely none" is. Telling a
+                     responsibility that DOES have filters that it has none contradicts reality
+                     rather than merely under-reporting it, so the error case is checked first. -->
+                <Text v-else-if="responsibilityFiltersError" variant="caption"
+                  >Could not load linked evidence filters for this
+                  responsibility.</Text
                 >
-                  {{
-                    savingResponsibility === row.responsibilityUuid
-                      ? 'Saving…'
-                      : 'Save'
-                  }}
-                </SecondaryButton>
-              </div>
-            </PermissionGate>
-          </div>
-        </template>
-        <p v-else class="mt-2 text-xs text-gray-500 dark:text-slate-400">
-          This inherited entry is missing its component record — re-import the
-          capability to manage it here.
-        </p>
+                <Text v-else variant="caption"
+                  >No evidence filters linked — link one and this
+                  responsibility's coverage follows its evidence.</Text
+                >
 
-        <!-- Evidence dashboards attached to this responsibility -->
-        <div class="mt-3">
-          <div class="text-xs font-medium text-gray-700 dark:text-slate-300">
-            Evidence filters
-          </div>
-          <div
-            v-for="filter in filtersFor(row.responsibilityUuid)"
-            :key="filter.filterId"
-            class="mt-1 flex flex-wrap items-center gap-2 text-xs"
-          >
-            <span class="dark:text-slate-300">{{ filter.filterName }}</span>
-            <DashboardEvidenceCounter :dashboard-id="filter.filterId" />
-            <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-              <button
-                type="button"
-                class="text-red-500 hover:text-red-700"
-                :title="
-                  filter.controlLinkCreated
-                    ? 'Also stops counting it toward the control'
-                    : undefined
-                "
-                @click="detachFilter(row.responsibilityUuid, filter)"
-              >
-                Unlink
-              </button>
-            </PermissionGate>
-          </div>
-          <!-- `filtersByResponsibility` is built from `responsibilityFilters ?? []`, so a
-               failed filters fetch is empty exactly as "genuinely none" is. Telling a
-               responsibility that DOES have dashboards that it has none contradicts reality
-               rather than merely under-reporting it, so the error case is checked first. -->
-          <div
-            v-if="responsibilityFiltersError"
-            class="mt-1 text-xs text-gray-500 italic dark:text-slate-400"
-          >
-            Could not load linked evidence filters for this responsibility.
-          </div>
-          <div
-            v-else-if="!filtersFor(row.responsibilityUuid).length"
-            class="mt-1 text-xs text-gray-500 dark:text-slate-400"
-          >
-            No evidence filters linked — link one and this responsibility's
-            coverage follows its evidence.
-          </div>
-
-          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-            <!-- Link an existing dashboard -->
-            <div
-              v-if="linkingResponsibility === row.responsibilityUuid"
-              class="mt-2 flex flex-wrap items-center gap-2"
-            >
-              <Select
-                v-model="selectedDashboard"
-                :options="linkableDashboards(row.responsibilityUuid)"
-                option-label="name"
-                filter
-                placeholder="Select an evidence filter…"
-                class="w-64"
-              />
-              <SecondaryButton
-                type="button"
-                size="small"
-                :disabled="!selectedDashboard || attaching"
-                @click="attachFilter(row.responsibilityUuid)"
-              >
-                {{ attaching ? 'Linking…' : 'Link' }}
-              </SecondaryButton>
-              <button
-                type="button"
-                class="text-sm text-gray-500 hover:text-gray-700 dark:text-slate-400"
-                @click="closeLinkPicker"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <!-- Create a new evidence dashboard, then link it to this responsibility -->
-            <EvidenceDashboardForm
-              v-else-if="creatingForResponsibility === row.responsibilityUuid"
-              v-model:name="dashboardName"
-              v-model:selected-baseline-evidence="selectedBaselineEvidence"
-              v-model:new-label-name="newLabelName"
-              v-model:new-label-value="newLabelValue"
-              :unique-evidence-titles="uniqueEvidenceTitles"
-              :evidence-loading="evidenceLoading"
-              :label-conditions="labelConditions"
-              :available-label-names="availableLabelNames"
-              :available-label-values="availableLabelValues"
-              :computed-filter="computedFilter"
-              :scope-followable="scopeFollowable"
-              v-model:follow-ssp-scope="followSspScope"
-              :is-submitting="creatingDashboard"
-              :server-error="createDashboardError"
-              @submit="createDashboard(row.responsibilityUuid)"
-              @cancel="closeCreatePicker"
-              @add-condition="addLabelCondition"
-              @remove-condition="removeLabelCondition"
-            />
-
-            <!-- Default: link an existing dashboard or create a new one -->
-            <div v-else class="mt-2 flex flex-wrap items-center gap-2">
-              <SecondaryButton
-                type="button"
-                size="small"
-                @click="openLinkPicker(row.responsibilityUuid)"
-              >
-                Link evidence filter
-              </SecondaryButton>
-              <SecondaryButton
-                type="button"
-                size="small"
-                @click="openCreatePicker(row.responsibilityUuid)"
-              >
-                Create evidence filter
-              </SecondaryButton>
-            </div>
-          </PermissionGate>
-        </div>
-      </div>
-    </div>
-  </div>
+                <template v-if="canUpdate">
+                  <DashboardLinkForm
+                    v-if="linkingResponsibility === row.responsibilityUuid"
+                    v-model:selected-dashboard="selectedDashboard"
+                    :dashboards="linkableDashboards(row.responsibilityUuid)"
+                    :is-submitting="attaching"
+                    @submit="attachFilter(row.responsibilityUuid)"
+                    @cancel="closeLinkPicker"
+                  />
+                  <EvidenceDashboardForm
+                    v-else-if="
+                      creatingForResponsibility === row.responsibilityUuid
+                    "
+                    v-model:name="dashboardName"
+                    v-model:selected-baseline-evidence="
+                      selectedBaselineEvidence
+                    "
+                    v-model:new-label-name="newLabelName"
+                    v-model:new-label-value="newLabelValue"
+                    v-model:follow-ssp-scope="followSspScope"
+                    :unique-evidence-titles="uniqueEvidenceTitles"
+                    :evidence-loading="evidenceLoading"
+                    :label-conditions="labelConditions"
+                    :available-label-names="availableLabelNames"
+                    :available-label-values="availableLabelValues"
+                    :computed-filter="computedFilter"
+                    :scope-followable="scopeFollowable"
+                    :is-submitting="creatingDashboard"
+                    :server-error="createDashboardError"
+                    @submit="createDashboard(row.responsibilityUuid)"
+                    @cancel="closeCreatePicker"
+                    @add-condition="addLabelCondition"
+                    @remove-condition="removeLabelCondition"
+                  />
+                  <Cluster v-else gap="2">
+                    <Button
+                      size="sm"
+                      icon="link"
+                      @click="openLinkPicker(row.responsibilityUuid)"
+                      >Link evidence filter</Button
+                    >
+                    <Button
+                      size="sm"
+                      icon="add"
+                      @click="openCreatePicker(row.responsibilityUuid)"
+                      >Create evidence filter</Button
+                    >
+                  </Cluster>
+                </template>
+              </Stack>
+            </Stack>
+          </li>
+        </Stack>
+      </Stack>
+    </Panel>
+  </Stack>
 </template>
 
 <script setup lang="ts">
+/**
+ * A statement's inherited responsibilities, in the statement editor: per upstream capability, its
+ * satisfaction and drift (with Re-attest), and per responsibility its evidence posture, "How we
+ * handle this" (the statement's satisfied entry) and the evidence filters linked to it.
+ */
 import { computed, inject, reactive, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
-import Badge from '@/volt/Badge.vue';
-import Label from '@/volt/Label.vue';
-import Message from '@/volt/Message.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import Select from '@/volt/Select.vue';
-import Textarea from '@/volt/Textarea.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
-import TooltipTitle from '@/components/TooltipTitle.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { usePermissions } from '@/composables/usePermissions';
 import DashboardEvidenceCounter from './DashboardEvidenceCounter.vue';
+import DashboardLinkForm from './DashboardLinkForm.vue';
 import EvidenceDashboardForm from './EvidenceDashboardForm.vue';
 import { useEvidenceDashboardForm } from '@/composables/useEvidenceDashboardForm';
 import { FilterParser } from '@/parsers/labelfilter';
@@ -296,10 +253,8 @@ import { uuid as newUuid } from '@/utils/uuid';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import {
   inheritedResponsibilityRows,
-  postureLabel,
-  postureSeverity,
-  satisfactionLabel,
-  satisfactionSeverity,
+  responsibilityBadge,
+  satisfactionBadge,
   type InheritedResponsibilityRow,
 } from './responsibility-posture';
 import type { ImplementedRequirement, Statement } from '@/oscal';
@@ -324,6 +279,8 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const { can } = usePermissions();
+const canUpdate = computed(() => can(RESOURCES.SSP, ACTIONS.UPDATE));
 const axiosInstance = useAuthenticatedInstance();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 

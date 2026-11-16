@@ -70,33 +70,30 @@ vi.mock('@/composables/axios', async () => {
   };
 });
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => permState.can,
+    permissionTooltip: () => '',
+  }),
+}));
+
 const stubs = {
-  Badge: {
-    props: ['severity'],
-    template: '<span :data-severity="severity"><slot /></span>',
-  },
-  Message: {
-    props: ['severity'],
-    template: '<div class="message"><slot /></div>',
-  },
-  Label: { template: '<label><slot /></label>' },
+  Tooltip: { template: '<slot />' },
   Textarea: {
     props: ['modelValue'],
     emits: ['update:modelValue'],
     template:
       '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
   },
-  Select: {
-    props: ['modelValue', 'options'],
-    emits: ['update:modelValue'],
-    template:
-      '<select data-testid="dashboard-picker" @change="$emit(\'update:modelValue\', options[+($event.target.value)])"><option v-for="(o, i) in options" :key="o.id" :value="i">{{ o.name }}</option></select>',
-  },
-  SecondaryButton: {
-    props: ['disabled'],
-    emits: ['click'],
-    template:
-      '<button type="button" :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
+  // The picker itself is covered by DashboardLinkForm's own use; here we only drive its
+  // v-model + submit to exercise the attach wiring.
+  DashboardLinkForm: {
+    props: ['selectedDashboard', 'dashboards'],
+    emits: ['update:selectedDashboard', 'submit', 'cancel'],
+    template: `<div>
+      <select data-testid="dashboard-picker" @change="$emit('update:selectedDashboard', dashboards[+($event.target.value)])"><option v-for="(o, i) in dashboards" :key="o.id" :value="i">{{ o.name }}</option></select>
+      <button type="button" @click="$emit('submit')">Link</button>
+    </div>`,
   },
   DashboardEvidenceCounter: {
     props: ['dashboardId'],
@@ -111,13 +108,6 @@ const stubs = {
       <button data-testid="submit-create" @click="$emit('submit')"></button>
       <button data-testid="cancel-create" @click="$emit('cancel')"></button>
     </div>`,
-  },
-  TooltipTitle: { props: ['text'], template: '<h4>{{ text }}</h4>' },
-  PermissionGate: {
-    template: '<span v-if="allowed"><slot /></span>',
-    computed: {
-      allowed: () => permState.can,
-    },
   },
 };
 

@@ -2,8 +2,8 @@
 /**
  * One component's statement for a control, in the Implementation drawer: the component, its open
  * risks for this control (linking to the register), the statement and implementation status,
- * and a menu to edit or delete it. Editing happens in place; the screen saves or deletes. The
- * shared-responsibility blocks below are a classic island.
+ * and a menu to edit or delete it, then what it shares (ByComponentResponsibilities). Editing
+ * happens in place; the screen saves or deletes.
  */
 import { computed, ref, watch } from 'vue';
 import VueMarkdown from 'vue-markdown-render';
@@ -32,8 +32,7 @@ import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
-import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
+import ByComponentResponsibilities from './ByComponentResponsibilities.vue';
 
 const props = defineProps<{
   byComponent: ByComponent;
@@ -178,9 +177,7 @@ const actions = computed<MenuEntry[]>(() => [
           >{{ byComponent.implementationStatus.remarks }}</Text
         >
       </template>
-      <LegacyPage>
-        <SharedResponsibilityBlocks :by-component="byComponent" />
-      </LegacyPage>
+      <ByComponentResponsibilities :by-component="byComponent" />
     </Stack>
     <ConfirmDialog
       v-model:open="confirmDelete"
