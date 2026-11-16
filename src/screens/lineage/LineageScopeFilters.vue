@@ -1,9 +1,17 @@
 <script setup lang="ts">
+/**
+ * The Compliance Map's scope: one system (or all), one of its components, and which catalog types
+ * to show (standards, policies, procedures), kept in the lineage scope store; with when the data
+ * was loaded and Refresh. The script is the classic scope bar's.
+ */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useTimeAgo } from '@vueuse/core';
-import Select from '@/volt/Select.vue';
-import SelectButton from '@/volt/SelectButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import Combobox from '@/ds/components/Combobox/Combobox.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import { useLineageScopeStore } from '@/stores/lineageScope';
 
@@ -22,7 +30,6 @@ const props = defineProps<{
 const emit = defineEmits<{ refresh: [] }>();
 
 const updatedAgo = useTimeAgo(computed(() => props.generatedAt ?? new Date()));
-const updatedTitle = computed(() => props.generatedAt?.toLocaleString() ?? '');
 
 const scopeStore = useLineageScopeStore();
 const sspStore = useSystemSecurityPlanStore();
@@ -47,7 +54,7 @@ async function loadSsps() {
       value: ssp.uuid,
     }));
   } catch (err) {
-    console.warn('[LineageScopeBar] failed to load SSPs', err);
+    console.warn('[LineageScopeFilters] failed to load SSPs', err);
     sspOptions.value = [];
   } finally {
     loadingSsps.value = false;
@@ -65,20 +72,23 @@ async function loadComponents(sspId: string | null) {
       value: c.uuid,
     }));
   } catch (err) {
-    console.warn('[LineageScopeBar] failed to load components', err);
+    console.warn('[LineageScopeFilters] failed to load components', err);
     componentOptions.value = [];
   } finally {
     loadingComponents.value = false;
   }
 }
 
-function onSsp(value: string | null) {
-  scopeStore.setSspId(value ?? null);
+function onSsp(value: string) {
+  scopeStore.setSspId(value || null);
 }
 
-function onComponent(value: string | null) {
-  scopeStore.setComponentId(value ?? null);
+function onComponent(value: string) {
+  scopeStore.setComponentId(value || null);
 }
+
+const ALL_SSPS: Option = { label: 'All systems', value: '' };
+const ALL_COMPONENTS: Option = { label: 'All components', value: '' };
 
 function onTypes(value: string[]) {
   scopeStore.setTypes(value ?? []);
@@ -96,74 +106,51 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-wrap items-end gap-4">
-    <label class="flex flex-col gap-1 text-sm">
-      <span class="font-medium text-surface-600 dark:text-surface-300"
-        >SSP</span
-      >
-      <Select
-        :modelValue="scopeStore.sspId"
-        :options="sspOptions"
-        optionLabel="label"
-        optionValue="value"
+  <Cluster gap="4" align="end">
+    <FormField label="System">
+      <Combobox
+        :model-value="scopeStore.sspId ?? ''"
+        :options="[ALL_SSPS, ...sspOptions]"
         :loading="loadingSsps"
-        showClear
-        filter
-        placeholder="All SSPs"
-        class="min-w-56"
-        @update:modelValue="onSsp"
+        placeholder="All systems"
+        @update:model-value="onSsp"
       />
-    </label>
-
-    <label class="flex flex-col gap-1 text-sm">
-      <span class="font-medium text-surface-600 dark:text-surface-300"
-        >Component</span
-      >
-      <Select
-        :modelValue="scopeStore.componentId"
-        :options="componentOptions"
-        optionLabel="label"
-        optionValue="value"
+    </FormField>
+    <FormField
+      label="Component"
+      :hint="scopeStore.sspId ? undefined : 'Choose a system first.'"
+    >
+      <Combobox
+        v-if="scopeStore.sspId"
+        :model-value="scopeStore.componentId ?? ''"
+        :options="[ALL_COMPONENTS, ...componentOptions]"
         :loading="loadingComponents"
-        :disabled="!scopeStore.sspId"
-        showClear
-        filter
         placeholder="All components"
-        class="min-w-56"
-        @update:modelValue="onComponent"
+        @update:model-value="onComponent"
       />
-    </label>
-
-    <label class="flex flex-col gap-1 text-sm">
-      <span class="font-medium text-surface-600 dark:text-surface-300"
-        >Types</span
-      >
-      <SelectButton
-        :modelValue="scopeStore.types"
-        :options="typeOptions"
-        optionLabel="label"
-        optionValue="value"
-        multiple
-        @update:modelValue="onTypes"
-      />
-    </label>
-
-    <div class="ml-auto flex items-center gap-3">
-      <span
+      <Text v-else as="span" variant="secondary">All components</Text>
+    </FormField>
+    <CheckboxGroup
+      :model-value="scopeStore.types"
+      legend="Types"
+      :options="typeOptions"
+      @update:model-value="onTypes"
+    />
+    <Cluster gap="3" align="center">
+      <Text
         v-if="generatedAt"
-        class="text-sm text-surface-500 dark:text-surface-400"
-        :title="updatedTitle"
+        as="span"
+        variant="caption"
         data-testid="lineage-updated"
-        >Updated {{ updatedAgo }}</span
+        >Updated {{ updatedAgo }}</Text
       >
-      <SecondaryButton
-        :disabled="refreshing"
+      <Button
+        icon="refresh"
+        :loading="refreshing"
         data-testid="lineage-refresh"
         @click="emit('refresh')"
+        >Refresh</Button
       >
-        <i class="pi pi-refresh mr-2" :class="{ 'pi-spin': refreshing }"></i>
-        Refresh
-      </SecondaryButton>
-    </div>
-  </div>
+    </Cluster>
+  </Cluster>
 </template>

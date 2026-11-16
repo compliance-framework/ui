@@ -156,9 +156,7 @@ describe('LineageNodeDrawer — inherited capabilities', () => {
     });
     const wrapper = mountDrawer({});
     await flushPromises();
-    expect(wrapper.text()).toContain(
-      'No inherited capabilities for this control.',
-    );
+    expect(wrapper.text()).toContain('This control inherits no capabilities.');
   });
 
   it('skips the fetch in fixtures mode', async () => {
@@ -169,7 +167,7 @@ describe('LineageNodeDrawer — inherited capabilities', () => {
       getMock.mock.calls.some((c) => String(c[0]).includes('/leverage')),
     ).toBe(false);
     expect(wrapper.text()).toContain(
-      'Inherited capabilities are available when connected to the API.',
+      'Inherited capabilities are shown when connected to the API.',
     );
   });
 

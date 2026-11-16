@@ -1,10 +1,21 @@
 <script setup lang="ts">
+/**
+ * Compliance Map → Tree (/lineage): standards, policies and procedures down to controls, risks and
+ * evidence, each node with its compliance and open-risk heat. Children load when a node first
+ * opens; what is open and selected survives a revisit (UI store). The script is the classic tree
+ * view's.
+ */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import Tree from '@/volt/Tree.vue';
-import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
-import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
-import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Tree from '@/ds/components/TreeItem/Tree.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import LineageNodeDrawer from './LineageNodeDrawer.vue';
+import LineageScopeFilters from './LineageScopeFilters.vue';
+import LineageTreeItem from './LineageTreeItem.vue';
+import { provideLineageTree } from './lineageTree';
 import { nodeDetailRoute } from '@/components/lineage/nodeMeta';
 import { useLineage } from '@/composables/useLineage';
 import type {
@@ -136,6 +147,23 @@ watch(drawerVisible, (isOpen) => {
 
 onMounted(loadRoots);
 
+provideLineageTree({
+  isOpen: (key) => Boolean(expandedKeys.value[key]),
+  setOpen(node, open) {
+    const next = { ...expandedKeys.value };
+    if (open) next[node.key] = true;
+    else delete next[node.key];
+    expandedKeys.value = next;
+    if (open) void onNodeExpand(node);
+  },
+  select: onNodeSelect,
+});
+
+const status = computed(() => {
+  if (loading.value && !nodes.value.length) return 'loading';
+  return nodes.value.length ? 'ready' : 'empty';
+});
+
 // Reload with current data from the API, keeping what is expanded and selected.
 // The button stays disabled until the whole reload is done, not just the roots,
 // so a second click cannot start a replay alongside this one.
@@ -162,43 +190,37 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-4">
-    <LineageScopeBar
-      :generatedAt="generatedAt"
+  <Stack gap="4">
+    <LineageScopeFilters
+      :generated-at="generatedAt"
       :refreshing="loading || refreshing"
       @refresh="onRefresh"
     />
-
-    <p
-      v-if="usingFixtures"
-      class="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+    <InlineMessage v-if="usingFixtures" tone="warning" title="Demo data">
+      <p>The lineage API isn't connected, so this is sample data.</p>
+    </InlineMessage>
+    <DataState
+      :status="status"
+      subject="the compliance map"
+      empty-title="Nothing in scope"
+      empty-body="No standards, policies or procedures match this scope."
+      icon="complianceMap"
     >
-      Showing demo fixture data — the lineage API isn't connected.
-    </p>
-
-    <div
-      class="min-h-0 flex-1 overflow-auto rounded-lg border border-surface-200 dark:border-surface-700"
-    >
-      <Tree
-        v-model:expandedKeys="expandedKeys"
-        :value="nodes"
-        :loading="loading"
-        selectionMode="single"
-        class="h-full"
-        @node-expand="onNodeExpand"
-        @node-select="onNodeSelect"
-      >
-        <template #default="{ node }">
-          <LineageNodeRow :node="(node as LineageTreeNode).data" />
-        </template>
-      </Tree>
-    </div>
-
+      <Stack gap="2">
+        <Text variant="caption"
+          >Open a node to see what it contains; Details shows its compliance,
+          risks and evidence.</Text
+        >
+        <Tree label="Compliance map">
+          <LineageTreeItem v-for="node in nodes" :key="node.key" :node="node" />
+        </Tree>
+      </Stack>
+    </DataState>
     <LineageNodeDrawer
       v-model:visible="drawerVisible"
       :node="selectedNode"
       :using-fixtures="usingFixtures"
       :ssp-id="scopeStore.sspId"
     />
-  </div>
+  </Stack>
 </template>

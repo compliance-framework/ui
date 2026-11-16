@@ -885,12 +885,12 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'lineage',
-        component: () => import('../views/lineage/LineageTreeView.vue'),
+        component: () => import('../screens/lineage/LineageTreeTab.vue'),
       },
       {
         path: 'graph',
         name: 'lineage-graph',
-        component: () => import('../views/lineage/LineageGraphView.vue'),
+        component: () => import('../screens/lineage/LineageGraphTab.vue'),
       },
     ],
   },

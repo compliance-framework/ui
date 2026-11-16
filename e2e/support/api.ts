@@ -276,6 +276,65 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         { data: { scope: {}, summary: {}, groups: [], controls: [] } },
       );
     }
+    // Compliance Map: two roots (one with open risk and a posture breakdown); no children.
+    if (path === '/api/lineage/roots') {
+      const node = (key: string, type: string, title: string, open: number) => ({
+        key,
+        'node-type': type,
+        title,
+        compliance: {
+          'total-controls': 4,
+          satisfied: 1,
+          'not-satisfied': 2,
+          unknown: 1,
+          'compliance-percent': 25,
+          'assessed-percent': 75,
+        },
+        risk: {
+          'open-score-sum': open,
+          'muted-score-sum': 0,
+          counts: {
+            open: open ? 1 : 0,
+            investigating: 0,
+            'mitigating-planned': 0,
+            'risk-accepted': 0,
+            'mitigating-implemented': 0,
+          },
+        },
+        linkage: {
+          policies: 1,
+          procedures: 0,
+          'operational-controls': 4,
+          unmapped: false,
+          unanchored: !open,
+        },
+        'ssp-breakdown': {
+          'total-ssps': 2,
+          satisfied: 2,
+          inherited: 0,
+          'not-satisfied': 3,
+          'not-applicable': 1,
+          planned: 0,
+          attention: 1,
+          'out-of-scope': 1,
+        },
+        'has-children': true,
+        'children-count': 2,
+      });
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            node('standard-catalog:iso', 'standard-catalog', 'ISO 27001', 30),
+            node('policy-catalog:sec', 'policy-catalog', 'Security policy', 0),
+          ],
+        },
+        { data: [] },
+      );
+    }
+    if (/^\/api\/lineage\/nodes\/[^/]+\/children$/.test(path))
+      return json(route, { data: [] });
     if (path === '/api/admin/risk-templates')
       return list(
         route,

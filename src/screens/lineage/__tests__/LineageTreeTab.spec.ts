@@ -25,9 +25,9 @@ vi.mock('@/composables/useLineage', async () => {
   };
 });
 
-import LineageTreeView from '../LineageTreeView.vue';
-import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
-import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
+import LineageTreeTab from '../LineageTreeTab.vue';
+import LineageNodeDrawer from '../LineageNodeDrawer.vue';
+import LineageScopeFilters from '../LineageScopeFilters.vue';
 import { useUIStore } from '@/stores/ui';
 
 const sampleTreeNode = {
@@ -82,7 +82,14 @@ const sampleChildNode = {
   },
 };
 
-describe('LineageTreeView (smoke)', () => {
+const stubs = {
+  LineageScopeFilters: true,
+  LineageNodeDrawer: true,
+  LineageNodeSummary: true,
+  Tooltip: { template: '<slot />' },
+};
+
+describe('LineageTreeTab (smoke)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootsMock.mockReset();
@@ -93,14 +100,9 @@ describe('LineageTreeView (smoke)', () => {
   });
 
   it('loads roots on mount', async () => {
-    mount(LineageTreeView, {
+    mount(LineageTreeTab, {
       global: {
-        stubs: {
-          Tree: true,
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-          LineageNodeRow: true,
-        },
+        stubs,
       },
     });
 
@@ -115,14 +117,9 @@ describe('LineageTreeView (smoke)', () => {
     uiStore.setLineageSelectedNodeKey(sampleChildNode.key);
     uiStore.setLineageDrawerOpen(true);
 
-    const wrapper = mount(LineageTreeView, {
+    const wrapper = mount(LineageTreeTab, {
       global: {
-        stubs: {
-          Tree: true,
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-          LineageNodeRow: true,
-        },
+        stubs,
       },
     });
 
@@ -145,14 +142,9 @@ describe('LineageTreeView (smoke)', () => {
     uiStore.setLineageSelectedNodeKey(sampleChildNode.key);
     uiStore.setLineageDrawerOpen(true);
 
-    const wrapper = mount(LineageTreeView, {
+    const wrapper = mount(LineageTreeTab, {
       global: {
-        stubs: {
-          Tree: true,
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-          LineageNodeRow: true,
-        },
+        stubs,
       },
     });
 
@@ -175,25 +167,64 @@ describe('LineageTreeView (smoke)', () => {
       { ...sampleTreeNode, children: undefined },
     ]);
 
-    const wrapper = mount(LineageTreeView, {
+    const wrapper = mount(LineageTreeTab, {
       global: {
-        stubs: {
-          Tree: true,
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-          LineageNodeRow: true,
-        },
+        stubs,
       },
     });
     await flushPromises();
     expect(fetchRootsMock).toHaveBeenCalledTimes(1);
     expect(fetchChildrenMock).toHaveBeenCalledTimes(1);
 
-    wrapper.findComponent(LineageScopeBar).vm.$emit('refresh');
+    wrapper.findComponent(LineageScopeFilters).vm.$emit('refresh');
     await flushPromises();
 
     expect(refreshMock).toHaveBeenCalledTimes(1);
     expect(fetchRootsMock).toHaveBeenCalledTimes(2);
     expect(fetchChildrenMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads a node's children the first time it opens, and remembers it is open", async () => {
+    const uiStore = useUIStore();
+    fetchRootsMock.mockResolvedValue([
+      { ...sampleTreeNode, children: undefined },
+    ]);
+    const wrapper = mount(LineageTreeTab, { global: { stubs } });
+    await flushPromises();
+    expect(fetchChildrenMock).not.toHaveBeenCalled();
+
+    const toggle = wrapper.get('button[aria-label="Expand SOC 2"]');
+    expect(toggle.attributes('aria-expanded')).toBe('false');
+    await toggle.trigger('click');
+    await flushPromises();
+
+    expect(fetchChildrenMock).toHaveBeenCalledWith(
+      sampleTreeNode.key,
+      expect.anything(),
+    );
+    expect(uiStore.lineageExpandedKeys).toEqual({ [sampleTreeNode.key]: true });
+    expect(
+      wrapper
+        .get('button[aria-label="Collapse SOC 2"]')
+        .attributes('aria-expanded'),
+    ).toBe('true');
+    expect(
+      wrapper.find('button[aria-label="Details for Child Policy"]').exists(),
+    ).toBe(true);
+  });
+
+  it('opens the drawer for a structural node from its Details button', async () => {
+    const uiStore = useUIStore();
+    const wrapper = mount(LineageTreeTab, { global: { stubs } });
+    await flushPromises();
+
+    await wrapper
+      .get('button[aria-label="Details for SOC 2"]')
+      .trigger('click');
+
+    expect(uiStore.lineageDrawerOpen).toBe(true);
+    expect(
+      wrapper.findComponent(LineageNodeDrawer).props('node'),
+    ).toMatchObject({ key: sampleTreeNode.key });
   });
 });

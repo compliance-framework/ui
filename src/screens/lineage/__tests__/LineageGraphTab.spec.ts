@@ -27,10 +27,16 @@ vi.mock('@/composables/useLineage', async () => {
   };
 });
 
-import LineageGraphView from '../LineageGraphView.vue';
-import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
-import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
+import LineageGraphTab from '../LineageGraphTab.vue';
+import LineageNodeDrawer from '../LineageNodeDrawer.vue';
+import LineageScopeFilters from '../LineageScopeFilters.vue';
 import { useUIStore } from '@/stores/ui';
+
+const stubs = {
+  LineageScopeFilters: true,
+  LineageNodeDrawer: true,
+  Tooltip: { template: '<slot />' },
+};
 
 function baseFields() {
   return {
@@ -102,7 +108,7 @@ function riskNode(
   };
 }
 
-describe('LineageGraphView risk grouping (smoke)', () => {
+describe('LineageGraphTab risk grouping (smoke)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootNodesMock.mockReset();
@@ -116,32 +122,29 @@ describe('LineageGraphView risk grouping (smoke)', () => {
       riskNode('Stale access', 42, 'ssp-2', 'Globex Staging'),
     ]);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
 
     await flushPromises();
 
     const text = wrapper.text();
-    expect(text).toContain('SSP: Acme Production');
-    expect(text).toContain('SSP: Globex Staging');
+    expect(text).toContain('Risks in Acme Production');
+    expect(text).toContain('Risks in Globex Staging');
     expect(text).toContain('Access Control');
     expect(text).toContain('Credential leak');
     expect(text).toContain('Stale access');
 
     // Worst-first: the higher-scored risk's SSP container renders before the other's.
-    expect(text.indexOf('SSP: Globex Staging')).toBeLessThan(
-      text.indexOf('SSP: Acme Production'),
+    expect(text.indexOf('Risks in Globex Staging')).toBeLessThan(
+      text.indexOf('Risks in Acme Production'),
     );
   });
 });
 
-describe('LineageGraphView persisted state', () => {
+describe('LineageGraphTab persisted state', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootNodesMock.mockReset();
@@ -157,12 +160,9 @@ describe('LineageGraphView persisted state', () => {
     const uiStore = useUIStore();
     uiStore.setLineageGraphPath([root.key]);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
 
@@ -183,12 +183,9 @@ describe('LineageGraphView persisted state', () => {
     uiStore.setLineageGraphSelectedNodeKey(node.key);
     uiStore.setLineageGraphDrawerOpen(true);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
 
@@ -207,12 +204,9 @@ describe('LineageGraphView persisted state', () => {
     uiStore.setLineageGraphSelectedNodeKey(node.key);
     uiStore.setLineageGraphDrawerOpen(true);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
 
@@ -227,51 +221,42 @@ describe('LineageGraphView persisted state', () => {
   });
 });
 
-describe('LineageGraphView column collapse', () => {
+describe('LineageGraphTab column collapse', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootNodesMock.mockReset();
     fetchChildNodesMock.mockReset();
-    // jsdom doesn't implement scrollIntoView; selectNode calls it after opening a column.
-    Element.prototype.scrollIntoView = vi.fn();
   });
 
-  it('re-clicking an open box collapses its child column instead of reopening it', async () => {
+  it("hiding an open node's children closes its column instead of reopening it", async () => {
     const root = groupNode('Standards', 1);
     const child = controlNode('Access Control');
     fetchRootNodesMock.mockResolvedValue([root]);
     fetchChildNodesMock.mockResolvedValue([child]);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
     await flushPromises();
 
-    const findBox = (title: string) =>
-      wrapper
-        .findAll('div.cursor-pointer')
-        .find((el) => el.text().includes(title));
-
-    await findBox('Standards')!.trigger('click');
+    await wrapper.get('button[aria-expanded="false"]').trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Access Control');
     expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
 
-    // Clicking the same (already open) box again should close the child
-    // column it opened, not immediately re-fetch and re-open it.
-    await findBox('Standards')!.trigger('click');
+    // Hiding the open node's children closes the column it opened, without re-fetching.
+    const hide = wrapper.get('button[aria-expanded="true"]');
+    expect(hide.text()).toBe('Hide children');
+    await hide.trigger('click');
     await flushPromises();
     expect(wrapper.text()).not.toContain('Access Control');
     expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('LineageGraphView refresh', () => {
+describe('LineageGraphTab refresh', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootNodesMock.mockReset();
@@ -285,12 +270,9 @@ describe('LineageGraphView refresh', () => {
     fetchChildNodesMock.mockResolvedValue([controlNode('Access Control')]);
     useUIStore().setLineageGraphPath([root.key]);
 
-    const wrapper = mount(LineageGraphView, {
+    const wrapper = mount(LineageGraphTab, {
       global: {
-        stubs: {
-          LineageScopeBar: true,
-          LineageNodeDrawer: true,
-        },
+        stubs,
       },
     });
     await flushPromises();
@@ -305,7 +287,7 @@ describe('LineageGraphView refresh', () => {
         }),
     );
 
-    const bar = wrapper.findComponent(LineageScopeBar);
+    const bar = wrapper.findComponent(LineageScopeFilters);
     bar.vm.$emit('refresh');
     await flushPromises();
 

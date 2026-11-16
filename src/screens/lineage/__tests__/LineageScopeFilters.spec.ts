@@ -9,17 +9,17 @@ vi.mock('@/stores/system-security-plans', () => ({
   }),
 }));
 
-import LineageScopeBar from '../LineageScopeBar.vue';
+import LineageScopeFilters from '../LineageScopeFilters.vue';
 
-const stubs = { Select: true, SelectButton: true };
+const stubs = { Combobox: true, CheckboxGroup: true };
 
-describe('LineageScopeBar refresh', () => {
+describe('LineageScopeFilters refresh', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
   it('emits refresh when the button is clicked', async () => {
-    const wrapper = mount(LineageScopeBar, { global: { stubs } });
+    const wrapper = mount(LineageScopeFilters, { global: { stubs } });
     await flushPromises();
 
     await wrapper.get('[data-testid="lineage-refresh"]').trigger('click');
@@ -27,20 +27,21 @@ describe('LineageScopeBar refresh', () => {
     expect(wrapper.emitted('refresh')).toHaveLength(1);
   });
 
-  it('disables the button while refreshing', async () => {
-    const wrapper = mount(LineageScopeBar, {
+  it('marks the button busy, and ignores clicks, while refreshing', async () => {
+    const wrapper = mount(LineageScopeFilters, {
       props: { refreshing: true },
       global: { stubs },
     });
     await flushPromises();
 
-    expect(
-      wrapper.get('[data-testid="lineage-refresh"]').attributes('disabled'),
-    ).toBeDefined();
+    const button = wrapper.get('[data-testid="lineage-refresh"]');
+    expect(button.attributes('aria-busy')).toBe('true');
+    await button.trigger('click');
+    expect(wrapper.emitted('refresh')).toBeUndefined();
   });
 
   it('shows how old the data is only once it is known', async () => {
-    const wrapper = mount(LineageScopeBar, { global: { stubs } });
+    const wrapper = mount(LineageScopeFilters, { global: { stubs } });
     await flushPromises();
     expect(wrapper.find('[data-testid="lineage-updated"]').exists()).toBe(
       false,

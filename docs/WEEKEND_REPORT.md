@@ -26,7 +26,7 @@ without a redesigned page around it. Pages fall into three kinds:
   edit dialog); Import; About; and every signed-out page.
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
-  section and the diagram editor), workflow run (step graph and panel), Compliance Map, Diagnostics,
+  section and the diagram editor), workflow run (step graph and panel), Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -1207,3 +1207,19 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Configure System → Characteristics:** the edit form (name, short name, sensitivity,
   description, remarks) is design-system, with Cancel, a loading state and save errors shown
   in the dialog (the classic form ignored a failed save). New spec.
+- **Compliance Map (`/lineage`), both tabs:** design-system, no islands left. The tree is a
+  disclosure tree (a new design-system `Tree`/`TreeItem`: real toggle buttons with
+  aria-expanded, children loaded on first open); the graph is drill-down columns (a new
+  `ColumnBrowser`: labelled columns scrolling sideways). Each node shows its type, open-risk
+  heat in words ("High open risk (30)", on the existing `heat-*` statuses), compliance spelled
+  out, its posture in the selected SSP, inheritance, and the posture distribution as a bar
+  with the same breakdown in text. The drawer (compliance, each SSP's status, inherited
+  capabilities, linkage, risks by status, evidence) and the scope filters (system, component,
+  types, Refresh) are rebuilt with the scripts kept. **Decisions:** the graph's hand-drawn
+  connector arrows are gone; the card whose children are open is marked (strong border and
+  accent) and its button reads "Hide children". Hover tooltips (control statement, bar
+  breakdown) are replaced by visible text. Added to the axe run with mocked lineage data.
+  Specs ported (tree, graph, summary, drawer, scope filters) plus specs for the two new
+  design-system pieces. **Not cleaned up yet:** `components/lineage/nodeMeta.ts` and
+  `heatScale.ts` still carry the classic Tailwind class strings beside the logic the map
+  uses.

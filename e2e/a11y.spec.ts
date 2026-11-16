@@ -48,6 +48,8 @@ const routes = [
   '/admin/subject-templates/st-1',
   '/admin/agents',
   '/admin/risk-templates',
+  '/lineage',
+  '/lineage/graph',
   '/admin/agents/ag-1',
   '/admin/agents/ag-1/keys',
   '/dashboards/create',
