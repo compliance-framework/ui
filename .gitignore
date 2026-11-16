@@ -41,3 +41,4 @@ test-husky.js
 # Playwright
 /test-results/
 /playwright-report/
+.claude/worktrees/

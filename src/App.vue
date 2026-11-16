@@ -2,7 +2,7 @@
 import { RouterView } from 'vue-router';
 import ToastRegion from '@/ds/components/ToastRegion/ToastRegion.vue';
 import ConfirmHost from '@/ds/components/ConfirmDialog/ConfirmHost.vue';
-import DemoFeedbackButton from '@/components/DemoFeedbackButton.vue';
+import DemoFeedbackButton from '@/screens/DemoFeedbackButton.vue';
 import ErrorDialogHost from '@/ds/components/Dialog/ErrorDialogHost.vue';
 import { useTheme } from '@/composables/useTheme';
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import DemoFeedbackButton from '../DemoFeedbackButton.vue';
 
 const { mockConfigStore, mockToastAdd } = vi.hoisted(() => ({
@@ -15,14 +16,6 @@ vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: mockToastAdd }),
 }));
 
-vi.mock('@/volt/Dialog.vue', () => ({
-  default: {
-    name: 'Dialog',
-    template: '<div v-if="visible" class="dialog"><slot /></div>',
-    props: ['visible', 'modal', 'header'],
-  },
-}));
-
 const FEEDBACK_URL = 'https://demo.example.com/api/feedback';
 
 async function mountButton(url: string | undefined) {
@@ -33,13 +26,11 @@ async function mountButton(url: string | undefined) {
   const wrapper = mount(DemoFeedbackButton, {
     global: {
       stubs: {
-        PrimaryButton: {
-          template:
-            '<button v-bind="$attrs" :disabled="disabled"><slot /></button>',
-          props: ['disabled'],
-        },
-        SecondaryButton: {
-          template: '<button v-bind="$attrs"><slot /></button>',
+        Tooltip: { template: '<slot />' },
+        Dialog: {
+          name: 'Dialog',
+          props: ['open', 'title'],
+          template: '<div v-if="open" class="dialog"><slot /></div>',
         },
       },
     },
@@ -50,6 +41,7 @@ async function mountButton(url: string | undefined) {
 
 describe('DemoFeedbackButton', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
   });
 
@@ -120,15 +112,6 @@ describe('DemoFeedbackButton', () => {
       ).value,
     ).toBe('Hi');
     expect(mockToastAdd).not.toHaveBeenCalled();
-  });
-
-  it('keeps the dialog narrower than the screen', async () => {
-    const wrapper = await mountButton(FEEDBACK_URL);
-    await wrapper.find('[data-testid="demo-feedback-button"]').trigger('click');
-    // An inline width: Volt's Dialog root classes (w-1/3, max-w-screen) override width classes.
-    const style = wrapper.find('.dialog').attributes('style');
-    expect(style).toMatch(/^width: min\(32rem/);
-    expect(style).toContain('calc(100vw - 2rem)');
   });
 
   it('does not send blank feedback', async () => {

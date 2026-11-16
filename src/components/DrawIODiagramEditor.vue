@@ -234,8 +234,17 @@ function onThemeChange(event: CustomEvent<ThemeChangeDetail>) {
 <template>
   <iframe
     ref="frame"
-    class="w-full"
+    class="drawio-frame"
+    :title="`Diagram editor: ${diagram.caption || 'diagram'}`"
     src="https://embed.diagrams.net/?spin=0&proto=json"
-    frameborder="0"
   ></iframe>
 </template>
+
+<style scoped>
+.drawio-frame {
+  display: block;
+  width: 100%;
+  height: var(--ds-height-embed);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+}
+</style>

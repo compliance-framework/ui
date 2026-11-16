@@ -30,6 +30,8 @@
   --ds-width-nav: 240px;
   --ds-width-rail: 64px;
   --ds-height-header: 64px;
+  /* An embedded editor (the draw.io frame). */
+  --ds-height-embed: 640px;
 }
 
 /* Breakpoints mirror breakpoints.ts (media queries cannot read custom properties). */

@@ -24,7 +24,7 @@ without a redesigned page around it. Pages fall into three kinds:
   the component definition, POA&M and assessment plan records (every tab, form and dialog);
   Preferences (with the Slack link); the system template page; New evidence filter (and the
   edit dialog); Import; About; and every signed-out page.
-- **Design-system page with classic islands inside**: Configure System (the diagram editor), Diagnostics,
+- **Design-system page with classic islands inside**: Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -1263,3 +1263,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Quarterly Access Review run and its definition: graphs, panel, no page errors. Specs ported
   (stubs and button names only) plus specs for `FlowGraph`, its layout and the reassign form.
   The Steps tab and a run page join the axe run, with mocked steps.
+- **Configure System and the demo feedback button have no classic parts left.** The draw.io
+  editor is an embedded frame either way; it lost its Tailwind class and its `LegacyPage`
+  wrapper, gained a title for screen readers (axe's frame-title rule), and now has a fixed
+  height (a new `--ds-height-embed` token, 640px) instead of the browser's default 150px
+  iframe height. Not checked live: no system in local-dev has a diagram. The demo feedback
+  button (public demo only) is a new design-system `FloatingButton` with a design-system
+  dialog; Send explains why it's unavailable (empty or too long) instead of greying out. Its
+  spec is ported (the test of the classic dialog's inline width is dropped: the design-system
+  dialog sizes itself). `FormTextarea` is deleted, now unused. `.claude/worktrees/` is
+  gitignored.

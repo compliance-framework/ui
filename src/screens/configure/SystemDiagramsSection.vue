@@ -2,7 +2,7 @@
 /**
  * Configure System → Authorization Boundary: the system's diagrams in three groups (authorization
  * boundary, network architecture, data flow), each open to edit in draw.io, with rename and
- * delete. The draw.io editor is a classic island and stays mounted while a diagram is closed.
+ * delete. The draw.io editor (an embedded frame) stays mounted while a diagram is closed.
  * The script is the classic DiagramsView's.
  */
 import { computed, onMounted, ref, type Ref } from 'vue';
@@ -11,7 +11,6 @@ import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
 import FormField from '@/ds/components/FormField/FormField.vue';
@@ -479,9 +478,7 @@ const groups = computed(() => [
                   />
                 </Cluster>
               </Cluster>
-              <LegacyPage>
-                <DrawIODiagramEditor :diagram="diagram" @saved="group.save" />
-              </LegacyPage>
+              <DrawIODiagramEditor :diagram="diagram" @saved="group.save" />
             </Stack>
           </Disclosure>
         </Stack>
