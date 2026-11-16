@@ -1,94 +1,55 @@
 <template>
-  <Dialog v-model:visible="localVisible" modal size="lg" header="Accept Risk">
-    <form class="space-y-4" @submit.prevent="submit">
-      <p class="text-sm text-gray-600 dark:text-slate-400">
-        Record the acceptance justification and next review deadline.
-      </p>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+  <Dialog v-model:open="localVisible" title="Accept risk" size="l">
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <Text
+          >Record why the risk is accepted and when it is next reviewed.</Text
         >
-          Justification <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          v-model="justification"
-          rows="4"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          placeholder="Explain why this risk is being accepted"
-          :disabled="submitting"
-          required
-        ></textarea>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Review Deadline <span class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="reviewDeadline"
-          type="datetime-local"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          :disabled="submitting"
-          required
-        />
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input
-          id="accept-owner-update-toggle"
+        <FormField label="Justification" required>
+          <Textarea v-model="justification" :rows="4" />
+        </FormField>
+        <FormField label="Review deadline" required hint="In the future.">
+          <TextInput v-model="reviewDeadline" type="datetime-local" />
+        </FormField>
+        <Checkbox
           v-model="includeOwnerUpdate"
-          type="checkbox"
-          :disabled="submitting"
+          label="Change the owners as part of accepting"
         />
-        <label
-          for="accept-owner-update-toggle"
-          class="text-sm text-gray-700 dark:text-slate-300"
-        >
-          Update owner assignments as part of acceptance
-        </label>
-      </div>
-
-      <RiskOwnerAssignment
-        v-if="includeOwnerUpdate"
-        :initial-value="ownerDraft"
-        :reset-key="ownerResetKey"
-        mode="embedded"
-        :disabled="submitting"
-        @change="onOwnerDraftChange"
-      />
-
-      <Message v-if="validationError" severity="error" variant="outlined">
-        {{ validationError }}
-      </Message>
-
-      <div class="flex justify-end gap-3 pt-2">
-        <button
-          type="button"
-          class="px-4 py-2 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200"
+        <RiskOwnerAssignment
+          v-if="includeOwnerUpdate"
+          :initial-value="ownerDraft"
+          :reset-key="ownerResetKey"
+          mode="embedded"
           :disabled="submitting"
-          @click="localVisible = false"
+          @change="onOwnerDraftChange"
+        />
+        <InlineMessage v-if="validationError" tone="error" title="Not accepted"
+          ><p>{{ validationError }}</p></InlineMessage
         >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
-          :disabled="submitting"
-        >
-          {{ submitting ? 'Accepting...' : 'Accept Risk' }}
-        </button>
-      </div>
+        <Cluster justify="end" gap="2">
+          <Button @click="localVisible = false">Cancel</Button>
+          <Button variant="primary" type="submit" :loading="submitting"
+            >Accept risk</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/** Accepting a risk: a justification, the next review deadline and, optionally, new owners. Emits `submit`; the risk page saves it. The script is the classic dialog's. */
+import Button from '@/ds/components/Button/Button.vue';
+import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { computed, ref, watch } from 'vue';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import {
   normalizeOwnerAssignments,

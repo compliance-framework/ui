@@ -1093,7 +1093,7 @@ describe('RiskScreen', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Risk Score History');
+    expect(wrapper.text()).toContain('Score history');
     expect(wrapper.text()).toContain('Baseline 4');
     expect(wrapper.text()).toContain('Residual 15');
     expect(wrapper.text()).toContain('Score Reassessed');

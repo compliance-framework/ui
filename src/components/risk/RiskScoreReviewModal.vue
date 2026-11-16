@@ -1,120 +1,84 @@
 <template>
-  <Dialog
-    v-model:visible="localVisible"
-    modal
-    size="lg"
-    header="Review Risk Score"
-  >
-    <form class="space-y-4" @submit.prevent="submit">
-      <p class="text-sm text-gray-600 dark:text-slate-400">
-        Reassess the risk likelihood and impact while the risk is open or
-        investigating.
-      </p>
-
-      <div
-        class="bg-slate-50 dark:bg-slate-800/60 border border-ccf-300 dark:border-slate-700 rounded-md p-3 space-y-2"
-      >
-        <p
-          class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+  <Dialog v-model:open="localVisible" title="Review risk score" size="l">
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <DescriptionList
+          :items="[
+            {
+              key: 'likelihood',
+              label: 'Current likelihood',
+              value: formatTokenLabel(currentLikelihood),
+            },
+            {
+              key: 'impact',
+              label: 'Current impact',
+              value: formatTokenLabel(currentImpact),
+            },
+          ]"
+        />
+        <FormField label="Likelihood" required>
+          <Select
+            v-model="likelihood"
+            data-testid="score-review-likelihood"
+            placeholder="Choose a likelihood"
+            :options="[
+              { value: 'low', label: 'Low' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]"
+          />
+        </FormField>
+        <FormField label="Impact" required>
+          <Select
+            v-model="impact"
+            data-testid="score-review-impact"
+            placeholder="Choose an impact"
+            :options="[
+              { value: 'low', label: 'Low' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]"
+          />
+        </FormField>
+        <FormField label="Notes" hint="Optional">
+          <Textarea
+            v-model="notes"
+            data-testid="score-review-notes"
+            :rows="3"
+          />
+        </FormField>
+        <InlineMessage v-if="validationError" tone="error" title="Not submitted"
+          ><p>{{ validationError }}</p></InlineMessage
         >
-          Current Score
-        </p>
-        <p class="text-sm text-gray-800 dark:text-slate-200">
-          <span class="font-semibold">Likelihood:</span>
-          <span class="ml-1">{{ formatTokenLabel(currentLikelihood) }}</span>
-        </p>
-        <p class="text-sm text-gray-800 dark:text-slate-200">
-          <span class="font-semibold">Impact:</span>
-          <span class="ml-1">{{ formatTokenLabel(currentImpact) }}</span>
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Likelihood <span class="text-red-500">*</span>
-        </label>
-        <select
-          v-model="likelihood"
-          data-testid="score-review-likelihood"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          :disabled="submitting"
-        >
-          <option value="">Select likelihood</option>
-          <option value="low">Low</option>
-          <option value="moderate">Moderate</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Impact <span class="text-red-500">*</span>
-        </label>
-        <select
-          v-model="impact"
-          data-testid="score-review-impact"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          :disabled="submitting"
-        >
-          <option value="">Select impact</option>
-          <option value="low">Low</option>
-          <option value="moderate">Moderate</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Notes
-        </label>
-        <textarea
-          v-model="notes"
-          data-testid="score-review-notes"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          placeholder="Optional reassessment notes"
-          :disabled="submitting"
-        ></textarea>
-      </div>
-
-      <Message v-if="validationError" severity="error" variant="outlined">
-        {{ validationError }}
-      </Message>
-
-      <div class="flex justify-end gap-3 pt-2">
-        <button
-          type="button"
-          class="px-4 py-2 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200"
-          :disabled="submitting"
-          @click="localVisible = false"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          data-testid="score-review-modal-submit"
-          class="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
-          :disabled="submitting"
-        >
-          {{ submitting ? 'Submitting...' : 'Review Risk Score' }}
-        </button>
-      </div>
+        <Cluster justify="end" gap="2">
+          <Button @click="localVisible = false">Cancel</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            data-testid="score-review-modal-submit"
+            :loading="submitting"
+            >Review risk score</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/** Reassessing an open or investigating risk: new likelihood and impact, with notes. Emits `submit`; the risk page saves it. The script is the classic dialog's. */
+import Button from '@/ds/components/Button/Button.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { computed, ref, watch } from 'vue';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
 
 type RiskScoreLevel = 'low' | 'moderate' | 'high' | 'critical';
 

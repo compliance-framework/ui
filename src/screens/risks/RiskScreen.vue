@@ -26,7 +26,6 @@ import Textarea from '@/ds/components/Textarea/Textarea.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
@@ -3334,13 +3333,11 @@ const transitionFacts = computed(() =>
             ><p>{{ ownerSaveError }}</p></InlineMessage
           >
           <DescriptionList :items="overviewFacts" />
-          <LegacyPage>
-            <RiskScoreHistoryWidget
-              :snapshots="riskScoreHistory"
-              :loading="loadingScoreHistory"
-              :error="scoreHistoryLoadError"
-            />
-          </LegacyPage>
+          <RiskScoreHistoryWidget
+            :snapshots="riskScoreHistory"
+            :loading="loadingScoreHistory"
+            :error="scoreHistoryLoadError"
+          />
           <Panel title="Workflow state" :level="2">
             <Stack gap="3">
               <Text
@@ -3776,9 +3773,10 @@ const transitionFacts = computed(() =>
           </Cluster>
         </Stack>
 
-        <LegacyPage v-else-if="activeTab === 'poam-items'">
-          <RiskPoamItemsTab :risk-id="riskId!" />
-        </LegacyPage>
+        <RiskPoamItemsTab
+          v-else-if="activeTab === 'poam-items'"
+          :risk-id="riskId!"
+        />
       </Tabs>
     </Stack>
 

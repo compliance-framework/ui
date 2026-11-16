@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import RiskScoreHistoryWidget from '@/components/risk/RiskScoreHistoryWidget.vue';
 import type { RiskScoreSnapshot } from '@/utils/risk-dashboard';
 
@@ -24,6 +25,7 @@ function makeSnapshot(
 
 describe('RiskScoreHistoryWidget', () => {
   it('sorts snapshots chronologically for chart data and latest metadata', () => {
+    setActivePinia(createPinia());
     const wrapper = mount(RiskScoreHistoryWidget, {
       props: {
         snapshots: [
@@ -51,7 +53,7 @@ describe('RiskScoreHistoryWidget', () => {
         stubs: {
           LineChart: {
             name: 'LineChart',
-            props: ['data', 'options'],
+            props: ['series', 'label', 'yMax'],
             template: '<div />',
           },
         },
@@ -59,10 +61,23 @@ describe('RiskScoreHistoryWidget', () => {
     });
 
     const chart = wrapper.findComponent({ name: 'LineChart' });
-    expect(chart.props('data')).toMatchObject({
-      labels: ['2026-03-01', '2026-03-03'],
-      datasets: [{ data: [4, 4] }, { data: [4, 15] }],
-    });
+    expect(chart.props('series')).toEqual([
+      {
+        name: 'Baseline score',
+        points: [
+          { x: '2026-03-01', y: 4 },
+          { x: '2026-03-03', y: 4 },
+        ],
+      },
+      {
+        name: 'Residual score',
+        points: [
+          { x: '2026-03-01', y: 4 },
+          { x: '2026-03-03', y: 15 },
+        ],
+      },
+    ]);
+    expect(chart.props('yMax')).toBe(15);
     expect(wrapper.text()).toContain('Residual 15');
     expect(wrapper.text()).toContain('Score Reassessed');
     expect(wrapper.text()).toContain('Critical');

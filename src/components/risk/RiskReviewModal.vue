@@ -1,105 +1,72 @@
 <template>
-  <Dialog v-model:visible="localVisible" modal size="lg" header="Review Risk">
-    <form class="space-y-4" @submit.prevent="submit">
-      <p class="text-sm text-gray-600 dark:text-slate-400">
-        Review the accepted risk and either extend its review horizon or reopen
-        it for investigation.
-      </p>
-
-      <div
-        class="bg-slate-50 dark:bg-slate-800/60 border border-ccf-300 dark:border-slate-700 rounded-md p-3 space-y-2"
-      >
-        <p
-          class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wide"
+  <Dialog v-model:open="localVisible" title="Review risk" size="l">
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <Text
+          >Extend the accepted risk's review deadline, or reopen it for
+          investigation.</Text
         >
-          Current Acceptance
-        </p>
-        <p class="text-sm text-gray-800 dark:text-slate-200">
-          <span class="font-semibold">Justification:</span>
-          <span class="ml-1">{{ acceptanceJustification || 'N/A' }}</span>
-        </p>
-        <p class="text-sm text-gray-800 dark:text-slate-200">
-          <span class="font-semibold">Review Deadline:</span>
-          <span class="ml-1">{{ formattedCurrentDeadline }}</span>
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Decision <span class="text-red-500">*</span>
-        </label>
-        <select
-          v-model="decision"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          :disabled="submitting"
-        >
-          <option value="extend">Extend</option>
-          <option value="reopen">Reopen</option>
-        </select>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Next Review Deadline
-          <span v-if="decision === 'extend'" class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="nextReviewDeadline"
-          type="datetime-local"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          :disabled="submitting || decision === 'reopen'"
-          :required="decision === 'extend'"
+        <DescriptionList
+          :items="[
+            {
+              key: 'justification',
+              label: 'Acceptance justification',
+              value: acceptanceJustification || '',
+            },
+            {
+              key: 'deadline',
+              label: 'Current review deadline',
+              value: formattedCurrentDeadline,
+            },
+          ]"
         />
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+        <FormField label="Decision" required>
+          <Select
+            v-model="decision"
+            :options="[
+              { value: 'extend', label: 'Extend' },
+              { value: 'reopen', label: 'Reopen' },
+            ]"
+          />
+        </FormField>
+        <FormField
+          v-if="decision === 'extend'"
+          label="Next review deadline"
+          required
         >
-          Notes
-        </label>
-        <textarea
-          v-model="notes"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
-          placeholder="Optional review notes"
-          :disabled="submitting"
-        ></textarea>
-      </div>
-
-      <Message v-if="validationError" severity="error" variant="outlined">
-        {{ validationError }}
-      </Message>
-
-      <div class="flex justify-end gap-3 pt-2">
-        <button
-          type="button"
-          class="px-4 py-2 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200"
-          :disabled="submitting"
-          @click="localVisible = false"
+          <TextInput v-model="nextReviewDeadline" type="datetime-local" />
+        </FormField>
+        <FormField label="Notes" hint="Optional">
+          <Textarea v-model="notes" :rows="3" />
+        </FormField>
+        <InlineMessage v-if="validationError" tone="error" title="Not submitted"
+          ><p>{{ validationError }}</p></InlineMessage
         >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
-          :disabled="submitting"
-        >
-          {{ submitting ? 'Submitting...' : 'Submit Review' }}
-        </button>
-      </div>
+        <Cluster justify="end" gap="2">
+          <Button @click="localVisible = false">Cancel</Button>
+          <Button variant="primary" type="submit" :loading="submitting"
+            >Submit review</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/** Reviewing an accepted risk: extend its review deadline or reopen it, with notes. Emits `submit`; the risk page saves it. The script is the classic dialog's. */
+import Button from '@/ds/components/Button/Button.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { computed, ref, watch } from 'vue';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
 import type { RiskReviewDecision } from '@/utils/risk-workflow';
 
 interface RiskReviewSubmitPayload {

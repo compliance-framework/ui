@@ -1,404 +1,128 @@
 <template>
-  <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-slate-200">
-          Mitigation Plan
-        </h3>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-          Mitigation items tracking this risk
-        </p>
-      </div>
-      <button
-        @click="showCreateModal = true"
-        class="inline-flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-xs font-medium"
+  <Stack gap="4">
+    <Cluster justify="between" gap="3">
+      <Text>The POA&amp;M items tracking how this risk is mitigated.</Text>
+      <Button variant="primary" icon="add" @click="showCreateModal = true"
+        >Create a mitigation plan</Button
       >
-        <svg
-          class="w-3.5 h-3.5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        Create a Mitigation Plan
-      </button>
-    </div>
-
-    <!-- Loading -->
-    <div
-      v-if="loading"
-      class="text-sm text-gray-500 dark:text-slate-400 py-4 text-center"
+    </Cluster>
+    <DataState
+      :status="loading ? 'loading' : poamItems.length ? 'ready' : 'empty'"
+      subject="the mitigation plans"
+      empty-title="No mitigation plans yet"
+      empty-body="Create one to start tracking mitigation tasks."
+      skeleton="panel"
     >
-      Loading Mitigation Plans...
-    </div>
-
-    <!-- Empty state -->
-    <div
-      v-else-if="poamItems.length === 0"
-      class="text-center py-8 border border-dashed border-ccf-300 dark:border-slate-600 rounded-md"
-    >
-      <svg
-        class="w-8 h-8 text-gray-400 mx-auto mb-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-        />
-      </svg>
-      <p class="text-sm text-gray-500 dark:text-slate-400">
-        No Mitigation Plans linked to this risk.
-      </p>
-      <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">
-        Create a mitigation plan to start tracking mitigation tasks.
-      </p>
-    </div>
-
-    <!-- Mitigation Plans list -->
-    <div v-else class="space-y-3">
-      <div
-        v-for="item in poamItems"
-        :key="item.id"
-        class="border border-ccf-200 dark:border-slate-700 rounded-md overflow-hidden group/item"
-      >
-        <!-- Item header -->
-        <div
-          class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/60 cursor-pointer"
-          @click="toggleExpanded(item.id)"
+      <Stack gap="3">
+        <Disclosure
+          v-for="item in poamItems"
+          :key="item.id"
+          :label="item.title"
         >
-          <div class="flex items-center gap-3 min-w-0">
-            <!-- Expand chevron -->
-            <svg
-              class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform"
-              :class="{ 'rotate-90': expandedIds.has(item.id) }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-
-            <div class="min-w-0">
-              <p
-                class="text-sm font-medium text-gray-900 dark:text-slate-200 truncate"
-              >
-                {{ item.title }}
-              </p>
-              <div class="flex flex-wrap items-center gap-2 mt-0.5">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                  :class="statusBadgeClass(item.status)"
-                >
-                  {{ statusLabel(item.status) }}
-                </span>
-                <span
-                  v-if="item.milestones && item.milestones.length > 0"
-                  class="text-xs text-gray-500 dark:text-slate-400"
-                >
-                  {{ completedMilestones(item) }}/{{ item.milestones.length }}
-                  milestones
-                </span>
-                <span
+          <Stack gap="4">
+            <Cluster justify="between" gap="2">
+              <Cluster gap="2">
+                <Tag :label="statusLabel(item.status)" />
+                <Text
                   v-if="item.plannedCompletionDate"
-                  class="text-xs text-gray-500 dark:text-slate-400"
+                  as="span"
+                  variant="caption"
+                  >Due {{ formatDate(item.plannedCompletionDate) }}</Text
                 >
-                  Due {{ formatDate(item.plannedCompletionDate) }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Progress bar (compact) & Actions -->
-          <div class="flex items-center gap-4 flex-shrink-0 ml-4">
-            <!-- Edit Action -->
-            <button
-              @click.stop="openEditModal(item)"
-              class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 opacity-0 group-hover/item:opacity-100 transition-opacity"
-              title="Edit Mitigation Plan"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </button>
-
-            <div
+              </Cluster>
+              <Button icon="edit" @click="openEditModal(item)">Edit</Button>
+            </Cluster>
+            <ProgressBar
               v-if="item.milestones && item.milestones.length > 0"
-              class="flex items-center gap-2"
-            >
-              <div
-                class="w-24 bg-gray-200 dark:bg-slate-700 rounded-full h-1.5"
-              >
-                <div
-                  class="h-1.5 rounded-full"
-                  :class="
-                    milestoneProgress(item) === 100
-                      ? 'bg-green-500'
-                      : 'bg-blue-500'
-                  "
-                  :style="{ width: `${milestoneProgress(item)}%` }"
-                />
-              </div>
-              <span
-                class="text-xs text-gray-500 dark:text-slate-400 w-8 text-right"
-              >
-                {{ milestoneProgress(item) }}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Expanded milestone list -->
-        <div
-          v-if="expandedIds.has(item.id)"
-          class="p-3 border-t border-ccf-200 dark:border-slate-700"
-        >
-          <PoamItemMilestones :poam-item-id="item.id" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Create Mitigation Plan modal (simplified — pre-fills riskId) -->
-    <Dialog
-      v-model:visible="showCreateModal"
-      header="Create a Mitigation Plan from Risk"
-      modal
-      :style="{ width: '560px' }"
-    >
-      <div class="space-y-4 py-2">
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-          >
-            Title <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="createForm.title"
-            type="text"
-            placeholder="e.g. Remediate SQL injection vulnerability"
-            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            :class="{ 'border-red-500': createErrors.title }"
-          />
-          <p v-if="createErrors.title" class="text-xs text-red-500 mt-1">
-            {{ createErrors.title }}
-          </p>
-        </div>
-
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-          >
-            Description
-          </label>
-          <textarea
-            v-model="createForm.description"
-            rows="3"
-            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-            >
-              Status
-            </label>
-            <select
-              v-model="createForm.status"
-              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="open">Open</option>
-              <option value="mitigating-planned">Mitigating Planned</option>
-              <option value="mitigating-implemented">
-                Mitigating Implemented
-              </option>
-            </select>
-          </div>
-          <div>
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-            >
-              Planned Completion
-            </label>
-            <input
-              v-model="createForm.plannedCompletionDate"
-              type="date"
-              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              :label="`Tasks done for ${item.title}`"
+              :value="completedMilestones(item)"
+              :max="item.milestones.length"
+              :value-text="`${completedMilestones(item)} of ${item.milestones.length} tasks (${milestoneProgress(item)}%)`"
             />
-          </div>
-        </div>
+            <PoamItemMilestones :poam-item-id="item.id" />
+          </Stack>
+        </Disclosure>
+      </Stack>
+    </DataState>
 
-        <!-- Pre-filled risk link info banner -->
-        <div
-          class="flex items-start gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-md"
-        >
-          <svg
-            class="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <p class="text-xs text-purple-700 dark:text-purple-300">
-            This Mitigation Plan will be automatically linked to the current
-            risk.
-          </p>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end gap-2 pt-2">
-          <button
-            @click="showCreateModal = false"
-            class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-          >
-            Cancel
-          </button>
-          <button
-            @click="submitCreate"
-            :disabled="creating"
-            class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50"
-          >
-            {{ creating ? 'Creating...' : 'Create a Mitigation Plan' }}
-          </button>
-        </div>
-      </template>
+    <Dialog v-model:open="showCreateModal" title="Create a mitigation plan">
+      <form novalidate @submit.prevent="submitCreate">
+        <Stack gap="4">
+          <FormField label="Title" required :error="createErrors.title">
+            <TextInput v-model="createForm.title" />
+          </FormField>
+          <FormField label="Description">
+            <Textarea v-model="createForm.description" :rows="3" />
+          </FormField>
+          <FormField label="Status">
+            <Select v-model="createForm.status" :options="CREATE_STATUSES" />
+          </FormField>
+          <FormField label="Planned completion">
+            <TextInput v-model="createForm.plannedCompletionDate" type="date" />
+          </FormField>
+          <Text variant="caption">It is linked to this risk.</Text>
+          <Cluster justify="end" gap="2">
+            <Button @click="showCreateModal = false">Cancel</Button>
+            <Button variant="primary" type="submit" :loading="creating"
+              >Create plan</Button
+            >
+          </Cluster>
+        </Stack>
+      </form>
     </Dialog>
-
-    <!-- Edit Mitigation Plan modal -->
-    <Dialog
-      v-model:visible="showEditModal"
-      header="Edit Mitigation Plan"
-      modal
-      :style="{ width: '560px' }"
-    >
-      <div class="space-y-4 py-2">
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-          >
-            Title <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="editForm.title"
-            type="text"
-            placeholder="e.g. Remediate SQL injection vulnerability"
-            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            :class="{ 'border-red-500': editErrors.title }"
-          />
-          <p v-if="editErrors.title" class="text-xs text-red-500 mt-1">
-            {{ editErrors.title }}
-          </p>
-        </div>
-
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-          >
-            Description
-          </label>
-          <textarea
-            v-model="editForm.description"
-            rows="3"
-            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+    <Dialog v-model:open="showEditModal" title="Edit mitigation plan">
+      <form novalidate @submit.prevent="submitEdit">
+        <Stack gap="4">
+          <FormField label="Title" required :error="editErrors.title">
+            <TextInput v-model="editForm.title" />
+          </FormField>
+          <FormField label="Description">
+            <Textarea v-model="editForm.description" :rows="3" />
+          </FormField>
+          <FormField label="Status">
+            <Select v-model="editForm.status" :options="EDIT_STATUSES" />
+          </FormField>
+          <FormField label="Planned completion">
+            <TextInput v-model="editForm.plannedCompletionDate" type="date" />
+          </FormField>
+          <Cluster justify="end" gap="2">
+            <Button @click="showEditModal = false">Cancel</Button>
+            <Button variant="primary" type="submit" :loading="editing"
+              >Save plan</Button
             >
-              Status
-            </label>
-            <select
-              v-model="editForm.status"
-              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="open">Open</option>
-              <option value="mitigating-planned">Mitigating Planned</option>
-              <option value="mitigating-implemented">
-                Mitigating Implemented
-              </option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div>
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-            >
-              Planned Completion
-            </label>
-            <input
-              v-model="editForm.plannedCompletionDate"
-              type="date"
-              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end gap-2 pt-2">
-          <button
-            @click="showEditModal = false"
-            class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-          >
-            Cancel
-          </button>
-          <button
-            @click="submitEdit"
-            :disabled="editing"
-            class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50"
-          >
-            {{ editing ? 'Saving...' : 'Save Changes' }}
-          </button>
-        </div>
-      </template>
+          </Cluster>
+        </Stack>
+      </form>
     </Dialog>
-  </div>
+  </Stack>
 </template>
 
 <script setup lang="ts">
+/**
+ * A risk's Mitigation Plan tab: the POA&M items mitigating it, each a disclosure with its status,
+ * milestone progress, due date and tasks, with Edit, plus Create a mitigation plan. The script is
+ * the classic tab's.
+ */
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import Dialog from '@/volt/Dialog.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import ProgressBar from '@/ds/components/ProgressBar/ProgressBar.vue';
+import Select from '@/ds/components/Select/Select.vue';
+import Tag from '@/ds/components/Tag/Tag.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import PoamItemMilestones from '@/components/poam/PoamItemMilestones.vue';
 import {
   usePoamItemsByRisk,
   usePoamItemCreate,
   usePoamItemUpdate,
-  poamStatusBadgeClass,
   poamStatusLabel,
 } from '@/composables/usePoamItems';
 import {
@@ -423,20 +147,6 @@ const {
 } = usePoamItemsByRisk(props.riskId);
 const poamItems = computed<PoamItem[]>(() => poamData.value ?? []);
 
-const expandedIds = ref<Set<string>>(new Set());
-
-function toggleExpanded(id: string) {
-  if (expandedIds.value.has(id)) {
-    expandedIds.value.delete(id);
-  } else {
-    expandedIds.value.add(id);
-  }
-}
-
-function statusBadgeClass(status: string): string {
-  return poamStatusBadgeClass(status);
-}
-
 function statusLabel(status: string): string {
   return poamStatusLabel(status);
 }
@@ -448,6 +158,16 @@ function formatDate(iso: string): string {
     year: 'numeric',
   });
 }
+
+const CREATE_STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'mitigating-planned', label: 'Mitigating Planned' },
+  { value: 'mitigating-implemented', label: 'Mitigating Implemented' },
+];
+const EDIT_STATUSES = [
+  ...CREATE_STATUSES,
+  { value: 'completed', label: 'Completed' },
+];
 
 function completedMilestones(item: PoamItem): number {
   return (item.milestones ?? []).filter((m) => m.status === 'completed').length;

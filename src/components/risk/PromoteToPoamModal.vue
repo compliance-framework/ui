@@ -1,135 +1,67 @@
 <template>
-  <Dialog
-    v-model:visible="localVisible"
-    modal
-    size="lg"
-    header="Create Mitigation"
-  >
-    <form class="space-y-4" @submit.prevent="submit">
-      <!-- Status transition banner -->
-      <div
-        class="flex items-center gap-2 rounded-md bg-indigo-50 border border-indigo-200 px-3 py-2 text-sm text-indigo-800"
-      >
-        <span class="font-medium">Status transition:</span>
-        <span
-          class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium"
-          >Investigating</span
+  <Dialog v-model:open="localVisible" title="Create mitigation" size="l">
+    <form novalidate @submit.prevent="submit">
+      <Stack gap="4">
+        <Text>The risk moves from Investigating to Mitigating Planned.</Text>
+        <FormField
+          label="Mitigation plan title"
+          hint="Leave blank to use the risk's title."
         >
-        <span class="text-indigo-500">→</span>
-        <span
-          class="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-2 py-0.5 text-xs font-medium"
-          >Mitigating Planned</span
+          <TextInput
+            v-model="form.title"
+            :placeholder="riskTitle || undefined"
+          />
+        </FormField>
+        <FormField label="Planned completion">
+          <TextInput v-model="form.deadline" type="date" />
+        </FormField>
+        <FormField
+          label="Resources required"
+          hint="Optional, e.g. 3 engineer days"
         >
-      </div>
-
-      <!-- Title -->
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          <TextInput v-model="form.resourceRequired" />
+        </FormField>
+        <Stack
+          v-if="templateMilestoneTitles && templateMilestoneTitles.length > 0"
+          gap="2"
         >
-          Mitigation Plan title
-        </label>
-        <input
-          v-model="form.title"
-          type="text"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 text-sm"
-          :placeholder="riskTitle || 'e.g. Apply security patches...'"
-          :disabled="submitting"
-        />
-        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-          Leave blank to inherit the risk title.
-        </p>
-      </div>
-
-      <!-- Planned Completion Date -->
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Planned Completion Date
-        </label>
-        <input
-          v-model="form.deadline"
-          type="date"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 text-sm"
-          :disabled="submitting"
-        />
-      </div>
-
-      <!-- Resource Required -->
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
-        >
-          Resource Required
-          <span class="font-normal text-gray-400">(optional)</span>
-        </label>
-        <input
-          v-model="form.resourceRequired"
-          type="text"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 text-sm"
-          placeholder="e.g. 3 engineer days, £5k budget"
-          :disabled="submitting"
-        />
-      </div>
-
-      <!-- Milestones preview (template-derived) -->
-      <div v-if="templateMilestoneTitles && templateMilestoneTitles.length > 0">
-        <p class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-          Milestones from Remediation Template
-        </p>
-        <ul class="space-y-1">
-          <li
-            v-for="(title, idx) in templateMilestoneTitles"
-            :key="idx"
-            class="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400"
+          <Text as="span" variant="label"
+            >Milestones from the remediation template</Text
           >
-            <span
-              class="inline-block w-5 h-5 rounded-full bg-gray-200 dark:bg-slate-700 text-xs text-center leading-5 text-gray-600 dark:text-slate-300 shrink-0"
-              >{{ idx + 1 }}</span
-            >
-            {{ title }}
-          </li>
-        </ul>
-      </div>
-      <div v-else>
-        <p class="text-xs text-gray-400 dark:text-slate-500 italic">
-          Remediation milestones are not currently available. Milestones can be
-          added to the POAM item after promotion.
-        </p>
-      </div>
-
-      <!-- Validation error -->
-      <p v-if="validationError" class="text-sm text-red-600">
-        {{ validationError }}
-      </p>
-
-      <!-- Footer buttons -->
-      <div class="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          class="px-4 py-2 rounded-md text-sm border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
-          :disabled="submitting"
-          @click="cancel"
+          <Stack gap="1" as="ol">
+            <li v-for="(title, idx) in templateMilestoneTitles" :key="idx">
+              <Text as="span">{{ title }}</Text>
+            </li>
+          </Stack>
+        </Stack>
+        <Text v-else variant="caption"
+          >Milestones can be added to the POA&M item after it is created.</Text
         >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 rounded-md text-sm bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
-          :disabled="submitting"
+        <InlineMessage v-if="validationError" tone="error" title="Not created"
+          ><p>{{ validationError }}</p></InlineMessage
         >
-          <span v-if="submitting">Creating…</span>
-          <span v-else>Create Mitigation</span>
-        </button>
-      </div>
+        <Cluster justify="end" gap="2">
+          <Button @click="cancel">Cancel</Button>
+          <Button variant="primary" type="submit" :loading="submitting"
+            >Create mitigation</Button
+          >
+        </Cluster>
+      </Stack>
     </form>
   </Dialog>
 </template>
 
 <script setup lang="ts">
+/** Creating a mitigation for a risk: a POA&M item (title, planned completion, resources) that moves the risk from Investigating to Mitigating Planned. Emits `submit`; the risk page saves it. The script is the classic dialog's. */
+import Button from '@/ds/components/Button/Button.vue';
+import Dialog from '@/ds/components/Dialog/Dialog.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { ref, watch } from 'vue';
-import Dialog from '@/volt/Dialog.vue';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

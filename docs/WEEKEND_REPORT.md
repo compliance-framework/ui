@@ -27,8 +27,8 @@ without a redesigned page around it. Pages fall into three kinds:
 - **Design-system page with classic islands inside**: Implementation (the per-control statement
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
   section, the diagram editor, the component risks list and evidence-filter drawer), catalog
-  page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
-  page (child panels and dialogs), Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
+  page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics,
+  Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
@@ -116,6 +116,8 @@ page below.
 - The evidence filter form couldn't link a control that has enhancements (e.g. AC-2, only
   AC-2(1) and so on), an invalid filter expression made Submit do nothing (only logged), and a
   failed create on New evidence filter was only logged (classic UI; all fixed in the new form).
+- On a risk's Mitigation Plan tab, adding or editing a task never saved: the task dialog emitted
+  its result and the tasks panel never listened (classic UI; fixed here).
 
 **A regression of mine, fixed:** after the Configure/SSP-editor merge, the Users and Leveraged
 Authorizations sections looked empty (their classic wrappers read only `:id`). Found by the
@@ -1149,9 +1151,20 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   facts, then on Assign owners a person picker per owner (all selectable users, as on the
   workflow roles tab) and a "Primary owner" radio group; it had no spec and now has one. It was
   also where the axe run found two contrast failures on this page. **Gap (islands):** the score
-  history panel, the Mitigation Plan tab and the four lifecycle dialogs are still classic (next). Removing a threat or remediation still uses the
+  history panel, the Mitigation Plan tab and the four lifecycle dialogs followed (next entry). Removing a threat or remediation still uses the
   browser's confirm, as before. The classic 2,552-line spec is ported (52 cases, plus one for
   Back). Checked live: a system risk (every tab, add and remove a threat, the link picker, Back
   before and after changing tabs) and a POA&M risk (created and deleted again). A risk page is in
   the axe run. **Found (API):** for a POA&M risk, `.../reviews` and `/api/risks/:id/score-history`
   answer 404 (the classic page asked for them too).
+- **Risk page, the rest:** the four lifecycle dialogs (accept, review, review score, create
+  mitigation), the score history panel (now the design-system line chart, baseline and residual
+  as two series, with a table view) and the Mitigation Plan tab (each plan a disclosure with its
+  status, task progress and tasks; create and edit dialogs) are design-system, transplanted in
+  place with their scripts. The tasks panel and task dialog (`src/components/poam/`) are too:
+  each task has a menu (mark in progress, completed or cancelled, edit, delete) and the
+  "Responsible" picker lists every selectable user. **Found (fixed):** adding or editing a task
+  never saved (the panel ignored the dialog's result). The risk page has no classic pieces left.
+  Specs: the score history spec is updated; the tasks panel has a new one (including the save).
+  Checked live on a throwaway POA&M risk: create a plan, add a task, mark it in progress (the
+  plan and risk were deleted afterwards).

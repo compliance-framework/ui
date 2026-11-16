@@ -1,92 +1,48 @@
 <template>
-  <div
-    class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-4"
+  <Panel
+    title="Score history"
+    description="Baseline and residual scores over time."
+    :level="3"
   >
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-slate-200">
-          Risk Score History
-        </h3>
-        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-          Baseline and residual score snapshots
-        </p>
-      </div>
-
-      <div v-if="latestSnapshot" class="flex flex-wrap gap-2 text-xs">
-        <span
-          class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
-        >
-          Baseline {{ latestSnapshot.baselineScore }}
-        </span>
-        <span
-          class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-200"
-        >
-          Residual {{ latestSnapshot.residualScore }}
-        </span>
-      </div>
-    </div>
-
-    <div v-if="loading" class="text-sm text-gray-600 dark:text-slate-400">
-      Loading risk score history...
-    </div>
-
-    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-300">
-      Unable to load risk score history.
-    </div>
-
-    <div
-      v-else-if="!snapshots.length"
-      class="text-sm text-gray-600 dark:text-slate-400"
-    >
-      No risk score history has been recorded for this risk.
-    </div>
-
-    <template v-else>
-      <div class="h-52">
-        <LineChart :data="chartData" :options="chartOptions" />
-      </div>
-
-      <div
-        v-if="latestSnapshot"
-        class="grid grid-cols-1 gap-3 text-sm md:grid-cols-4"
-      >
-        <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500">
-            Likelihood
-          </p>
-          <p class="font-medium text-gray-900 dark:text-slate-100">
-            {{ formatTokenLabel(latestSnapshot.likelihood) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500">Impact</p>
-          <p class="font-medium text-gray-900 dark:text-slate-100">
-            {{ formatTokenLabel(latestSnapshot.impact) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500">
-            Last Snapshot
-          </p>
-          <p class="font-medium text-gray-900 dark:text-slate-100">
-            {{ formatDate(latestSnapshot.occurredAt) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500">Event</p>
-          <p class="font-medium text-gray-900 dark:text-slate-100">
-            {{ formatTokenLabel(latestSnapshot.sourceEventType) }}
-          </p>
-        </div>
-      </div>
+    <template v-if="latestSnapshot" #actions>
+      <Cluster gap="1">
+        <Tag :label="`Baseline ${latestSnapshot.baselineScore}`" />
+        <Tag :label="`Residual ${latestSnapshot.residualScore}`" />
+      </Cluster>
     </template>
-  </div>
+    <DataState
+      :status="status"
+      subject="the score history"
+      empty-title="No score history yet"
+      empty-body="Scores are recorded when the risk is created and reassessed."
+      skeleton="panel"
+    >
+      <LineChart
+        label="Baseline and residual risk score over time"
+        :series="series"
+        y-label="Score"
+        x-label="Date"
+        :y-max="yMax"
+        :format-y="(value: number) => String(Math.round(value))"
+      />
+      <DescriptionList :items="latestFacts" />
+    </DataState>
+  </Panel>
 </template>
 
 <script setup lang="ts">
+/**
+ * A risk's score history: baseline and residual scores over time as a line chart, with the latest
+ * snapshot's likelihood, impact, date and the event that recorded it. The data and sorting are
+ * the classic widget's.
+ */
 import { computed } from 'vue';
-import type { ChartData, ChartOptions } from 'chart.js';
-import LineChart from '@/components/charts/LineChart.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import LineChart from '@/ds/components/LineChart/LineChart.vue';
+import Tag from '@/ds/components/Tag/Tag.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
 import type { RiskScoreSnapshot } from '@/utils/risk-dashboard';
 
 const props = defineProps<{
@@ -111,59 +67,60 @@ const latestSnapshot = computed(
   () => sortedSnapshots.value[sortedSnapshots.value.length - 1] || null,
 );
 
-const chartData = computed<ChartData<'line'>>(() => ({
-  labels: sortedSnapshots.value.map((snapshot) =>
-    snapshot.occurredAt.slice(0, 10),
+const series = computed(() => [
+  {
+    name: 'Baseline score',
+    points: sortedSnapshots.value.map((snapshot) => ({
+      x: snapshot.occurredAt.slice(0, 10),
+      y: snapshot.baselineScore,
+    })),
+  },
+  {
+    name: 'Residual score',
+    points: sortedSnapshots.value.map((snapshot) => ({
+      x: snapshot.occurredAt.slice(0, 10),
+      y: snapshot.residualScore,
+    })),
+  },
+]);
+// Scores are small whole numbers; the axis tops out just above the highest one.
+const yMax = computed(() =>
+  Math.max(
+    5,
+    ...sortedSnapshots.value.flatMap((s) => [s.baselineScore, s.residualScore]),
   ),
-  datasets: [
+);
+const status = computed(() =>
+  props.loading
+    ? 'loading'
+    : props.error
+      ? 'error'
+      : props.snapshots.length
+        ? 'ready'
+        : 'empty',
+);
+const latestFacts = computed(() => {
+  const latest = latestSnapshot.value;
+  if (!latest) return [];
+  return [
     {
-      label: 'Baseline Score',
-      data: sortedSnapshots.value.map((snapshot) => snapshot.baselineScore),
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37, 99, 235, 0.12)',
-      pointRadius: 3,
-      pointHoverRadius: 4,
-      tension: 0.3,
-      fill: false,
+      key: 'likelihood',
+      label: 'Likelihood',
+      value: formatTokenLabel(latest.likelihood),
+    },
+    { key: 'impact', label: 'Impact', value: formatTokenLabel(latest.impact) },
+    {
+      key: 'date',
+      label: 'Last snapshot',
+      value: formatDate(latest.occurredAt),
     },
     {
-      label: 'Residual Score',
-      data: sortedSnapshots.value.map((snapshot) => snapshot.residualScore),
-      borderColor: '#dc2626',
-      backgroundColor: 'rgba(220, 38, 38, 0.12)',
-      pointRadius: 3,
-      pointHoverRadius: 4,
-      tension: 0.3,
-      fill: false,
+      key: 'event',
+      label: 'Event',
+      value: formatTokenLabel(latest.sourceEventType),
     },
-  ],
-}));
-
-const chartOptions: ChartOptions<'line'> = {
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom',
-    },
-  },
-  scales: {
-    x: {
-      ticks: {
-        maxTicksLimit: 8,
-      },
-      grid: {
-        display: false,
-      },
-    },
-    y: {
-      beginAtZero: true,
-      ticks: {
-        precision: 0,
-      },
-    },
-  },
-};
+  ];
+});
 
 function formatTokenLabel(value?: string): string {
   const normalized = (value || '').trim();
