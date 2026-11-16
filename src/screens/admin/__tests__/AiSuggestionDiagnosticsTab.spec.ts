@@ -1,13 +1,17 @@
 import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h } from 'vue';
+import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
+import { TooltipProvider } from 'reka-ui';
 import {
-  buildAiDiagnosticsCacheHitChartData,
-  buildAiDiagnosticsTokenChartData,
+  buildAiDiagnosticsCacheHitSeries,
+  buildAiDiagnosticsTokenSeries,
+  niceAxisMax,
   type AiDiagnosticsRun,
   type AiDiagnosticsRunDetail,
   type AiDiagnosticsSummary,
-} from '@/views/admin/partials/ai-diagnostics';
+} from '../aiDiagnostics';
 
 const state = vi.hoisted(() => {
   function testRef<T>(value: T) {
@@ -74,54 +78,50 @@ vi.mock('@/composables/useAiDiagnostics', () => ({
   }),
 }));
 
-vi.mock('@/components/charts/LineChart.vue', () => ({
+// The drawer teleports out of the wrapper; an inline stub keeps its content in wrapper.text().
+vi.mock('@/ds/components/Drawer/Drawer.vue', () => ({
   default: {
-    name: 'LineChart',
-    props: ['data', 'options'],
-    template: '<div class="line-chart">{{ data.datasets.length }}</div>',
+    name: 'Drawer',
+    props: ['open', 'title'],
+    emits: ['update:open'],
+    template: '<aside v-if="open"><h2>{{ title }}</h2><slot /></aside>',
   },
 }));
 
-import AiDiagnosticsView from '../admin/AiDiagnosticsView.vue';
+import AiSuggestionDiagnosticsTab from '../AiSuggestionDiagnosticsTab.vue';
 
-// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
-// left mounted lets it fire after this file's jsdom environment is torn down
-// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
 enableAutoUnmount(afterEach);
 
-function mountView() {
-  return mount(AiDiagnosticsView, {
-    global: {
-      stubs: {
-        PageCard: { template: '<section><slot /></section>' },
-        Message: { template: '<div><slot /></div>' },
-        RouterLink: {
-          props: ['to'],
-          template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
-        },
-        Drawer: {
-          props: ['visible', 'header'],
-          emits: ['update:visible'],
-          template: '<aside v-if="visible"><slot /></aside>',
-        },
-        SecondaryButton: {
-          emits: ['click'],
-          props: ['disabled', 'type'],
-          template:
-            '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-        },
-        Tabs: { template: '<div><slot /></div>' },
-        TabList: { template: '<div><slot /></div>' },
-        Tab: { template: '<button><slot /></button>' },
-        TabPanels: { template: '<div><slot /></div>' },
-        TabPanel: { template: '<section><slot /></section>' },
+async function mountView(query: Record<string, string> = {}) {
+  const Notifications = { template: '<p>notifications</p>' };
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      {
+        path: '/admin/diagnostics/ai-suggestions',
+        name: 'admin-diagnostics-ai-suggestions',
+        component: AiSuggestionDiagnosticsTab,
       },
-    },
+      {
+        path: '/admin/diagnostics/notifications',
+        name: 'admin-diagnostics-notifications',
+        component: Notifications,
+      },
+    ],
   });
+  await router.push({ name: 'admin-diagnostics-ai-suggestions', query });
+  await router.isReady();
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(RouterView)),
+    }),
+    { global: { plugins: [router] } },
+  );
 }
 
-describe('AiDiagnosticsView', () => {
+describe('AiSuggestionDiagnosticsTab', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     state.aiEnabled = true;
     state.aiFetched = true;
@@ -282,10 +282,11 @@ describe('AiDiagnosticsView', () => {
       return false;
     });
 
-    const wrapper = mountView();
+    const wrapper = await mountView();
     await flushPromises();
-    await wrapper.vm.$forceUpdate();
-    await nextTick();
+    // The store mock isn't reactive, so re-render once the config has "loaded".
+    wrapper.findComponent(AiSuggestionDiagnosticsTab).vm.$forceUpdate();
+    await flushPromises();
 
     expect(wrapper.text()).toContain(
       'AI is not configured, so AI suggestions diagnostics are unavailable.',
@@ -295,10 +296,11 @@ describe('AiDiagnosticsView', () => {
   });
 
   it('renders summary totals, checks, and the full cache warning', async () => {
-    const wrapper = mountView();
+    const wrapper = await mountView();
     await flushPromises();
 
     expect(wrapper.text()).toContain('3');
+    expect(wrapper.text()).toContain('1 completed, 1 failed, 1 running');
     expect(wrapper.text()).toContain('42%');
     expect(wrapper.text()).toContain('12,000');
     expect(wrapper.text()).toContain(
@@ -306,18 +308,36 @@ describe('AiDiagnosticsView', () => {
     );
     expect(wrapper.text()).toContain('Increase chunk sizes.');
     expect(wrapper.text()).toContain('Rate limits are slowing runs.');
+    expect(wrapper.text()).toContain('Cache engaging');
+    expect(wrapper.text()).toContain('gpt-5.2');
+  });
+
+  it('links the suggestion queue to the notifications diagnostics', async () => {
+    const wrapper = await mountView();
+    await flushPromises();
+
+    const link = wrapper
+      .findAll('a')
+      .find((anchor) => anchor.text() === 'Open notifications');
+    expect(link?.attributes('href')).toBe('/admin/diagnostics/notifications');
   });
 
   it('passes filters and cursor pagination params through the composable', async () => {
-    const wrapper = mountView();
+    const wrapper = await mountView({ tab: 'runs' });
     await flushPromises();
 
     const selects = wrapper.findAll('select');
     await selects[0].setValue('failed');
-    await wrapper
-      .find('[data-testid="ai-diagnostics-ssp-filter"]')
-      .setValue('ssp-1');
+    await wrapper.find('input[type="search"]').setValue('ssp-1');
+    await wrapper.find('form[role="search"]').trigger('submit');
+    expect(state.refreshRuns).toHaveBeenLastCalledWith({
+      status: 'failed',
+      sspId: 'ssp-1',
+      limit: 50,
+    });
+
     await selects[1].setValue('25');
+    await flushPromises();
 
     expect(state.refreshRuns).toHaveBeenLastCalledWith({
       status: 'failed',
@@ -327,7 +347,7 @@ describe('AiDiagnosticsView', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Load More')
+      .find((button) => button.text() === 'Load more')
       ?.trigger('click');
 
     expect(state.loadMoreRuns).toHaveBeenCalledWith({
@@ -337,26 +357,28 @@ describe('AiDiagnosticsView', () => {
     });
   });
 
-  it('disables Load More while a pagination request is running', async () => {
+  it('marks Load more busy while a pagination request is running', async () => {
     state.paginationLoading.value = true;
 
-    const wrapper = mountView();
+    const wrapper = await mountView({ tab: 'runs' });
     await flushPromises();
 
     const loadMoreButton = wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Load More');
+      .find((button) => button.text() === 'Load more');
 
-    expect(loadMoreButton?.attributes('disabled')).toBeDefined();
+    expect(loadMoreButton?.attributes('aria-busy')).toBe('true');
+    await loadMoreButton?.trigger('click');
+    expect(state.loadMoreRuns).not.toHaveBeenCalled();
   });
 
   it('opens the run drawer with cells, failed errors, scope, and events', async () => {
-    const wrapper = mountView();
+    const wrapper = await mountView({ tab: 'runs' });
     await flushPromises();
 
     await wrapper
-      .findAll('tbody tr')
-      .find((row) => row.text().includes('Payments SSP'))
+      .findAll('button')
+      .find((button) => button.text() === 'Payments SSP')
       ?.trigger('click');
     await flushPromises();
 
@@ -422,14 +444,28 @@ describe('AI diagnostics chart builders', () => {
       },
     ];
 
-    const tokenData = buildAiDiagnosticsTokenChartData(runs);
-    expect(tokenData.labels).toEqual(['2026-06-15', '2026-06-16']);
-    expect(tokenData.datasets[0].data).toEqual([300, 50]);
-    expect(tokenData.datasets[1].data).toEqual([120, 10]);
-    expect(tokenData.datasets[2].data).toEqual([30, 5]);
+    const ys = (points: { y: number }[]) => points.map((point) => point.y);
 
-    const cacheData = buildAiDiagnosticsCacheHitChartData(runs);
-    expect(cacheData.labels).toEqual(['2026-06-15', '2026-06-16']);
-    expect(cacheData.datasets[0].data).toEqual([50, 20]);
+    const tokenSeries = buildAiDiagnosticsTokenSeries(runs);
+    expect(tokenSeries[0].points.map((point) => point.x)).toEqual([
+      '2026-06-15',
+      '2026-06-16',
+    ]);
+    expect(ys(tokenSeries[0].points)).toEqual([300, 50]);
+    expect(ys(tokenSeries[1].points)).toEqual([120, 10]);
+    expect(ys(tokenSeries[2].points)).toEqual([30, 5]);
+
+    const cacheSeries = buildAiDiagnosticsCacheHitSeries(runs);
+    expect(cacheSeries[0].points.map((point) => point.x)).toEqual([
+      '2026-06-15',
+      '2026-06-16',
+    ]);
+    expect(ys(cacheSeries[0].points)).toEqual([50, 20]);
+  });
+
+  it('rounds the token axis up to a clean maximum', () => {
+    expect(niceAxisMax(0)).toBe(4);
+    expect(niceAxisMax(300)).toBe(300);
+    expect(niceAxisMax(1234)).toBe(2000);
   });
 });

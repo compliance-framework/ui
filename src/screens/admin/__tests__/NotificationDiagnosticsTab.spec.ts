@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { ref, shallowRef } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h, ref, shallowRef } from 'vue';
+import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
+import { TooltipProvider } from 'reka-ui';
 
 const createDestinationExecuteResult = (destination: {
   providerType: 'slack' | 'email';
@@ -309,6 +312,35 @@ function getLastButtonByText(wrapper: VueWrapper, text: string) {
   return button!;
 }
 
+function getButtonByText(wrapper: VueWrapper, text: string) {
+  const button = wrapper
+    .findAll('button')
+    .find((candidate) => candidate.text() === text);
+
+  expect(button).toBeDefined();
+
+  return button!;
+}
+
+/** The value shown beside a DescriptionList label. */
+function fact(wrapper: VueWrapper, label: string): string | undefined {
+  return wrapper
+    .findAll('dt')
+    .find((term) => term.text() === label)
+    ?.element.nextElementSibling?.textContent?.trim();
+}
+
+/** Opens one of the in-page tabs (they are links that set ?tab=…). */
+async function openTab(wrapper: VueWrapper, label: string) {
+  const tab = wrapper
+    .findAll('[role="tab"]')
+    .find((candidate) => candidate.text() === label);
+
+  expect(tab).toBeDefined();
+  await tab!.trigger('click');
+  await flushPromises();
+}
+
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({
     get: mockAuthenticatedGet,
@@ -364,39 +396,58 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
-vi.mock('@/components/PageCard.vue', () => ({
-  default: {
-    name: 'PageCard',
-    template: '<div><slot /></div>',
-  },
-}));
-
-vi.mock('@/volt/Dialog.vue', () => ({
+// The modal panels teleport out of the wrapper; inline stubs keep their content in wrapper.text().
+vi.mock('@/ds/components/Dialog/Dialog.vue', () => ({
   default: {
     name: 'Dialog',
-    props: ['visible', 'modal', 'header', 'size'],
-    emits: ['update:visible', 'hide'],
-    template: '<div v-if="visible"><slot /><slot name="footer" /></div>',
+    props: ['open', 'title', 'description', 'size'],
+    emits: ['update:open'],
+    template:
+      '<div v-if="open" role="dialog"><h2>{{ title }}</h2><p>{{ description }}</p><slot /><slot name="footer" /></div>',
   },
 }));
 
-vi.mock('@/volt/Drawer.vue', () => ({
+vi.mock('@/ds/components/Drawer/Drawer.vue', () => ({
   default: {
     name: 'Drawer',
-    props: ['visible', 'position', 'header'],
-    emits: ['update:visible'],
-    template: '<aside v-if="visible"><slot /></aside>',
+    props: ['open', 'title'],
+    emits: ['update:open'],
+    template: '<aside v-if="open"><h2>{{ title }}</h2><slot /></aside>',
   },
 }));
 
-import NotificationsView from '../admin/NotificationsView.vue';
+import NotificationDiagnosticsTab from '../NotificationDiagnosticsTab.vue';
 
-describe('NotificationsView', () => {
+async function mountView(query: Record<string, string> = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      {
+        path: '/admin/diagnostics/notifications',
+        name: 'admin-diagnostics-notifications',
+        component: NotificationDiagnosticsTab,
+      },
+    ],
+  });
+  await router.push({ name: 'admin-diagnostics-notifications', query });
+  await router.isReady();
+  const wrapper = mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(RouterView)),
+    }),
+    { global: { plugins: [router] } },
+  );
+  await flushPromises();
+  return wrapper;
+}
+
+describe('NotificationDiagnosticsTab', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockCreateDestination.mockResolvedValue(
       createDestinationExecuteResult({
@@ -588,8 +639,8 @@ describe('NotificationsView', () => {
     isDeletingDestination.value = false;
   });
 
-  it('loads provider information from the backend response', () => {
-    const wrapper = mount(NotificationsView);
+  it('loads provider information from the backend response', async () => {
+    const wrapper = await mountView();
 
     expect(wrapper.text()).toContain('Configuration');
     expect(wrapper.text()).toContain('Health');
@@ -600,18 +651,18 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain(
       'Configured SMTP provider for email service',
     );
-    expect(wrapper.text()).toContain('Service Provider Name: SMTP');
-    expect(wrapper.text()).toContain('Service Provider Type: smtp');
-    expect(wrapper.text()).toContain('Bot Id: B0ANWHKQMCP');
-    expect(wrapper.text()).toContain('Team Id: T0AP4C0TA7M');
-    expect(wrapper.text()).toContain('Workspace Name: reece-sandbox');
-    expect(wrapper.text()).toContain(
-      'Workspace Url: https://reece-sandbox.slack.com/',
+    expect(fact(wrapper, 'Service provider name')).toBe('SMTP');
+    expect(fact(wrapper, 'Service provider type')).toBe('smtp');
+    expect(fact(wrapper, 'Bot ID')).toBe('B0ANWHKQMCP');
+    expect(fact(wrapper, 'Team ID')).toBe('T0AP4C0TA7M');
+    expect(fact(wrapper, 'Workspace name')).toBe('reece-sandbox');
+    expect(fact(wrapper, 'Workspace URL')).toBe(
+      'https://reece-sandbox.slack.com/',
     );
     expect(wrapper.text()).toContain('Enabled');
   });
 
-  it('renders provider error instead of metadata when the provider is misconfigured', () => {
+  it('renders provider error instead of metadata when the provider is misconfigured', async () => {
     notificationProviders.value = [
       {
         providerType: 'email',
@@ -632,25 +683,24 @@ describe('NotificationsView', () => {
       },
     ];
 
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    expect(wrapper.text()).toContain('Error: invalid_auth');
-    expect(wrapper.text()).not.toContain('Bot Id: B0ANWHKQMCP');
-    expect(wrapper.text()).not.toContain('Team Id: T0AP4C0TA7M');
-    expect(wrapper.text()).not.toContain('Workspace Name: reece-sandbox');
-    expect(wrapper.text()).not.toContain(
-      'Workspace Url: https://reece-sandbox.slack.com/',
-    );
+    expect(wrapper.text()).toContain('This provider is misconfigured');
+    expect(wrapper.text()).toContain('invalid_auth');
+    expect(fact(wrapper, 'Bot ID')).toBeUndefined();
+    expect(fact(wrapper, 'Team ID')).toBeUndefined();
+    expect(wrapper.text()).not.toContain('reece-sandbox');
+    expect(wrapper.text()).not.toContain('https://reece-sandbox.slack.com/');
   });
 
-  it('loads configured destinations from the backend response', () => {
-    const wrapper = mount(NotificationsView);
+  it('loads configured destinations from the backend response', async () => {
+    const wrapper = await mountView();
 
     expect(wrapper.text()).toContain('Slack');
     expect(wrapper.text()).toContain('ccf-slack-int');
   });
 
-  it('loads workflow execution failure destinations from the backend response', () => {
+  it('loads workflow execution failure destinations from the backend response', async () => {
     notificationConfigurations.value = [
       {
         name: 'EVIDENCE_DIGEST',
@@ -671,27 +721,24 @@ describe('NotificationsView', () => {
       },
     ];
 
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    expect(wrapper.text()).toContain('Workflow Instance Failure');
+    expect(wrapper.text()).toContain('Workflow instance failure');
     expect(wrapper.text()).toContain('ccf-slack-int');
     expect(wrapper.text()).toContain('ccf-slack-int-pub');
   });
 
   it('posts a new email destination to the notification destinations endpoint', async () => {
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
+    await wrapper.get('[data-testid="destination-provider"]').setValue('email');
+    await wrapper
+      .get('[data-testid="destination-target"]')
+      .setValue('alerts@example.com');
 
-    await wrapper.get('#destination-provider').setValue('email');
-    await wrapper.get('#destination-target').setValue('alerts@example.com');
-
-    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
+    await getLastButtonByText(wrapper, 'Add destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalledWith(
@@ -718,9 +765,10 @@ describe('NotificationsView', () => {
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'success',
-        summary: 'Destination Added',
+        summary: 'Destination added',
       }),
     );
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('alerts@example.com');
   });
 
@@ -737,19 +785,16 @@ describe('NotificationsView', () => {
       },
     });
 
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
+    await wrapper.get('[data-testid="destination-provider"]').setValue('email');
+    await wrapper
+      .get('[data-testid="destination-target"]')
+      .setValue('alerts@example.com');
 
-    await wrapper.get('#destination-provider').setValue('email');
-    await wrapper.get('#destination-target').setValue('alerts@example.com');
-
-    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
+    await getLastButtonByText(wrapper, 'Add destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalledWith(
@@ -767,10 +812,13 @@ describe('NotificationsView', () => {
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'error',
-        summary: 'Add Destination Failed',
+        summary: "Couldn't add the destination",
       }),
     );
-    expect(wrapper.text()).not.toContain('alerts@example.com');
+    expect(
+      notificationConfigurations.value[0].configuredDestinations,
+    ).toHaveLength(1);
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true);
   });
 
   it('shows non-Axios error messages when destination creation fails', async () => {
@@ -778,19 +826,16 @@ describe('NotificationsView', () => {
       new Error('Network connection lost.'),
     );
 
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
+    await wrapper.get('[data-testid="destination-provider"]').setValue('email');
+    await wrapper
+      .get('[data-testid="destination-target"]')
+      .setValue('alerts@example.com');
 
-    await wrapper.get('#destination-provider').setValue('email');
-    await wrapper.get('#destination-target').setValue('alerts@example.com');
-
-    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
+    await getLastButtonByText(wrapper, 'Add destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalled();
@@ -798,21 +843,16 @@ describe('NotificationsView', () => {
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'error',
-        summary: 'Add Destination Failed',
+        summary: "Couldn't add the destination",
         detail: 'Network connection lost.',
       }),
     );
   });
 
   it('deletes a configured destination via the notification destinations endpoint', async () => {
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const removeButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Remove');
-
-    expect(removeButton).toBeDefined();
-    await removeButton!.trigger('click');
+    await getButtonByText(wrapper, 'Remove').trigger('click');
     await flushPromises();
 
     expect(mockDeleteDestination).toHaveBeenCalledWith(
@@ -832,7 +872,7 @@ describe('NotificationsView', () => {
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'success',
-        summary: 'Destination Removed',
+        summary: 'Destination removed',
       }),
     );
   });
@@ -850,14 +890,9 @@ describe('NotificationsView', () => {
       },
     });
 
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const removeButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Remove');
-
-    expect(removeButton).toBeDefined();
-    await removeButton!.trigger('click');
+    await getButtonByText(wrapper, 'Remove').trigger('click');
     await flushPromises();
 
     expect(mockDeleteDestination).toHaveBeenCalledWith(
@@ -879,26 +914,75 @@ describe('NotificationsView', () => {
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'error',
-        summary: 'Remove Destination Failed',
+        summary: "Couldn't remove the destination",
         detail: 'configured notification destination not found',
       }),
     );
   });
 
+  it('says why the other Remove buttons wait while one destination is removed', async () => {
+    notificationConfigurations.value = [
+      {
+        name: 'EVIDENCE_DIGEST',
+        configuredDestinations: [
+          { providerType: 'slack', destinationTarget: 'ccf-slack-int' },
+          { providerType: 'slack', destinationTarget: 'ccf-slack-int-pub' },
+        ],
+      },
+    ];
+    mockDeleteDestination.mockImplementationOnce(() => {
+      isDeletingDestination.value = true;
+      return new Promise(() => undefined);
+    });
+
+    const wrapper = await mountView();
+
+    await wrapper.get('[aria-label="Remove ccf-slack-int"]').trigger('click');
+    await flushPromises();
+
+    expect(
+      wrapper
+        .get('[aria-label="Remove ccf-slack-int"]')
+        .attributes('aria-busy'),
+    ).toBe('true');
+    const waiting = wrapper.get('[aria-label="Remove ccf-slack-int-pub"]');
+    expect(waiting.attributes('aria-disabled')).toBe('true');
+    expect(wrapper.text()).toContain('Another destination is being removed.');
+  });
+
+  it('sends a test notification to a configured destination', async () => {
+    const wrapper = await mountView();
+
+    await getButtonByText(wrapper, 'Send test notification').trigger('click');
+    await flushPromises();
+
+    expect(mockAuthenticatedPost).toHaveBeenCalledWith(
+      '/api/admin/notifications/test',
+      {
+        providerType: 'slack',
+        destinationTarget: 'ccf-slack-int',
+        mode: 'enqueue',
+      },
+    );
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'success',
+        detail: 'Test notification enqueued.',
+      }),
+    );
+  });
+
   it('blocks the request when email validation fails', async () => {
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
+    await wrapper.get('[data-testid="destination-provider"]').setValue('email');
+    await wrapper
+      .get('[data-testid="destination-target"]')
+      .setValue('not-an-email');
 
-    await wrapper.get('#destination-provider').setValue('email');
-    await wrapper.get('#destination-target').setValue('not-an-email');
-
-    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
+    await getLastButtonByText(wrapper, 'Add destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).not.toHaveBeenCalled();
@@ -915,17 +999,11 @@ describe('NotificationsView', () => {
         : provider,
     );
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
-
-    const providerSelect = wrapper.get('#destination-provider');
+    const providerSelect = wrapper.get('[data-testid="destination-provider"]');
     const slackOption = providerSelect.find('option[value="slack"]');
     const emailOption = providerSelect.find('option[value="email"]');
 
@@ -947,17 +1025,11 @@ describe('NotificationsView', () => {
         : provider,
     );
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
+    await getButtonByText(wrapper, 'Add destination').trigger('click');
 
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
-
-    const providerSelect = wrapper.get('#destination-provider');
+    const providerSelect = wrapper.get('[data-testid="destination-provider"]');
     const slackOption = providerSelect.find('option[value="slack"]');
     const emailOption = providerSelect.find('option[value="email"]');
 
@@ -966,9 +1038,11 @@ describe('NotificationsView', () => {
     expect((providerSelect.element as HTMLSelectElement).value).toBe('slack');
 
     await providerSelect.setValue('email');
-    await wrapper.get('#destination-target').setValue('alerts@example.com');
+    await wrapper
+      .get('[data-testid="destination-target"]')
+      .setValue('alerts@example.com');
 
-    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
+    await getLastButtonByText(wrapper, 'Add destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).not.toHaveBeenCalled();
@@ -997,14 +1071,9 @@ describe('NotificationsView', () => {
       schedules: [],
     };
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Health')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Health');
 
     expect(wrapper.text()).toContain('Notify');
     expect(wrapper.text()).toContain(
@@ -1030,32 +1099,43 @@ describe('NotificationsView', () => {
       },
     };
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Health')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Health');
 
     expect(wrapper.text()).toContain('Polling');
   });
 
+  it('loads the section named in the address', async () => {
+    const wrapper = await mountView({ tab: 'health' });
+
+    expect(mockAuthenticatedGet).toHaveBeenCalledWith(
+      '/api/admin/notifications/health',
+    );
+    expect(wrapper.text()).toContain('Queue summary');
+  });
+
+  it('links a scheduled run to its deliveries', async () => {
+    const wrapper = await mountView();
+
+    await openTab(wrapper, 'Health');
+    await getButtonByText(wrapper, '241582').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('River notification jobs are read-only');
+    expect(mockJobsGet.mock.calls.at(-1)?.[0]).toMatchObject({
+      params: {
+        jobIdOrCorrelation: '241582',
+      },
+    });
+  });
+
   it('calls the jobs endpoint with delivery filter parameters', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Deliveries');
 
-    await wrapper
-      .find('#notifications-deliveries-panel')
-      .find('select')
-      .setValue('evidence_digest');
+    await wrapper.findAll('select')[0].setValue('evidence_digest');
     await flushPromises();
 
     const lastParams = mockJobsGet.mock.calls.at(-1)?.[0] as {
@@ -1079,22 +1159,15 @@ describe('NotificationsView', () => {
       throw new Error(`Unexpected authenticated get: ${url}`);
     });
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Deliveries');
 
     expect(wrapper.text()).toContain('Delivery jobs failed to load.');
     expect(wrapper.text()).not.toContain(
-      'No notification delivery jobs match the current filters.',
+      'No notification delivery jobs match the current filters',
     );
-    expect(wrapper.find('#notifications-deliveries-panel table').exists()).toBe(
-      false,
-    );
+    expect(wrapper.find('table').exists()).toBe(false);
   });
 
   it('keeps loaded delivery jobs visible when loading more jobs fails', async () => {
@@ -1122,100 +1195,68 @@ describe('NotificationsView', () => {
       throw new Error(`Unexpected authenticated get: ${url}`);
     });
 
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Deliveries');
 
-    await getLastButtonByText(wrapper, 'Load More').trigger('click');
+    await getLastButtonByText(wrapper, 'Load more').trigger('click');
     await flushPromises();
 
     expect(wrapper.text()).toContain('241583');
     expect(wrapper.text()).toContain('More jobs failed to load.');
-    expect(wrapper.find('#notifications-deliveries-panel table').exists()).toBe(
-      true,
-    );
+    expect(wrapper.find('table').exists()).toBe(true);
     expect(wrapper.text()).not.toContain(
-      'No notification delivery jobs match the current filters.',
+      'No notification delivery jobs match the current filters',
     );
   });
 
   it('lazy-loads operational tabs and pauses job auto-refresh outside deliveries', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
     expect(mockAuthenticatedGet).not.toHaveBeenCalledWith(
       '/api/admin/notifications/health',
     );
     expect(mockJobsGet).not.toHaveBeenCalled();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Health')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Health');
 
     expect(mockAuthenticatedGet).toHaveBeenCalledWith(
       '/api/admin/notifications/health',
     );
     expect(mockJobsGet).not.toHaveBeenCalled();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Deliveries');
 
     expect(mockJobsGet).toHaveBeenCalledTimes(1);
 
-    vi.useFakeTimers();
+    // Only the refresh interval is faked, so navigation and flushPromises keep working.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 
     await wrapper.find('input[type="checkbox"]').setValue(true);
     vi.advanceTimersByTime(30000);
-    await Promise.resolve();
-    await Promise.resolve();
+    await flushPromises();
 
     expect(mockJobsGet).toHaveBeenCalledTimes(2);
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Configuration')!
-      .trigger('click');
+    await openTab(wrapper, 'Configuration');
     vi.advanceTimersByTime(30000);
-    await Promise.resolve();
-    await Promise.resolve();
+    await flushPromises();
 
     expect(mockJobsGet).toHaveBeenCalledTimes(2);
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
+    await openTab(wrapper, 'Deliveries');
     vi.advanceTimersByTime(30000);
-    await Promise.resolve();
-    await Promise.resolve();
+    await flushPromises();
 
     expect(mockJobsGet).toHaveBeenCalledTimes(3);
     wrapper.unmount();
   });
 
   it('renders sanitized job detail data without sensitive payload fields', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === '241583')!
-      .trigger('click');
+    await openTab(wrapper, 'Deliveries');
+    await getButtonByText(wrapper, '241583').trigger('click');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Job 241583');
@@ -1239,18 +1280,10 @@ describe('NotificationsView', () => {
     };
 
     try {
-      const wrapper = mount(NotificationsView);
-      await flushPromises();
+      const wrapper = await mountView();
 
-      await wrapper
-        .findAll('button')
-        .find((button) => button.text() === 'Deliveries')!
-        .trigger('click');
-      await flushPromises();
-      await wrapper
-        .findAll('button')
-        .find((button) => button.text() === '241583')!
-        .trigger('click');
+      await openTab(wrapper, 'Deliveries');
+      await getButtonByText(wrapper, '241583').trigger('click');
       await flushPromises();
 
       expect(wrapper.text()).toContain('Job 241583');
@@ -1261,47 +1294,36 @@ describe('NotificationsView', () => {
     }
   });
 
-  it('opens delivery job details from a non-link row cell', async () => {
-    const wrapper = mount(NotificationsView);
+  it('opens delivery job details from the job ID, which names the job', async () => {
+    const wrapper = await mountView();
+
+    await openTab(wrapper, 'Deliveries');
+    await wrapper.get('[aria-label="Open job 241583"]').trigger('click');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
-    await flushPromises();
-    await wrapper
-      .find('#notifications-deliveries-panel tbody tr td:nth-child(3)')
-      .trigger('click');
-    await flushPromises();
-
+    expect(mockAuthenticatedGet).toHaveBeenCalledWith(
+      '/api/admin/notifications/jobs/241583',
+    );
     expect(wrapper.text()).toContain('Job 241583');
     expect(wrapper.text()).toContain('ccf-alerts');
   });
 
   it('renders diagnostics checks for digest, workflow, and risk notifications', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Diagnostics')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Diagnostics');
 
     expect(wrapper.text()).toContain('Slack provider enabled');
     expect(wrapper.text()).toContain('Slack destination configured');
-    expect(wrapper.text()).toContain('Pass');
-    expect(wrapper.text()).toContain('Fail');
+    expect(wrapper.text()).toContain('Passed');
+    expect(wrapper.text()).toContain('Failed');
     expect(wrapper.text()).toContain('1 downstream provider jobs found.');
-    expect(wrapper.text()).toContain('Recommended Actions');
+    expect(wrapper.text()).toContain('Recommended actions');
     expect(wrapper.text()).toContain(
       'Add a Slack destination for Evidence Digest.',
     );
 
-    const diagnosticsSelect = wrapper
-      .find('#notifications-diagnostics-panel')
-      .find('select');
+    const diagnosticsSelect = wrapper.findAll('select')[0];
     await diagnosticsSelect.setValue('WORKFLOW_EXECUTION_FAILED');
     await flushPromises();
     expect(wrapper.text()).toContain('Workflow task assigned');
@@ -1309,46 +1331,32 @@ describe('NotificationsView', () => {
     await diagnosticsSelect.setValue('RISK_NOTIFICATIONS');
     await flushPromises();
     expect(wrapper.text()).toContain('Risk review due reminder');
-    expect(wrapper.text()).toContain('Warn');
+    expect(wrapper.text()).toContain('Warning');
   });
 
   it('does not offer POAM Notifications as a diagnostics option', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Diagnostics')!
-      .trigger('click');
-    await flushPromises();
+    await openTab(wrapper, 'Diagnostics');
 
-    const diagnosticsSelect = wrapper
-      .find('#notifications-diagnostics-panel')
-      .find('select');
-    const optionLabels = diagnosticsSelect
+    const optionLabels = wrapper
+      .findAll('select')[0]
       .findAll('option')
       .map((option) => option.text());
-    expect(optionLabels).not.toContain('POAM Notifications');
+    expect(optionLabels).not.toContain('POAM notifications');
+    expect(optionLabels).toContain('Risk notifications');
   });
 
   it('links diagnostics results to filtered deliveries', async () => {
-    const wrapper = mount(NotificationsView);
+    const wrapper = await mountView();
+
+    await openTab(wrapper, 'Diagnostics');
+    await getButtonByText(wrapper, 'Job 241582').trigger('click');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Diagnostics')!
-      .trigger('click');
-    await flushPromises();
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Job 241582')!
-      .trigger('click');
-    await flushPromises();
-
-    expect(wrapper.text()).toContain('Deliveries');
+    expect(wrapper.text()).toContain('River notification jobs are read-only');
     expect(
-      wrapper.find('[data-testid="deliveries-search"]').element,
+      wrapper.find('input[type="search"]').element as HTMLInputElement,
     ).toHaveProperty('value', '241582');
     expect(mockJobsGet.mock.calls.at(-1)?.[0]).toMatchObject({
       params: {
@@ -1358,13 +1366,9 @@ describe('NotificationsView', () => {
   });
 
   it('marks delivery jobs read-only and omits queue mutation controls', async () => {
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
+    const wrapper = await mountView();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Deliveries')!
-      .trigger('click');
+    await openTab(wrapper, 'Deliveries');
 
     expect(wrapper.text()).toContain('River notification jobs are read-only');
     expect(

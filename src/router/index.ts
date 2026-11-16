@@ -402,7 +402,8 @@ const authenticatedRoutes = [
       {
         path: 'notifications',
         name: 'admin-diagnostics-notifications',
-        component: () => import('../views/admin/NotificationsView.vue'),
+        component: () =>
+          import('../screens/admin/NotificationDiagnosticsTab.vue'),
         meta: {
           requiresAuth: true,
           permission: ADMIN_MANAGE,
@@ -411,7 +412,8 @@ const authenticatedRoutes = [
       {
         path: 'ai-suggestions',
         name: 'admin-diagnostics-ai-suggestions',
-        component: () => import('../views/admin/AiDiagnosticsView.vue'),
+        component: () =>
+          import('../screens/admin/AiSuggestionDiagnosticsTab.vue'),
         meta: {
           requiresAuth: true,
           permission: ADMIN_MANAGE,

@@ -1,4 +1,6 @@
-import type { ChartData } from 'chart.js';
+import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
+
+/** Types, endpoints and pure helpers for Diagnostics > AI suggestions. */
 
 export type AiDiagnosticsStatus =
   'pending' | 'running' | 'completed' | 'failed';
@@ -211,66 +213,139 @@ function sortedBucketEntries(runs: AiDiagnosticsRun[]) {
   );
 }
 
-export function buildAiDiagnosticsTokenChartData(
-  runs: AiDiagnosticsRun[],
-): ChartData<'line'> {
-  const buckets = sortedBucketEntries(runs);
-
-  return {
-    labels: buckets.map(([day]) => day),
-    datasets: [
-      {
-        label: 'Input tokens',
-        data: buckets.map(([, bucket]) => bucket.inputTokens),
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.12)',
-        pointRadius: 3,
-        tension: 0.3,
-        fill: false,
-      },
-      {
-        label: 'Cache read tokens',
-        data: buckets.map(([, bucket]) => bucket.cacheReadInputTokens),
-        borderColor: '#059669',
-        backgroundColor: 'rgba(5, 150, 105, 0.12)',
-        pointRadius: 3,
-        tension: 0.3,
-        fill: false,
-      },
-      {
-        label: 'Cache creation tokens',
-        data: buckets.map(([, bucket]) => bucket.cacheCreationInputTokens),
-        borderColor: '#d97706',
-        backgroundColor: 'rgba(217, 119, 6, 0.12)',
-        pointRadius: 3,
-        tension: 0.3,
-        fill: false,
-      },
-    ],
-  };
+/** A LineChart series: one value per run-start day. */
+export interface AiDiagnosticsSeries {
+  name: string;
+  points: { x: string; y: number }[];
 }
 
-export function buildAiDiagnosticsCacheHitChartData(
+export function buildAiDiagnosticsTokenSeries(
   runs: AiDiagnosticsRun[],
-): ChartData<'line'> {
+): AiDiagnosticsSeries[] {
   const buckets = sortedBucketEntries(runs);
 
-  return {
-    labels: buckets.map(([day]) => day),
-    datasets: [
-      {
-        label: 'Cache hit %',
-        data: buckets.map(([, bucket]) =>
-          bucket.runCount
-            ? Math.round((bucket.cacheHitRatioTotal / bucket.runCount) * 100)
-            : 0,
-        ),
-        borderColor: '#7c3aed',
-        backgroundColor: 'rgba(124, 58, 237, 0.12)',
-        pointRadius: 3,
-        tension: 0.3,
-        fill: false,
-      },
-    ],
-  };
+  return [
+    {
+      name: 'Input tokens',
+      points: buckets.map(([day, bucket]) => ({
+        x: day,
+        y: bucket.inputTokens,
+      })),
+    },
+    {
+      name: 'Cache read tokens',
+      points: buckets.map(([day, bucket]) => ({
+        x: day,
+        y: bucket.cacheReadInputTokens,
+      })),
+    },
+    {
+      name: 'Cache creation tokens',
+      points: buckets.map(([day, bucket]) => ({
+        x: day,
+        y: bucket.cacheCreationInputTokens,
+      })),
+    },
+  ];
+}
+
+export function buildAiDiagnosticsCacheHitSeries(
+  runs: AiDiagnosticsRun[],
+): AiDiagnosticsSeries[] {
+  const buckets = sortedBucketEntries(runs);
+
+  return [
+    {
+      name: 'Cache hit %',
+      points: buckets.map(([day, bucket]) => ({
+        x: day,
+        y: bucket.runCount
+          ? Math.round((bucket.cacheHitRatioTotal / bucket.runCount) * 100)
+          : 0,
+      })),
+    },
+  ];
+}
+
+/** A round axis maximum at or above `value`, e.g. 1,234 → 2,000, so the ticks read cleanly. */
+export function niceAxisMax(value: number): number {
+  if (value <= 0) return 4;
+  const step = 10 ** Math.floor(Math.log10(value));
+  return Math.ceil(value / step) * step;
+}
+
+export function formatNumber(value?: number | null): string {
+  return new Intl.NumberFormat().format(value ?? 0);
+}
+
+/** A ratio (0.42) or a percentage (42) as "42%". */
+export function formatPercent(value?: number | null): string {
+  const numeric = value ?? 0;
+  const percent = numeric > 1 ? numeric : numeric * 100;
+  return `${Math.round(percent)}%`;
+}
+
+export function formatDate(value?: string | null): string {
+  if (!value) return 'Never';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}
+
+export function formatDuration(value?: number | null): string {
+  if (!value) return 'N/A';
+
+  if (value < 1000) return `${value} ms`;
+
+  const seconds = Math.round(value / 1000);
+  if (seconds < 60) return `${seconds}s`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+/** "cache_engaging" → "Cache engaging". */
+export function formatLabel(value?: string | null): string {
+  if (!value) return 'N/A';
+
+  const words = value
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export function formatScopeList(values?: string[]): string {
+  return values?.length ? values.join(', ') : 'All';
+}
+
+export function formatLabelSet(labels: Record<string, string>): string {
+  const entries = Object.entries(labels);
+  if (entries.length === 0) return 'None';
+  return entries.map(([key, value]) => `${key}=${value}`).join(', ');
+}
+
+const runStatusKeys: Record<AiDiagnosticsStatus, StatusKey> = {
+  pending: 'suggestion-run-pending',
+  running: 'suggestion-run-running',
+  completed: 'suggestion-run-completed',
+  failed: 'suggestion-run-failed',
+};
+
+export function runStatusKey(status: AiDiagnosticsStatus): StatusKey {
+  return runStatusKeys[status] ?? 'unknown';
+}
+
+export function checkStatusKey(status: AiDiagnosticsCheckStatus): StatusKey {
+  if (status === 'pass') return 'check-pass';
+  if (status === 'fail') return 'check-fail';
+  return 'check-warning';
 }

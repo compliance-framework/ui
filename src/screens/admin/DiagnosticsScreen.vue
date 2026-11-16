@@ -2,12 +2,11 @@
 import { computed, onMounted } from 'vue';
 import { RouterView } from 'vue-router';
 import { useAiConfigStore } from '@/stores/ai-config';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
 /**
  * Diagnostics (/admin/diagnostics, admin): notification delivery and, where enabled, AI
- * suggestion runs, as route tabs. Both sections are classic islands.
+ * suggestion runs, as route tabs.
  */
 const aiConfig = useAiConfigStore();
 
@@ -34,8 +33,6 @@ onMounted(() => {
     description="How notifications and AI suggestions are running."
     :tabs="tabs"
   >
-    <LegacyPage>
-      <RouterView />
-    </LegacyPage>
+    <RouterView />
   </RecordTemplate>
 </template>

@@ -10,13 +10,14 @@ import { countsSentence, type StatusKey } from '../StatusBadge/statuses';
  * and states the same breakdown in words from the shared status vocabulary (F-12 AC4), so the bar
  * is never colour alone (P6); statuses with no items are left out, and so is the bar when all are
  * zero. `description` adds context in one short line, e.g. "32 items" or why a value is empty.
- * The whole tile is one link.
+ * With `to` the whole tile is one link; without it the tile is a plain figure, for a value with
+ * no list behind it (such as a worker mode or a token count).
  */
 const props = defineProps<{
   label: string;
   value: string;
   description?: string;
-  to: RouteLocationRaw;
+  to?: RouteLocationRaw;
   segments?: { status: StatusKey; count: number }[];
 }>();
 
@@ -30,12 +31,18 @@ const caption = computed(() =>
 </script>
 
 <template>
-  <RouterLink :to="to" class="metric-tile">
+  <RouterLink v-if="to" :to="to" class="metric-tile metric-tile--link">
     <span class="metric-tile__label">{{ label }}</span>
     <span class="metric-tile__value">{{ value }}</span>
     <DistributionBar v-if="shown.length" :segments="shown" />
     <span v-if="caption" class="metric-tile__description">{{ caption }}</span>
   </RouterLink>
+  <div v-else class="metric-tile">
+    <span class="metric-tile__label">{{ label }}</span>
+    <span class="metric-tile__value">{{ value }}</span>
+    <DistributionBar v-if="shown.length" :segments="shown" />
+    <span v-if="caption" class="metric-tile__description">{{ caption }}</span>
+  </div>
 </template>
 
 <style scoped>
@@ -53,11 +60,11 @@ const caption = computed(() =>
   transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
-.metric-tile:hover {
+.metric-tile--link:hover {
   background: var(--ds-color-surface-hover);
 }
 
-.metric-tile:hover .metric-tile__label {
+.metric-tile--link:hover .metric-tile__label {
   text-decoration: underline;
 }
 

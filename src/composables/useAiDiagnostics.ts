@@ -9,7 +9,7 @@ import {
   type AiDiagnosticsRunsFilters,
   type AiDiagnosticsRunsResponse,
   type AiDiagnosticsSummary,
-} from '@/views/admin/partials/ai-diagnostics';
+} from '@/screens/admin/aiDiagnostics';
 
 const labelKeyStopPaths = ['data.scope.labelSets', 'data.events.metadata'];
 

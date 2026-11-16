@@ -213,6 +213,21 @@ export const statuses = {
   'step-failed': { label: 'Failed', tone: 'error', icon: 'error' },
   'step-skipped': { label: 'Skipped', tone: 'neutral', icon: 'next' },
   'step-overdue': { label: 'Overdue', tone: 'warning', icon: 'warning' },
+  // diagnostic checks (notifications, AI suggestions)
+  'check-pass': { label: 'Passed', tone: 'success', icon: 'success' },
+  'check-warning': { label: 'Warning', tone: 'warning', icon: 'warning' },
+  'check-fail': { label: 'Failed', tone: 'error', icon: 'error' },
+  'check-error': { label: 'Error', tone: 'error', icon: 'error' },
+  // background jobs (notification deliveries)
+  'job-available': { label: 'Available', tone: 'warning', icon: 'planned' },
+  'job-scheduled': { label: 'Scheduled', tone: 'neutral', icon: 'date' },
+  'job-running': { label: 'Running', tone: 'info', icon: 'inProgress' },
+  'job-retryable': { label: 'Retryable', tone: 'warning', icon: 'warning' },
+  'job-completed': { label: 'Completed', tone: 'success', icon: 'success' },
+  'job-discarded': { label: 'Discarded', tone: 'error', icon: 'error' },
+  // notification providers
+  'provider-enabled': { label: 'Enabled', tone: 'success', icon: 'success' },
+  'provider-disabled': { label: 'Disabled', tone: 'neutral', icon: 'paused' },
 } as const satisfies Record<string, StatusDefinition>;
 
 export type StatusKey = keyof typeof statuses;
