@@ -54,6 +54,7 @@ const routes = [
   '/lineage/graph',
   '/admin/agents/ag-1',
   '/admin/agents/ag-1/keys',
+  '/admin/agents/ag-1/configuration',
   '/dashboards/create',
   '/users/u1',
   '/admin/groups/g1',

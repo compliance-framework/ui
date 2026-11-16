@@ -77,6 +77,7 @@ withDefaults(
   font-weight: var(--ds-font-weight-bold);
   letter-spacing: var(--ds-tracking-wide);
   line-height: var(--ds-leading-snug);
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 

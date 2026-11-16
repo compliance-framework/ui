@@ -563,6 +563,126 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           'updated-at': '2026-09-09T00:00:00Z',
         },
       });
+    // The agent's Configuration tab: revision 7, one in-sync instance running one plugin.
+    if (
+      path === '/api/admin/agents/ag-1/config' ||
+      path === '/api/admin/agents/ag-1/config/revisions/7'
+    )
+      return json(route, {
+        data: {
+          agent_id: 'ag-1',
+          revision: 7,
+          overlay: { verbosity: 1 },
+          overlay_size: 15,
+          comment: 'Louder logs',
+          created_by: 'admin@example.com',
+          created_at: '2026-11-10T09:00:00Z',
+          revert_of: null,
+        },
+      });
+    if (
+      path === '/api/admin/agents/ag-1/instances' ||
+      path === '/api/admin/agents/ag-1/instances/inst-1'
+    ) {
+      const config = {
+        daemon: true,
+        verbosity: 0,
+        api: { url: 'https://ccf.example.com' },
+        remote_config: {
+          mode: 'apply_safe',
+          poll_interval: '60s',
+          overridable_config_flags: [],
+        },
+        plugins: {
+          'local-ssh': {
+            source: 'ghcr.io/compliance-framework/plugin-local-ssh:v1.2.0',
+            schedule: '*/5 * * * *',
+            policies: [
+              'ghcr.io/compliance-framework/plugin-local-ssh-policies:v1.0.0',
+            ],
+            config: { host: 'localhost', port: '22' },
+          },
+        },
+      };
+      const instance = {
+        instance_id: 'inst-1',
+        hostname: 'collector-1',
+        agent_version: 'v0.9.0',
+        mode: 'apply_safe',
+        first_seen_at: '2026-11-01T00:00:00Z',
+        last_seen_at: '2026-11-16T09:00:00Z',
+        reported_at: '2026-11-16T09:00:00Z',
+        stale: false,
+        applied_revision: 7,
+        attempted_revision: 7,
+        status: 'applied',
+        reason: null,
+        error: null,
+        sync_status: 'in-sync',
+        effective_digest: 'sha256:1',
+        heartbeat_config_revision: 7,
+        report_stale: false,
+        remote_config: config.remote_config,
+        unsafe: [],
+        daemon: true,
+        truncated: false,
+        warnings: [],
+      };
+      if (path.endsWith('/inst-1'))
+        return json(route, {
+          data: {
+            ...instance,
+            base: config,
+            effective: { ...config, verbosity: 1 },
+          },
+        });
+      return list(
+        route,
+        lists,
+        {
+          data: [instance],
+          meta: {
+            desired_revision: 7,
+            page: 1,
+            limit: 25,
+            total: 1,
+            total_pages: 1,
+            counts: {
+              total: 1,
+              fresh: 1,
+              stale: 0,
+              in_sync: 1,
+              out_of_sync: 0,
+              pending: 0,
+              rejected: 0,
+              failed: 0,
+              unknown: 0,
+            },
+          },
+        },
+        {
+          data: [],
+          meta: {
+            desired_revision: 7,
+            page: 1,
+            limit: 25,
+            total: 0,
+            total_pages: 0,
+            counts: {
+              total: 0,
+              fresh: 0,
+              stale: 0,
+              in_sync: 0,
+              out_of_sync: 0,
+              pending: 0,
+              rejected: 0,
+              failed: 0,
+              unknown: 0,
+            },
+          },
+        },
+      );
+    }
     if (path === '/api/admin/agents/ag-1/keys')
       return list(
         route,

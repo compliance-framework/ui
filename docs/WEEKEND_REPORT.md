@@ -24,9 +24,7 @@ without a redesigned page around it. Pages fall into three kinds:
   the component definition, POA&M and assessment plan records (every tab, form and dialog);
   Preferences (with the Slack link); the system template page; New evidence filter (and the
   edit dialog); Import; About; and every signed-out page.
-- **Design-system page with classic islands inside**: Diagnostics,
-  Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
-- **Design-system header over a classic body**: Diagnostics sections.
+- **Classic islands**: none left. Diagnostics and the agent Configuration tab were the last.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
 classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
@@ -1286,3 +1284,19 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   against local-dev (notifications, all four tabs, a real delivery job; AI is off locally, so
   its enabled views are covered by specs and the axe run's mocks). All six diagnostics views
   join the axe run.
+- **The agent Configuration tab is design-system.** The editor (about 6,000 lines) moved to
+  `src/screens/agents/config`; the CodeMirror editor became a design-system `CodeEditor` with
+  one theme built from tokens (so it no longer reconfigures when the theme changes). New
+  design-system pieces: `InfoTip` (a focusable tip, replacing every `v-tooltip`, which keyboard
+  users couldn't reach), `InlineTabs` (tabs that don't change the address, for the plugins),
+  `ToggleChip` (the instance picker), a sticky-bottom `Panel` (the pending-changes bar), and
+  `undo`/`moveUp`/`moveDown` icons. **Decisions:** every disabled control says why; the YAML
+  viewers use `CodeBlock` (Copy and Download, hidden when there is no document); the raw YAML
+  dialog uses the design-system dirty guard and now closes on Escape (asking first when there are
+  edits); plugin install problems show as a text tag on the tab, with the reason in the card's
+  tip; "Review & save" reads "Review and save". The editor's own fetching (debounce, 409/422
+  handling) is kept rather than moved onto `useApiQuery`. Checked live against local-dev's
+  todo-worker agent: Effective (summary), File, History, raw YAML and Add plugin; no page errors.
+  The live check found long locked-key names (`REMOTE_CONFIG.TRUSTED_SOURCES`) running into the
+  next column, so `DescriptionList` terms now wrap. The tab joins the axe run with a mocked
+  instance.
