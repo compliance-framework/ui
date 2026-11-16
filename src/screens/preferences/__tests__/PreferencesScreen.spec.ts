@@ -15,13 +15,6 @@ vi.mock('@/composables/axios', () => ({
 }));
 
 // Mock components
-vi.mock('@/components/PageHeader.vue', () => ({
-  default: {
-    name: 'PageHeader',
-    template: '<header><slot></slot></header>',
-  },
-}));
-
 vi.mock('@/components/PageCard.vue', () => ({
   default: {
     name: 'PageCard',

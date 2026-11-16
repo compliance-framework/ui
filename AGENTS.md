@@ -49,13 +49,11 @@ npm run format:fix                           # prettier --write src/
 
 - `src/views/`: route pages. `src/router/index.ts` defines routes and gates them on
   `meta.requiresAuth` and permissions.
-- `src/components/`: feature folders plus shared building blocks (`PageCard.vue`,
-  `PageHeader.vue`, buttons).
+- `src/components/`: feature folders plus shared building blocks (`PageCard.vue`, buttons).
 - `src/volt/`: vendored Volt wrappers around unstyled PrimeVue. Not linted. Don't restyle or
   refactor them as part of feature work.
 - `src/composables/axios/`: **the API client to use**: `useDataApi`,
   `useAuthenticatedInstance`, `useGuestApi`, `decamelizeKeys`.
-- `src/composables/api/`: older fetch-based client. Don't extend it.
 - `src/stores/`: Pinia stores. `config.ts` resolves the API URL: `VITE_API_URL`, otherwise
   `/config.json` at runtime over `src/defaultconfig.json`.
 - `src/oscal/`, `src/types/`: hand-written API types (OSCAL and non-OSCAL).
@@ -102,8 +100,6 @@ These cause most API-related bugs in this repo:
 - API types are written by hand in `src/types` or `src/oscal`. Match the API's JSON tags, after
   camelCasing.
 - Tooltip text lives in `src/config/tooltips.ts` (see `docs/TOOLTIPS.md`).
-- `src/components/LabelList.vue` hides labels whose names start with `_`, which are system
-  labels such as `_policy` and `_agent`. Don't use it where every label must be shown.
 
 ## Tests
 

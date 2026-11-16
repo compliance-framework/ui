@@ -364,13 +364,6 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
-vi.mock('@/components/PageHeader.vue', () => ({
-  default: {
-    name: 'PageHeader',
-    template: '<h1><slot /></h1>',
-  },
-}));
-
 vi.mock('@/components/PageCard.vue', () => ({
   default: {
     name: 'PageCard',
