@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import { ACTIONS } from '@/constants/permissions';
 import type { AssessmentPlan, AssessmentResult, POAM } from '@/oscal';

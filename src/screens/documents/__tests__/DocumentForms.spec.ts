@@ -13,7 +13,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
   decamelizeKeys: (data: unknown) => data,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 enableAutoUnmount(afterEach);
 

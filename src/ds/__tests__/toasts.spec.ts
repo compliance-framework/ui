@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import ToastEventBus from 'primevue/toasteventbus';
-import {
-  bridgePrimeVueToasts,
-  dismissToast,
-  showToast,
-  toasts,
-  toneOf,
-} from '../toasts';
+import { dismissToast, showToast, toasts, toneOf, useToast } from '../toasts';
 
 describe('toasts', () => {
   beforeEach(() => {
@@ -39,9 +32,9 @@ describe('toasts', () => {
     ]);
   });
 
-  it('shows toasts raised through PrimeVue’s toast service', () => {
-    const stop = bridgePrimeVueToasts();
-    ToastEventBus.emit('add', {
+  it('raises toasts through useToast with the app’s message shape', () => {
+    const toast = useToast();
+    toast.add({
       severity: 'error',
       summary: 'Delete failed',
       detail: 'Try again.',
@@ -54,10 +47,11 @@ describe('toasts', () => {
         message: 'Try again.',
       }),
     ]);
-    ToastEventBus.emit('remove-all-groups');
-    expect(toasts).toHaveLength(0);
-    stop();
-    ToastEventBus.emit('add', { severity: 'info', summary: 'Ignored' });
+    toast.add({ severity: 'info', detail: 'Only a detail' });
+    expect(toasts[1]).toEqual(
+      expect.objectContaining({ title: 'Only a detail', message: undefined }),
+    );
+    toast.removeAllGroups();
     expect(toasts).toHaveLength(0);
   });
 });

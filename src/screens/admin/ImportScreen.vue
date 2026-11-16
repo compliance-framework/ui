@@ -5,7 +5,7 @@
  */
 import { reactive } from 'vue';
 import type { AxiosError } from 'axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { getErrorDetail } from '@/utils/httpErrors';
 import { plural } from '@/ds/format';

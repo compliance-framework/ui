@@ -112,7 +112,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import Button from '@/ds/components/Button/Button.vue';

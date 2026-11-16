@@ -5,7 +5,7 @@
  * on. Saves the task itself and emits `created` or `updated`.
  */
 import { computed, reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { v4 as uuidv4 } from 'uuid';
 import type { Task, TaskTiming } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';

@@ -6,7 +6,7 @@
  * inherited ones are managed on their group.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS, MANIFEST_ROLES, RESOURCES } from '@/constants/permissions';

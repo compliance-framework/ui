@@ -56,8 +56,8 @@ import type {
 import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
 import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
 import ByComponentStatement from './ByComponentStatement.vue';
-import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from '@/ds/toasts';
+import { useConfirm } from '@/ds/confirm';
 import {
   buildApplySuggestionsEndpoint,
   buildSuggestComponentsEndpoint,

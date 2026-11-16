@@ -37,7 +37,7 @@ vi.mock('@/composables/usePermissions', () => ({
 vi.mock('@/utils/delete-dialog', () => ({
   useDeleteConfirmationDialog: () => ({ confirmDeleteDialog: vi.fn() }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 vi.mock('@/composables/axios', () => ({
   useDataApi: () => ({
     data: ref([{ id: 'u-1', displayName: 'Ada Lovelace' }]),

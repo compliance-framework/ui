@@ -22,7 +22,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ post }),
 }));
 
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountScreen(screen: Component, path: string) {
   const Stub = defineComponent({ render: () => h('div') });

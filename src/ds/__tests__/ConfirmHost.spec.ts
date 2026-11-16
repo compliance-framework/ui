@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import ConfirmationEventBus from 'primevue/confirmationeventbus';
+import { useConfirm } from '../confirm';
 import ConfirmDialog from '../components/ConfirmDialog/ConfirmDialog.vue';
 import ConfirmHost from '../components/ConfirmDialog/ConfirmHost.vue';
 
@@ -9,11 +9,11 @@ describe('ConfirmHost', () => {
     document.body.innerHTML = '';
   });
 
-  it('shows a PrimeVue confirm request as a design-system confirm and accepts it', async () => {
+  it('shows a confirm request as a ConfirmDialog and accepts it', async () => {
     const accept = vi.fn();
     const reject = vi.fn();
     const wrapper = mount(ConfirmHost, { attachTo: document.body });
-    ConfirmationEventBus.emit('confirm', {
+    useConfirm().require({
       header: 'Delete Workflow Definition',
       message: 'This action cannot be undone.',
       acceptProps: { label: 'Delete', severity: 'danger' },
@@ -44,7 +44,7 @@ describe('ConfirmHost', () => {
     const accept = vi.fn();
     const reject = vi.fn();
     const wrapper = mount(ConfirmHost, { attachTo: document.body });
-    ConfirmationEventBus.emit('confirm', {
+    useConfirm().require({
       header: 'Start execution?',
       acceptProps: { label: 'Start Execution', severity: 'primary' },
       accept,

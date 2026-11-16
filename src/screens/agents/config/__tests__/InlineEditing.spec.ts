@@ -23,7 +23,7 @@ import {
 
 vi.mock('@/ds/components/CodeEditor', () => import('./codeEditorMock'));
 // Confirmations accept immediately.
-vi.mock('primevue/useconfirm', () => ({
+vi.mock('@/ds/confirm', () => ({
   useConfirm: () => ({
     require: (o: { accept?: () => void }) => o.accept?.(),
   }),

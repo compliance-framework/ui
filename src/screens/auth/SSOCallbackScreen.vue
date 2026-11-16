@@ -5,7 +5,7 @@
  */
 import { onMounted, ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
 import Button from '@/ds/components/Button/Button.vue';

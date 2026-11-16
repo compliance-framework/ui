@@ -4,7 +4,7 @@
  * links. The API's POST replaces the whole back matter, so the existing resources go with it.
  */
 import { reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { v4 as uuidv4 } from 'uuid';
 import type { BackMatterResource } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';

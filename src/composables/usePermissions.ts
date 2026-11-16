@@ -5,7 +5,7 @@ import { RESOURCES, ACTIONS, permissionTooltip } from '@/constants/permissions';
 // Ergonomic access to the permission map for templates and components.
 //
 //   const { can } = usePermissions();
-//   <PrimaryButton :disabled="!can(RESOURCES.RISK, ACTIONS.CREATE)" />
+//   <Button :disabled-reason="can(RESOURCES.RISK, ACTIONS.CREATE) ? undefined : '…'" />
 //
 // or the reactive convenience computeds for common gates.
 export function usePermissions() {

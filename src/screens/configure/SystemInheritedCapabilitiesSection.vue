@@ -7,7 +7,7 @@
  * leveraged-controls projection is the only fetch: no catalog controls are looked up here.
  */
 import { computed, ref, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { LEVERAGED_CONTROLS_STOP_PATHS } from '@/composables/useLeveragedControls';
 import { usePermissions } from '@/composables/usePermissions';

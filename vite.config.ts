@@ -1,7 +1,6 @@
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import tailwindcss from '@tailwindcss/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
 // Opt-in dev proxy: `VITE_API_PROXY=http://localhost:8080 npm run dev` sends /api through the dev
@@ -13,7 +12,7 @@ const apiProxy = process.env.VITE_API_PROXY;
 // https://vite.dev/config/
 export default defineConfig({
   // The dev tools overlay is left out of browser checks (E2E=1), so it can't affect them.
-  plugins: [vue(), ...(process.env.E2E ? [] : [vueDevTools()]), tailwindcss()],
+  plugins: [vue(), ...(process.env.E2E ? [] : [vueDevTools()])],
   server: {
     port: 3000, // must be a port other than 5173
     host: true,

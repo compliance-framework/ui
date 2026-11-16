@@ -12,7 +12,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: state.push }),
 }));
 
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 function mountView() {
   return mount(CreateFormView, {

@@ -4,7 +4,7 @@
  * API stores only these here (its props and links aren't saved), so the form offers only these.
  */
 import { reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { v4 as uuidv4 } from 'uuid';
 import type { DefinedComponent } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';

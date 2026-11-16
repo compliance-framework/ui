@@ -18,7 +18,7 @@ import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import { useControlLinkDelete } from '@/composables/controlLinks';
 import { usePermissions } from '@/composables/usePermissions';

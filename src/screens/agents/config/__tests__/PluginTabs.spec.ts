@@ -21,7 +21,7 @@ import {
 } from './helpers';
 
 vi.mock('@/ds/components/CodeEditor', () => import('./codeEditorMock'));
-vi.mock('primevue/useconfirm', () => ({
+vi.mock('@/ds/confirm', () => ({
   useConfirm: () => ({
     require: (o: { accept?: () => void }) => o.accept?.(),
   }),

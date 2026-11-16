@@ -11,7 +11,7 @@ const toastAdd = vi.hoisted(() => vi.fn());
 vi.mock('@/stores/system-security-plans', () => ({
   useSystemSecurityPlanStore: () => store,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: toastAdd }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: toastAdd }) }));
 
 describe('useSspProfileBindings', () => {
   beforeEach(() => {

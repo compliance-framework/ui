@@ -6,7 +6,7 @@
  * the admin API and emits `saved` with the API's copy of the template.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import type { Profile } from '@/oscal';
 import { getErrorDetail } from '@/utils/httpErrors';

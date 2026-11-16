@@ -6,7 +6,7 @@
  */
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Agent } from '@/types/agents';
 import { formatDate, formatDateTime, plural } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';

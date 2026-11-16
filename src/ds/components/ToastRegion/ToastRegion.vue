@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { computed } from 'vue';
 import { TooltipProvider } from 'reka-ui';
-import { bridgePrimeVueToasts, dismissToast, toasts } from '../../toasts';
+import { dismissToast, toasts } from '../../toasts';
 import Icon from '../Icon/Icon.vue';
 import IconButton from '../IconButton/IconButton.vue';
 
@@ -9,7 +9,8 @@ import IconButton from '../IconButton/IconButton.vue';
  * The one toast region (F-13 AC4, AC5; P5), mounted once in App. It sits bottom-right inside the
  * page padding, stacks upward and never reaches the header. Success and info go to a polite live
  * region, warnings and errors to an assertive role="alert" region; both stay in the DOM so new
- * toasts are announced. It also shows toasts raised through PrimeVue's `useToast()`.
+ * toasts are announced. Scripts raise toasts with `useToast()`
+ * from `@/ds/toasts`.
  */
 // role="alert" is assertive and role="status" polite; aria-atomic="false" reads only the new toast.
 const groups = computed(() => [
@@ -22,10 +23,6 @@ const groups = computed(() => [
     items: toasts.filter((t) => t.tone === 'success' || t.tone === 'info'),
   },
 ]);
-
-let unbridge: (() => void) | undefined;
-onMounted(() => (unbridge = bridgePrimeVueToasts()));
-onBeforeUnmount(() => unbridge?.());
 </script>
 
 <template>

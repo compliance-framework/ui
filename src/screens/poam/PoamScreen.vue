@@ -7,7 +7,7 @@ import { ref, watch, computed } from 'vue';
 import type { POAM } from '@/oscal';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 

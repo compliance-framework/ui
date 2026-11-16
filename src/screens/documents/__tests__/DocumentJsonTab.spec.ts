@@ -24,7 +24,7 @@ vi.mock('@/composables/axios', () => ({
 }));
 
 // CodeBlock reports copy results through the global toast.
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('DocumentJsonTab', () => {
   it('shows the full document for the route’s type as kebab-case OSCAL JSON', async () => {

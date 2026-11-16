@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Add or edit an export offering's title and description. Emits `created` or `saved`. */
 import { reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { SSPExportOffering } from '@/types/ssp-export-offerings';
 import { getErrorDetail } from '@/utils/httpErrors';

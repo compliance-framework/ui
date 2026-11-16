@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser, CCFUserGroup, DataResponse } from '@/stores/types';
 import { getErrorDetail } from '@/utils/httpErrors';

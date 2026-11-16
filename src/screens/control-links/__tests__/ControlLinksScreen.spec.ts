@@ -41,7 +41,7 @@ vi.mock('@/composables/controlLinks', () => ({
     deleteCatalogLink: vi.fn(),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountScreen(path = '/control-links') {
   const router = createRouter({

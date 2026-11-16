@@ -4,7 +4,7 @@
  * button opens a dialog that posts the message, with the page it came from, to the demo portal.
  */
 import { computed, onMounted, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useConfigStore } from '@/stores/config';
 import Button from '@/ds/components/Button/Button.vue';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';

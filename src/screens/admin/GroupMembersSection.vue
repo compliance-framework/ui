@@ -5,7 +5,7 @@
  * picker over the user directory) and Remove.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFGroupMember, CCFUser } from '@/stores/types';
 import { getErrorDetail } from '@/utils/httpErrors';

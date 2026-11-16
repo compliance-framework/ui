@@ -19,7 +19,7 @@ vi.mock('@/composables/axios', () => ({
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => state.can }),
 }));
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toast }),
 }));
 

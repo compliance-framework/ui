@@ -324,7 +324,7 @@ vi.mock('@/stores/system-security-plans', () => ({
   }),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: mockToastAdd,
   }),

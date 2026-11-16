@@ -9,7 +9,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 
 const toast = useToast();
 const route = useRoute();

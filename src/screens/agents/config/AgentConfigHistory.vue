@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, shallowRef, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import Button from '@/ds/components/Button/Button.vue';
 import DataTable from '@/ds/components/DataTable/DataTable.vue';
 import type { DataTableColumn } from '@/ds/components/DataTable/types';

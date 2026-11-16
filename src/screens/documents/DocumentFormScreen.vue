@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
 import { ACTIONS } from '@/constants/permissions';

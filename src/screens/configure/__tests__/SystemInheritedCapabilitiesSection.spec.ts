@@ -19,7 +19,7 @@ const { postMock, toastAddMock, permState, controlsData, fetched } = vi.hoisted(
   }),
 );
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 vi.mock('@/composables/usePermissions', () => ({

@@ -5,7 +5,7 @@
  * or `saved`.
  */
 import { reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { SystemUser } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { uuid } from '@/utils/uuid';

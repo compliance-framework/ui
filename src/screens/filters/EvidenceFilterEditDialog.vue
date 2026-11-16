@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** A saved evidence filter's form in a dialog. Confirms the save and emits `saved`. */
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Dashboard, DashboardCreate } from '@/stores/filters';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';
 import EvidenceFilterForm from './EvidenceFilterForm.vue';

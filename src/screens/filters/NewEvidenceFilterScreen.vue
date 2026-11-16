@@ -4,7 +4,7 @@
  * saved from This System > Evidence, `?sspId=`. Saving returns to the evidence it searches.
  */
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { DashboardCreate } from '@/stores/filters.ts';
 import { serializeFilter } from '@/parsers/labelfilter.ts';
 import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';

@@ -6,7 +6,7 @@
  */
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { downloadJson } from '@/utils/download-json';
 import Button from '@/ds/components/Button/Button.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';

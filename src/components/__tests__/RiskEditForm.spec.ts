@@ -55,7 +55,7 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: vi.fn((data: unknown) => JSON.stringify(data)),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: toastAdd,
     remove: vi.fn(),

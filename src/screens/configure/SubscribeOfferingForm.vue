@@ -5,7 +5,7 @@
  * Leverage section (the whole offering) and by the Implementation statement editor (one item).
  */
 import { computed, reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 import type {

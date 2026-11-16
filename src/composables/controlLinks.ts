@@ -1,5 +1,5 @@
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import type { CatalogLinkSummary, ControlLink } from '@/types/control-links';
 

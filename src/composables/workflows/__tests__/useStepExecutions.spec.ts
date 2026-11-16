@@ -17,13 +17,13 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: vi.fn((data) => JSON.stringify(data)),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: mockToastAdd,
   }),
 }));
 
-vi.mock('primevue/useconfirm', () => ({
+vi.mock('@/ds/confirm', () => ({
   useConfirm: () => ({
     require: mockConfirmRequire,
   }),

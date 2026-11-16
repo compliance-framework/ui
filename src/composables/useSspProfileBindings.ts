@@ -1,6 +1,6 @@
 import { ref, nextTick, watch } from 'vue';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { getErrorStatus, getErrorDetail } from '@/utils/httpErrors';
 
 export function useSspProfileBindings(

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { Risk } from '@/oscal';

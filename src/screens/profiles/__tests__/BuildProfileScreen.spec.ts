@@ -18,7 +18,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
   decamelizeKeys: (data: unknown) => JSON.stringify(data),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountScreen() {
   const Stub = { render: () => null };

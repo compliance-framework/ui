@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useBaselineEvidence } from '@/composables/useBaselineEvidence';
 import type {
   LabelCondition,

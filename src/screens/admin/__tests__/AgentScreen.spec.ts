@@ -58,7 +58,7 @@ vi.mock('@/composables/axios', () => ({
     };
   },
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 vi.mock('@/screens/agents/config/AgentConfigTab.vue', () => ({
   __esModule: true,
   default: {

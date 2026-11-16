@@ -120,16 +120,12 @@ vi.mock('@/composables/axios', () => ({
 }));
 
 const toastAdd = vi.fn();
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAdd }),
 }));
 
-vi.mock('primevue/useconfirm', () => ({
+vi.mock('@/ds/confirm', () => ({
   useConfirm: () => ({ require: vi.fn() }),
-}));
-
-vi.mock('bootstrap-icons-vue', () => ({
-  BIconEye: { template: '<span />' },
 }));
 
 function flushPromises() {

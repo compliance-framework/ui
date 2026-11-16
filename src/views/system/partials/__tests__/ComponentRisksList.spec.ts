@@ -42,7 +42,7 @@ vi.mock('vue-router', () => ({
   }),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: toastAddMock,
   }),

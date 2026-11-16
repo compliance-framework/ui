@@ -20,7 +20,7 @@ vi.mock('@/composables/useBaselineEvidence', async () => {
   };
 });
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toastAdd }),
 }));
 

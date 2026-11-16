@@ -4,7 +4,7 @@
  * expiry and creation, Revoke for each live key, and New key (which shows the secret once).
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { Agent, AgentServiceAccountKey } from '@/types/agents';
 import { getErrorDetail } from '@/utils/httpErrors';

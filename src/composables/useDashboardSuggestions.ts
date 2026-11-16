@@ -9,7 +9,7 @@ import {
   type MaybeRef,
   type Ref,
 } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import {
   buildAcceptDashboardSuggestionsEndpoint,

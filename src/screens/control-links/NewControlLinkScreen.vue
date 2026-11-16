@@ -19,7 +19,7 @@ import Cluster from '@/ds/components/layout/Cluster.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import { useControlOptions } from '@/composables/useControlOptions';
 import { usePermissions } from '@/composables/usePermissions';

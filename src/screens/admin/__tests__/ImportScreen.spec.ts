@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({ post: vi.fn() as ReturnType<typeof vi.fn> }));
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 function mountScreen() {
   return mount(

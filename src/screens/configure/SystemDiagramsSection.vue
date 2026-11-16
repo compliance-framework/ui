@@ -9,7 +9,7 @@ import { computed, onMounted, ref, type Ref } from 'vue';
 import type { Diagram, SystemSecurityPlan } from '@/oscal';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import { v4 } from 'uuid';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import Button from '@/ds/components/Button/Button.vue';
 import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';

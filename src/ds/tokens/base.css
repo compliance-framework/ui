@@ -1,8 +1,11 @@
 /*
- * Global element defaults for the design system. Pages not yet migrated render inside a legacy
- * wrapper (src/views/layouts/LegacyPage.vue) that restores their Tailwind look. :where() keeps
- * these at element specificity, so any component or utility class overrides them.
+ * Global element defaults for the design system. :where() keeps these at element specificity,
+ * so any component class overrides them.
  */
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
 :where(html) {
   background: var(--ds-color-surface-base);
   color: var(--ds-color-text-primary);

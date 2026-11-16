@@ -21,7 +21,7 @@ vi.mock('vue-router', async (importOriginal) => ({
   useRoute: () => ({ params: { systemId: 'system-1' } }),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 

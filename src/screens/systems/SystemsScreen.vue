@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { SystemSecurityPlan } from '@/oscal';

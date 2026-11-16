@@ -6,7 +6,7 @@
  */
 import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Link, Property, SystemImplementation } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';

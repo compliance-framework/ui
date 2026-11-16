@@ -9,7 +9,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
   decamelizeKeys: (data: unknown) => JSON.stringify(data),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('BackMatterResourceForm', () => {
   it('sends the existing resources with the new one, since the API replaces the list', async () => {

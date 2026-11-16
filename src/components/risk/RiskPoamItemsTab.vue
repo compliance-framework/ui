@@ -104,7 +104,7 @@
  * the classic tab's.
  */
 import { ref, computed } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';

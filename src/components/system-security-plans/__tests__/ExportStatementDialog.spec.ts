@@ -19,7 +19,7 @@ const { loadMock, saveMock, toastAddMock, permState, composableState } =
     },
   }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 

@@ -4,7 +4,7 @@
  * other systems to allow one more. The offering's own system can't be its own downstream.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { SystemSecurityPlan } from '@/oscal';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';

@@ -10,7 +10,7 @@ import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 import type { Profile } from '@/oscal';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';

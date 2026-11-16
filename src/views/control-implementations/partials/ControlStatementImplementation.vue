@@ -34,7 +34,7 @@ import {
   useDataApi,
   decamelizeKeys,
 } from '@/composables/axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import ImportFromSspDialog from '@/components/system-security-plans/ImportFromSspDialog.vue';

@@ -1,5 +1,4 @@
 import { reactive } from 'vue';
-import ToastEventBus from 'primevue/toasteventbus';
 
 /**
  * Toasts (F-13): success and info dismiss themselves after 5 s; warnings and errors stay until
@@ -45,31 +44,29 @@ export function toneOf(severity: unknown): ToastTone {
   return 'info';
 }
 
-interface PrimeVueToast {
+/** A toast as the app raises it: PrimeVue-style names, kept so call sites read the same. */
+export interface ToastMessage {
   severity?: string;
   summary?: unknown;
   detail?: unknown;
+  /** Accepted for compatibility; how long a toast stays is set by its tone. */
+  life?: number;
 }
 
-/**
- * Shows every toast raised through PrimeVue's `useToast()` (classic pages and screens alike) as
- * a design-system toast, so call sites don't change. Returns the unsubscribe function.
- */
-export function bridgePrimeVueToasts(): () => void {
-  const add = (message: PrimeVueToast) => {
-    const title = message.summary ? String(message.summary) : '';
-    const detail = message.detail ? String(message.detail) : undefined;
-    showToast({
-      tone: toneOf(message.severity),
-      title: title || detail || 'Done',
-      message: title ? detail : undefined,
-    });
-  };
-  const clear = () => toasts.splice(0, toasts.length);
-  ToastEventBus.on('add', add);
-  ToastEventBus.on('remove-all-groups', clear);
-  return () => {
-    ToastEventBus.off('add', add);
-    ToastEventBus.off('remove-all-groups', clear);
+/** `useToast().add({ severity, summary, detail })` raises a toast; ToastRegion shows it. */
+export function useToast() {
+  return {
+    add(message: ToastMessage): void {
+      const title = message.summary ? String(message.summary) : '';
+      const detail = message.detail ? String(message.detail) : undefined;
+      showToast({
+        tone: toneOf(message.severity),
+        title: title || detail || 'Done',
+        message: title ? detail : undefined,
+      });
+    },
+    removeAllGroups(): void {
+      toasts.splice(0, toasts.length);
+    },
   };
 }

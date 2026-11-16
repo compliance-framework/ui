@@ -37,7 +37,7 @@ vi.mock('@/composables/axios', () => ({
   }),
   useAuthenticatedInstance: () => api,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountSection() {
   const wrapper = mount(

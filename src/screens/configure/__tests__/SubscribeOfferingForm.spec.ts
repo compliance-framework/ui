@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({ post: vi.fn() }));
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ post: state.post }),
 }));
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: vi.fn() }),
 }));
 

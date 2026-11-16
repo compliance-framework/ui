@@ -6,8 +6,8 @@ API.
 
 ## How this repo fits
 
-- **ui** (this repo): Vue 3 + TypeScript + PrimeVue (unstyled, via Volt) + Tailwind v4. It
-  talks only to the API.
+- **ui** (this repo): Vue 3 + TypeScript, on its own design system (`src/ds`, built on
+  reka-ui). It talks only to the API.
 - **api**: Go/Echo service on Postgres. It stores OSCAL documents, evidence and policy
   artifacts. Its Swagger is at `http://localhost:8080/swagger/index.html` in local-dev.
 - **agent** and **plugin-\***: collect evidence and post it to the API. The UI never talks to
@@ -47,28 +47,25 @@ npm run format:fix                           # prettier --write src/
 
 ## Layout
 
-- `src/views/`: route pages. `src/router/index.ts` defines routes and gates them on
+- `src/screens/`: route pages. `src/router/index.ts` defines routes and gates them on
   `meta.requiresAuth` and permissions.
-- `src/components/`: feature folders plus shared building blocks.
-- `src/volt/`: vendored Volt wrappers around unstyled PrimeVue. Not linted. Don't restyle or
-  refactor them as part of feature work.
+- `src/ds/`: the design system: tokens, components, the `AppShell`/`ListTemplate` templates,
+  `useApiQuery`, toasts (`useToast`) and confirmations (`useConfirm`).
+- `src/components/`, `src/views/`: older feature folders, still in use, on the design system.
 - `src/composables/axios/`: **the API client to use**: `useDataApi`,
   `useAuthenticatedInstance`, `useGuestApi`, `decamelizeKeys`.
 - `src/stores/`: Pinia stores. `config.ts` resolves the API URL: `VITE_API_URL`, otherwise
   `/config.json` at runtime over `src/defaultconfig.json`.
 - `src/oscal/`, `src/types/`: hand-written API types (OSCAL and non-OSCAL).
 - `src/utils/`, `src/parsers/`: pure helpers with co-located specs.
-- **Redesign in progress (this branch):** the UI is moving page by page onto the design system in
-  `src/ds/`, with migrated pages in `src/screens/`. Read `docs/REDESIGN.md` first: it has the
-  migration steps, URL scheme and tracker. A migrated page replaces its classic page (which is
-  deleted); classic pages render inside the new shell via `LegacyPage` until their turn. In
-  `src/ds` and `src/screens`: no Tailwind or PrimeVue components; scoped CSS using only `--ds-`
-  tokens; screens contain no CSS or class attributes; read data through `useApiQuery` and render
-  states with `DataState`. Toasts: keep calling PrimeVue's `useToast()`; the design system's
-  `ToastRegion` (in `App.vue`) shows them, with its own policy (errors stay until dismissed).
-  Classic `useConfirm().require(...)` calls are shown by the design system's `ConfirmHost`.
-  `npm run lint:css` enforces the tokens; add each migrated route to `e2e/a11y.spec.ts` and its
-  API calls to `e2e/support/api.ts`.
+- **Design system (this branch):** every page is on the design system; `docs/REDESIGN.md` has
+  its rules, URL scheme and decisions. In `src/ds` and `src/screens`: scoped CSS using only
+  `--ds-` tokens (`npm run lint:css` enforces them); screens contain no CSS or class
+  attributes; read data through `useApiQuery` and render states with `DataState`. Raise toasts
+  with `useToast()` from `@/ds/toasts` (the `ToastRegion` in `App.vue` shows them; errors stay
+  until dismissed) and script confirmations with `useConfirm().require(...)` from
+  `@/ds/confirm` (shown by `ConfirmHost`); in templates use `ConfirmDialog`. Add each new route
+  to `e2e/a11y.spec.ts` and its API calls to `e2e/support/api.ts`.
 
 ## API client traps
 
@@ -94,9 +91,9 @@ These cause most API-related bugs in this repo:
 ## Conventions
 
 - Components use `<script setup lang="ts">`; there is no Options API.
-- Style with Tailwind classes, include `dark:` variants.
-- Only `PrimaryButton`, `SecondaryButton` and `v-tooltip` are registered globally. Import
-  everything else explicitly: there are no auto-imports.
+- Compose design-system components; new visual pieces go in `src/ds/components` with scoped
+  CSS on `--ds-` tokens, which cover dark mode.
+- Nothing is registered globally. Import everything explicitly: there are no auto-imports.
 - API types are written by hand in `src/types` or `src/oscal`. Match the API's JSON tags, after
   camelCasing.
 - Tooltip text lives in `src/config/tooltips.ts` (see `docs/TOOLTIPS.md`).
@@ -119,6 +116,6 @@ These cause most API-related bugs in this repo:
 
 ## Don't
 
-- Hand-edit `src/volt/*` to fix a single page's styling. Pass classes or `pt` props instead.
+- Add Tailwind, PrimeVue or another component library; extend `src/ds` instead.
 - Commit `dist/`, `tests_output/` or `logs/`.
 - Add a second Prettier config.

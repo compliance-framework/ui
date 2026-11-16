@@ -6,7 +6,7 @@
  * chosen: the API rejects an item without a statement. A revoked offering can't change.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS, RESOURCES } from '@/constants/permissions';

@@ -10,7 +10,7 @@ import type { Catalog, Control, Part } from '@/oscal';
 import { computed, ref, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { v4 as uuidv4 } from 'uuid';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useFormSubmit } from '@/composables/useFormSubmit';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';

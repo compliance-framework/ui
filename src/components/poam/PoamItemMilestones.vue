@@ -67,7 +67,7 @@
  * task. The script is the classic panel's.
  */
 import { ref, computed, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import MilestoneCreateEditModal from './MilestoneCreateEditModal.vue';
 import {
   useMilestonesList,

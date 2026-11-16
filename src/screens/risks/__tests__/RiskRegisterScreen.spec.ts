@@ -22,7 +22,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ get: state.get, delete: vi.fn() }),
   decamelizeKeys: (data: unknown) => data,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 vi.mock('@/composables/workflows', () => ({
   useUserSearch: () => ({
     loadUsersByIds: vi.fn(),

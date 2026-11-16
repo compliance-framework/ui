@@ -18,7 +18,7 @@ vi.mock('@/composables/axios', () => ({
   }),
 }));
 
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const plan = (uuid: string, title: string, lastModified: string) => ({
   uuid,

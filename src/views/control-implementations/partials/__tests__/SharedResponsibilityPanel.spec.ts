@@ -18,7 +18,7 @@ let failOffers = false;
 // Holds the offers fetch in flight so the loading window is observable.
 let holdOffers = false;
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 

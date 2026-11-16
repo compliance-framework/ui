@@ -20,7 +20,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ put: vi.fn(), delete: vi.fn() }),
 }));
 
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const catalog = (uuid: string, title: string, props: object[] = []) => ({
   uuid,

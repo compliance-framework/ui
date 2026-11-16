@@ -5,7 +5,7 @@
  */
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { DataResponse } from '@/stores/types';

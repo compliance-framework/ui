@@ -18,16 +18,14 @@ VITE_API_PROXY=http://localhost:8080 npm run dev
 
 | Path                               | What it is                                                                                                                                                        |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/ds/tokens/`                   | Design tokens, all prefixed `--ds-` so they never clash with Tailwind, and the global element defaults.                                                           |
+| `src/ds/tokens/`                   | Design tokens, all prefixed `--ds-`, and the global element defaults.                                                           |
 | `src/ds/components/`               | Shared components from the mockup (Button, DataTable, DataState, FilterBar, Menu, Dialog, Tabs, LineChart, CodeBlock, layout primitives…), on reka-ui and Lucide. |
 | `src/ds/templates/`                | `AppShell` (the app's only frame: header, nav, system switcher, account menu) and `ListTemplate`.                                                                 |
 | `src/ds/query.ts`                  | `useApiQuery`: `useDataApi` mapped to the DataState states (loading, ready, empty, error, forbidden).                                                             |
 | `src/screens/`                     | Migrated pages. Screens compose templates and components and contain no CSS or class attributes.                                                                  |
-| `src/views/layouts/LegacyPage.vue` | The frame for pages not yet migrated: restores their Tailwind look (Inter, text colours) inside the new shell. Deleted with the last classic page.                |
 
-Routes in `src/router/index.ts`: migrated pages are in `designSystemRoutes` with `meta.ds`, which
-tells the shell not to wrap them in `LegacyPage`. Classic pages keep the classic layout's
-behaviour: `meta.activeSystemScoped` pages remount when the current system changes.
+Routes in `src/router/index.ts`: pages are in `designSystemRoutes` with `meta.ds` (from the
+migration; every page has it now). System pages take the system from their URL.
 
 ### Migrating a page
 
@@ -66,28 +64,25 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 | This System > Risks: dashboard, register, new and edit risk                                      | `risks:index` → `/systems/:id/risks` (dashboard) and `/systems/:id/risks/register`                           | **Done**, plus the cross-system register (`/admin/risks`) and the risk page (`risks:detail`, design-system throughout)                                                               |
 | This System > Workflow Instances (list, New instance)                                            | `workflow-instances:index` → `/systems/:id/workflows`                                                        | **Done**; instance page and run page on the design system, with the step graph (`FlowGraph`) and step panel                                                                                           |
 | Configure System (15 tabs)                                                                       | `system:*`, `system-component-dashboards` → `/systems/:id/configure/...`                                     | **Done**: every section is design-system (the draw.io editor is an embedded frame); the old Control Implementation section redirects to Implementation |
-| POA&M items, inventory                                                                           | `poam-items:index`, `inventory:index`                                                                        | POA&M items **done**; inventory **done** (design-system header, classic body)                                                                                                                  |
-| SSP editor (16 tabs)                                                                             | `system-security-plan-*` → Configure System (sections), Risks, Compliance                                    | **Merged into Configure System**; SSP create (`system-security-plans-create`) still classic                                                                                                    |
-| Evidence filters (dashboards)                                                                    | `dashboards`, `dashboards.*`                                                                                 | List **done** (trend in a drawer); New filter and Suggestions frames done (form and suggestions are islands)                                                                                   |
+| POA&M items, inventory                                                                           | `poam-items:index`, `inventory:index`                                                                        | POA&M items **done**; inventory **done**                                                                                                                  |
+| SSP editor (16 tabs)                                                                             | `system-security-plan-*` → Configure System (sections), Risks, Compliance                                    | **Merged into Configure System**; SSP create **done**                                                                                                    |
+| Evidence filters (dashboards)                                                                    | `dashboards`, `dashboards.*`                                                                                 | List **done** (trend in a drawer); New filter and Suggestions **done**                                                                                   |
 | Analysis: cross-system risks, compliance map                                                     | `admin-risks`, `lineage`, `lineage-graph`                                                                    | Cross-system risks **done**; Compliance Map **done** (tree, graph, scope filters and drawer)                                                                            |
-| Integrations: workflow definitions, agents, import                                               | `workflow:index`, `workflow-definition-*`, `admin-agents`, `admin-import`                                    | Workflow definitions list **done**; definition record done with islands; agents (every tab, the Configuration editor included) and import **done**                                                       |
+| Integrations: workflow definitions, agents, import                                               | `workflow:index`, `workflow-definition-*`, `admin-agents`, `admin-import`                                    | Workflow definitions list **done**; definition record **done**; agents (every tab, the Configuration editor included) and import **done**                                                       |
 | Control Definitions: catalogs, profiles, control links, component definitions                    | `catalog-*`, `profile*`, `control-links-*`, `component-definition*`                                          | Lists of catalogs, profiles, component definitions; catalog page; control evidence; control links; create catalog, profile, component definition; build-props **done**          |
-| Assessment plans, assessment results                                                             | `assessment-plan*`, `assessment-results*`                                                                    | Lists, create and edit **done** (shared form); records done with islands                                                                                                                       |
-| POA&M documents                                                                                  | `plan-of-action-and-milestones*`                                                                             | List, create and edit **done** (shared form); record done with islands                                                                                                                         |
-| Admin: users, groups, parties, roles, templates (SSP, subject, risk), diagnostics, notifications | `users-list`, `user-view`, `admin-*`                                                                         | Users, groups, parties, roles; user and group pages; system templates; Diagnostics; subject templates (list and page); risk templates (design-system header, classic body) **done**                                   |
+| Assessment plans, assessment results                                                             | `assessment-plan*`, `assessment-results*`                                                                    | Lists, create and edit **done** (shared form); records **done**                                                                                                                       |
+| POA&M documents                                                                                  | `plan-of-action-and-milestones*`                                                                             | List, create and edit **done** (shared form); record **done**                                                                                                                         |
+| Admin: users, groups, parties, roles, templates (SSP, subject, risk), diagnostics, notifications | `users-list`, `user-view`, `admin-*`                                                                         | Users, groups, parties, roles; user and group pages; system templates; Diagnostics; subject templates (list and page); risk templates **done**                                   |
 | My tasks, preferences, about                                                                     | `my-tasks`, `preferences`, `about`                                                                           | **Done**                                                                                                                          |
 | Sign-in, password reset, SSO and Slack callbacks (guest layout)                                  | `login`, `forgot-password`, `password-reset`, `sso-callback`, `slack-link-callback`                          | **Done**: new `GuestTemplate`; scripts kept from the classic pages                                                                                                                             |
 
-When the last classic page goes: delete `LegacyPage`, PrimeVue, Volt, Tailwind and the classic
-components; drop the `--ds-` prefix if wanted.
+The last classic page has gone, and with it `LegacyPage`, PrimeVue, Volt, Tailwind, primeicons,
+chart.js and the classic shims. Dropping the `--ds-` prefix is optional.
 
 ## Legacy islands
 
-Some migrated pages embed classic components (inside `LegacyPage`) for deep editors that are
-large enough to rebuild separately. They work and keep their tests; they still look classic.
-Replace each with a design-system version, then delete the classic component.
-
-None are left.
+During the migration some pages embedded classic editors (inside `LegacyPage`) until they were
+rebuilt. None are left.
 
 Rebuilt so far (no longer islands): the agent Configuration tab and its editor, Admin Diagnostics (notifications and AI suggestions), every JSON tab, the four OSCAL Overview tabs, profile
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
@@ -140,17 +135,18 @@ Made during the work (open to review):
 - **Components are copied from the mockup, not shared.** This repo's `src/ds` is now the source of
   truth. Changes from the mockup: `DataState` reads the signed-in user from the auth store;
   `format.ts` uses the real clock; `Menu/menu.ts` became `menuEntries.ts` (vue-tsc 2 case clash);
-  `CodeBlock` uses the PrimeVue toast; the mockup's prototype-only pieces were left out.
+  `CodeBlock` uses the app's toasts; the mockup's prototype-only pieces were left out.
 - **API access stays on the existing axios client** (`useDataApi`, `useAuthenticatedInstance`), so
   camelCasing, cookie auth and the 401/403 handling are unchanged. No new data library yet.
 - **Dark mode uses the existing `.dark` class and `useTheme`**; the shell's account menu changes
   it. The classic floating theme button is gone.
 - **Toasts use the design system's `ToastRegion`** (ported from the mockup), mounted once in
-  `App.vue`. It listens to PrimeVue's toast event bus, so every existing `useToast()` call, classic
-  or redesigned, shows a design-system toast. Success and info dismiss after 5 s; warnings and
+  `App.vue`. Scripts raise them with `useToast().add({ severity, summary, detail })` from
+  `@/ds/toasts`, the shape the app's PrimeVue calls used, so the call sites didn't change. Success and info dismiss after 5 s; warnings and
   errors stay until dismissed (the `life` a call site passes is ignored).
-- **Confirmations use the design system's `ConfirmHost`** in `App.vue`, which shows PrimeVue
-  `useConfirm().require(...)` requests as design-system ConfirmDialogs. New screens use
+- **Confirmations use the design system's `ConfirmHost`** in `App.vue`, which shows
+  `useConfirm().require(...)` requests (`@/ds/confirm`, PrimeVue's option names) as
+  ConfirmDialogs. New screens use
   `ConfirmDialog` directly.
 - **Wording follows the current app**; the status vocabulary in `StatusBadge/statuses.ts` is used
   where it matches (evidence results, risk statuses and levels).

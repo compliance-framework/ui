@@ -90,24 +90,9 @@ describe('AppShell', () => {
     pageMounts = 0;
   });
 
-  it('wraps pages not yet migrated in the legacy frame, and not redesigned ones', async () => {
-    const legacy = await mountShell('/global');
-    expect(legacy.find('.legacy-page .page').exists()).toBe(true);
-
-    const redesigned = await mountShell('/new');
-    expect(redesigned.find('.page').exists()).toBe(true);
-    expect(redesigned.find('.legacy-page').exists()).toBe(false);
-  });
-
-  it('remounts a This System page when the current system changes', async () => {
-    const systemStore = useSystemStore();
-    systemStore.setSecurityPlan(plan('ssp-1'));
-    await mountShell('/page');
-    expect(pageMounts).toBe(1);
-
-    systemStore.setSecurityPlan(plan('ssp-2'));
-    await flushPromises();
-    expect(pageMounts).toBe(2);
+  it('renders the page inside the shell', async () => {
+    const wrapper = await mountShell('/new');
+    expect(wrapper.find('main .page').exists()).toBe(true);
   });
 
   it('keeps the page mounted while the current system stays the same', async () => {

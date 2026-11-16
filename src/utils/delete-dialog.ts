@@ -1,5 +1,5 @@
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
+import { useConfirm } from '@/ds/confirm';
+import { useToast } from '@/ds/toasts';
 
 export type DeleteConfirmationOptions = {
   itemName?: string;

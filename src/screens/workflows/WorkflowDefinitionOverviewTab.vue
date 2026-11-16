@@ -6,7 +6,7 @@
  */
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowDefinitionStore } from '@/stores/workflows/definitions';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { WorkflowDefinitionUpdate, EvidenceType } from '@/types/workflows';
 import type { CadenceType } from '@/types/workflows';
 import { formatDateTime } from '@/ds/format';

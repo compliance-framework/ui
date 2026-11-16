@@ -17,7 +17,6 @@ import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useSystemStore } from '@/stores/system';
 import type { DataResponse } from '@/stores/types';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import PrimaryNav from './PrimaryNav.vue';
 import { useContentScroll } from './useContentScroll';
 import { useNavMode } from './useNavMode';
@@ -25,11 +24,7 @@ import { useNavMode } from './useNavMode';
 /**
  * The app shell: skip link, header (product mark, account menu with theme), primary nav as
  * drawer / rail / expanded by width, and one scrolling <main>.
- *
- * Redesigned screens (`meta.ds`) render as they are. Pages not yet migrated render inside
- * LegacyPage, which restores their Tailwind look, and keep the classic layout's behaviour: system
- * pages (`meta.activeSystemScoped`) remount when the current system changes, since many read it
- * once at setup, and the catalog view is kept alive between visits.
+ * The catalog view is kept alive between visits.
  */
 const route = useRoute();
 const router = useRouter();
@@ -52,13 +47,6 @@ onMounted(() => {
   if (userStore.isAuthenticated) permissions.hydrate();
   void loadSystems();
 });
-
-const redesigned = computed(() => route.matched.some((r) => r.meta.ds));
-const legacyKey = computed(() =>
-  route.matched.some((r) => r.meta.activeSystemScoped)
-    ? `system:${systemStore.system.securityPlan?.uuid ?? 'none'}`
-    : 'global',
-);
 
 // Systems ------------------------------------------------------------------------------------
 
@@ -89,8 +77,8 @@ const systems = computed(() =>
 );
 
 /**
- * Switching keeps the user on the same page of the newly chosen system. On a redesigned system
- * page that means the same route with the new system in the URL; SystemScope then makes it
+ * Switching keeps the user on the same page of the newly chosen system. On a system page
+ * that means the same route with the new system in the URL; SystemScope then makes it
  * current. Elsewhere the choice goes straight to the store.
  */
 function switchSystem(id: string): void {
@@ -292,12 +280,9 @@ const userMenu = computed<MenuEntry[]>(() => [
         >
           <RouterView v-slot="{ Component }">
             <!-- The catalog keeps its open groups when you visit a control and come back. -->
-            <KeepAlive v-if="redesigned" include="CatalogScreen">
+            <KeepAlive include="CatalogScreen">
               <component :is="Component" />
             </KeepAlive>
-            <LegacyPage v-else>
-              <component :is="Component" :key="legacyKey" />
-            </LegacyPage>
           </RouterView>
           <div data-tooltip-portal />
         </main>

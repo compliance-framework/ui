@@ -77,4 +77,10 @@ withDefaults(
 .cluster--align-end {
   align-items: flex-end;
 }
+
+/* As a list (`as="ul"`), the items are laid out, not bulleted. */
+:is(ul, ol).cluster {
+  padding: 0;
+  list-style: none;
+}
 </style>

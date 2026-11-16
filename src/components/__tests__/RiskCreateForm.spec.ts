@@ -76,19 +76,11 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: vi.fn((data: unknown) => JSON.stringify(data)),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: toastAdd,
     remove: vi.fn(),
   }),
-}));
-
-vi.mock('@/volt/Dialog.vue', () => ({
-  default: {
-    name: 'Dialog',
-    template: '<div v-if="visible" class="dialog"><slot /></div>',
-    props: ['visible', 'size', 'modal', 'header'],
-  },
 }));
 
 import RiskCreateForm from '../risk/RiskCreateForm.vue';

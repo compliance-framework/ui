@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue';
 import VueMarkdown from 'vue-markdown-render';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Catalog, Control, Group } from '@/oscal';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';

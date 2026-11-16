@@ -39,7 +39,7 @@ vi.mock('@/composables/axios', () => ({
   }),
   useAuthenticatedInstance: () => ({ delete: vi.fn() }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const catalog = { uuid: 'cat-1', metadata: { title: 'NIST' } } as Catalog;
 const group = {

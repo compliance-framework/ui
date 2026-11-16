@@ -12,7 +12,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
   decamelizeKeys: (data: unknown) => JSON.stringify(data),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('SystemUserForm', () => {
   it('splits role IDs and functions on commas and keeps the rest of an edited user', async () => {

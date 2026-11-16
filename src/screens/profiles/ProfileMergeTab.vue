@@ -10,7 +10,7 @@ import {
 } from '@/oscal';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import Button from '@/ds/components/Button/Button.vue';
 import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';

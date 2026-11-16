@@ -1,6 +1,4 @@
-import './assets/main.css';
-import 'primeicons/primeicons.css';
-// Design-system tokens and element defaults (prefixed --ds-, so they never clash with Tailwind's).
+// Design-system tokens and element defaults.
 import './ds/tokens/index.css';
 
 import { createApp } from 'vue';
@@ -10,14 +8,6 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
 import router from './router';
 
-import PrimeVue from 'primevue/config';
-import ToastService from 'primevue/toastservice';
-import ConfirmationService from 'primevue/confirmationservice';
-import Tooltip from 'primevue/tooltip';
-import TooltipPt from '@/volt/Tooltip';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-
 const app = createApp(App);
 
 const pinia = createPinia();
@@ -25,19 +15,5 @@ pinia.use(piniaPluginPersistedstate);
 
 app.use(pinia);
 app.use(router);
-app.use(PrimeVue, {
-  unstyled: true,
-  pt: {
-    ...TooltipPt,
-  },
-});
-app.use(ConfirmationService);
-app.directive('tooltip', Tooltip);
-app.component('PrimaryButton', PrimaryButton);
-app.component('SecondaryButton', SecondaryButton);
-
-// This is a recursive component so should be registered globally
-
-app.use(ToastService);
 
 app.mount('#app');

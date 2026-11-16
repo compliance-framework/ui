@@ -27,7 +27,7 @@ vi.mock('@/composables/axios', async () => {
 });
 
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('ComponentDashboardsView', () => {
   beforeEach(() => {

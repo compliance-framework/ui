@@ -153,7 +153,7 @@ import {
 import { computed, reactive, ref } from 'vue';
 import { uuid } from '@/utils/uuid';
 import { type Risk } from '@/oscal';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { isAxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';

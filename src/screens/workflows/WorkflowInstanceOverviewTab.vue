@@ -6,7 +6,7 @@
  */
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowInstanceStore } from '@/stores/workflows/instances';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { WorkflowInstanceUpdate, CadenceType } from '@/types/workflows';
 import { formatDateTime } from '@/ds/format';
 import Button from '@/ds/components/Button/Button.vue';

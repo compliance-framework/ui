@@ -21,7 +21,7 @@ const { state, postMock, deleteMock, executeMock, toastAddMock } = vi.hoisted(
   }),
 );
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 vi.mock('@/composables/usePermissions', () => ({

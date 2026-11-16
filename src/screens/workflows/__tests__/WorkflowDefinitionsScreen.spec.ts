@@ -22,7 +22,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ post: state.post, delete: vi.fn() }),
   decamelizeKeys: (data: unknown) => data,
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountScreen(path = '/workflows') {
   const router = createRouter({

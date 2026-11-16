@@ -28,7 +28,7 @@ vi.mock('@/composables/axios', () => ({
     };
   },
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const agent = { id: 'agent-1', name: 'collector' } as Agent;
 const key = (

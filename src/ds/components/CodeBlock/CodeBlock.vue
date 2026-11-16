@@ -3,7 +3,7 @@ import { computed, nextTick, ref, useId, watch } from 'vue';
 import Button from '../Button/Button.vue';
 import InlineMessage from '../InlineMessage/InlineMessage.vue';
 import { useScrollable } from '../ScrollArea/useScrollable';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 
 /**
  * Read-only code, such as an OSCAL document, with line numbers, Copy and Download (F-30 AC1,

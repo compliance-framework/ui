@@ -5,8 +5,8 @@
  * classic island. The script is the classic ScopePanel's.
  */
 import { computed, ref, toRef, watch } from 'vue';
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
+import { useConfirm } from '@/ds/confirm';
+import { useToast } from '@/ds/toasts';
 import LabelConditionFields from './LabelConditionFields.vue';
 import {
   buildDashboardSuggestionLabelKeysEndpoint,

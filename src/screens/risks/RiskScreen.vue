@@ -37,7 +37,7 @@ import { useSystemStore } from '@/stores/system';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import type { Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import {
   useDataApi,
   decamelizeKeys,

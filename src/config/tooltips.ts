@@ -1,13 +1,8 @@
 /**
  * Centralized Tooltip Configuration
  *
- * This file contains all tooltip text definitions used throughout the application.
- * To add a new tooltip:
- * 1. Add a new key-value pair to the TOOLTIPS object below
- * 2. Use the TooltipTitle component with the tooltip-key prop instead of tooltip-text
- *
- * Example:
- * <TooltipTitle text="My Title" tooltip-key="my.tooltip.key" />
+ * Shared help text, keyed by dotted names. Show it with the design system's InfoTip:
+ * <InfoTip :text="TOOLTIPS['my.tooltip.key']" /> (see docs/TOOLTIPS.md).
  */
 
 export const TOOLTIPS = {

@@ -5,7 +5,7 @@
  * its details, and can be edited, duplicated or deleted (with a warning when risks use it).
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import {
   getRiskTemplateApiId,

@@ -8,7 +8,7 @@ import type { Evidence } from '@/stores/evidence.ts';
 import { useToggle } from '@/composables/useToggle';
 import { useBaselineEvidence } from '@/composables/useBaselineEvidence';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DataTable from '@/ds/components/DataTable/DataTable.vue';

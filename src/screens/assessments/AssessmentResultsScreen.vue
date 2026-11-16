@@ -6,7 +6,7 @@ import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 import { onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { AssessmentResult } from '@/oscal';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';

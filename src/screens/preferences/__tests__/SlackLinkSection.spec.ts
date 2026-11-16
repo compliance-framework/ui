@@ -36,7 +36,7 @@ vi.mock('@/stores/config', () => ({
   useConfigStore: () => mockConfigStore,
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({
     add: mockToastAdd,
   }),

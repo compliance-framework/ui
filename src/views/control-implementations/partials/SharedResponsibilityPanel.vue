@@ -5,7 +5,7 @@
  * rows (delete only), and upstream offerings available to import for this control.
  */
 import { computed, ref, toRef } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { AxiosError } from 'axios';
 import Button from '@/ds/components/Button/Button.vue';
 import Dialog from '@/ds/components/Dialog/Dialog.vue';

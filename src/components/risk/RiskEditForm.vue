@@ -71,7 +71,7 @@ import TextInput from '@/ds/components/TextInput/TextInput.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import type { Risk } from '@/oscal';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { buildRiskItemEndpoint, type RiskContext } from '@/utils/risk-context';
 import { getRiskIdentifier } from '@/utils/risk-id';

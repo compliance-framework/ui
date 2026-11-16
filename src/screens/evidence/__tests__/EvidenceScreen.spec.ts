@@ -23,7 +23,7 @@ vi.mock('@/utils/evidence-csv', async (original) => ({
 vi.mock('@/composables/useSspScope', () => ({
   sspHasScopeEntries: () => Promise.resolve(api.hasScope),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const evidence = (id: string, title: string, state: string) => ({
   id,

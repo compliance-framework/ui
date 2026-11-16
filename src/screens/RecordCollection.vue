@@ -7,7 +7,7 @@
  * forms are classic islands in design-system dialogs; edit forms may emit `saved` or `updated`.
  */
 import { computed, defineAsyncComponent, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS } from '@/constants/permissions';

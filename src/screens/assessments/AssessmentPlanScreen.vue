@@ -8,7 +8,7 @@ import type { AssessmentPlan } from '@/oscal';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 
 const route = useRoute();
 const id = ref<string>(route.params.id as string);

@@ -35,7 +35,7 @@ vi.mock('@/composables/axios', () => ({
     execute: vi.fn(() => Promise.resolve()),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toast }),
 }));
 

@@ -41,7 +41,7 @@ vi.mock('@/composables/axios', () => ({
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => state.can }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const URL =
   '/api/oscal/system-security-plans/ssp-up/export-offerings/o-1/allowed-downstreams';

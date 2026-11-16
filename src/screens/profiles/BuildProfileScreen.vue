@@ -5,7 +5,7 @@
  * links to the new profile and lists the matched controls.
  */
 import { computed, reactive, ref, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS, RESOURCES } from '@/constants/permissions';

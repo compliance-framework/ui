@@ -6,7 +6,7 @@
  * template itself and emits `saved`.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { getErrorDetail } from '@/utils/httpErrors';
 import {

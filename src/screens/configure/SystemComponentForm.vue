@@ -6,7 +6,7 @@
  * and emits `created` or `saved`.
  */
 import { computed, reactive, ref, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type {
   ComponentDefinition,
   DefinedComponent,

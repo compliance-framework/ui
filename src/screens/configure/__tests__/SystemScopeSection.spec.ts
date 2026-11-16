@@ -35,11 +35,11 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
-vi.mock('primevue/useconfirm', () => ({
+vi.mock('@/ds/confirm', () => ({
   useConfirm: () => ({ require: state.confirmRequire }),
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toastAdd }),
 }));
 

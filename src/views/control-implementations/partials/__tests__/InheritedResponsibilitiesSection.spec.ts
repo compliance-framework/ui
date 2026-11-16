@@ -33,7 +33,7 @@ const {
   decamelizeMarker: () => '',
 }));
 
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
 

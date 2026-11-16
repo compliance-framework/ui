@@ -13,9 +13,7 @@ export const TeleportStub = defineComponent({
     return () => slots.default?.();
   },
 });
-import ToastService from 'primevue/toastservice';
 import { RouterLinkStub } from '@vue/test-utils';
-import ConfirmationService from 'primevue/confirmationservice';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { usePermissionsStore } from '@/stores/permissions';
 
@@ -35,7 +33,7 @@ export function globalWith(
   extraStubs: Record<string, any> = {},
 ) {
   return {
-    plugins: [pinia, ToastService, ConfirmationService],
+    plugins: [pinia],
     stubs: {
       // CodeMirror: specs that render editors mock '@/ds/components/CodeEditor' with
       // ./codeEditorMock (sync stand-ins); only CodeEditor.spec mounts the real editor.

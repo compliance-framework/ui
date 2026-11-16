@@ -18,7 +18,7 @@ import {
 } from './helpers';
 
 const toastAdd = vi.hoisted(() => vi.fn());
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: toastAdd }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: toastAdd }) }));
 // The async CodeMirror wrappers are replaced by synchronous stubs.
 vi.mock('@/ds/components/CodeEditor', () => import('./codeEditorMock'));
 

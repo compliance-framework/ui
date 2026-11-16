@@ -3,7 +3,7 @@ import { useConfigStore } from '@/stores/config.ts';
 import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type {
   UseAxiosOptions,
   UseAxiosOptionsWithInitialData,

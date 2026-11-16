@@ -26,7 +26,7 @@ vi.mock('@/composables/axios', () => ({
   }),
   useAuthenticatedInstance: () => ({ delete: vi.fn() }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountTab(tab: Component) {
   const router = createRouter({

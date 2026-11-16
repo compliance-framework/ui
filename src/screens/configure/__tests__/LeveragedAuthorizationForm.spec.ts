@@ -20,7 +20,7 @@ vi.mock('@/composables/axios', () => ({
     execute: vi.fn(() => Promise.resolve()),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('LeveragedAuthorizationForm', () => {
   it('asks for title, party and date, then adds the authorization', async () => {

@@ -20,7 +20,7 @@ vi.mock('@/composables/axios', () => ({
     execute: vi.fn(() => Promise.resolve()),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('FindingForm', () => {
   it('sends an OSCAL target with its status, asking for the target ID first', async () => {

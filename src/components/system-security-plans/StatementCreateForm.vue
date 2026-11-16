@@ -72,7 +72,7 @@ import Grid from '@/ds/components/layout/Grid.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { reactive, onMounted } from 'vue';
 import { uuid } from '@/utils/uuid';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

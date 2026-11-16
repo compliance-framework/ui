@@ -36,4 +36,10 @@ withDefaults(
 .stack--start {
   align-items: flex-start;
 }
+
+/* As a list (`as="ul"`), the items are laid out, not bulleted. */
+:is(ul, ol).stack {
+  padding: 0;
+  list-style: none;
+}
 </style>

@@ -19,7 +19,7 @@ vi.mock('@/stores/config', () => ({
     getConfig: async () => ({ API_URL: 'https://api.example.test/' }),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const createdKey = {
   id: 'key-2',

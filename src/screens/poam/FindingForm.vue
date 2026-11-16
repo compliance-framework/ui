@@ -5,7 +5,7 @@
  * and risks behind it, and remarks. Emits `created` or `saved`.
  */
 import { computed, reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Finding, Observation, Risk } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { uuid } from '@/utils/uuid';

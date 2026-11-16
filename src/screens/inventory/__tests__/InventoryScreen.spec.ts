@@ -51,7 +51,7 @@ vi.mock('@/composables/axios', () => {
 vi.mock('@/stores/system', () => ({
   useSystemStore: () => ({ system: { securityPlan: { uuid: 'ssp-1' } } }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 async function mountScreen(path = '/inventory') {
   const router = createRouter({

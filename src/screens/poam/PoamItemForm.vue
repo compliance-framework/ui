@@ -4,7 +4,7 @@
  * `created` or `saved`; editing keeps the item's links to findings, observations and risks.
  */
 import { reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { POAMItem } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { uuid } from '@/utils/uuid';

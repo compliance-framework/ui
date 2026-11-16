@@ -2,7 +2,7 @@
 // One plugin on the Effective view, with an inline editor per editable field (R69) and the
 // field states of R71.
 import { computed } from 'vue';
-import { useConfirm } from 'primevue/useconfirm';
+import { useConfirm } from '@/ds/confirm';
 import Button from '@/ds/components/Button/Button.vue';
 import InfoTip from '@/ds/components/InfoTip/InfoTip.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';

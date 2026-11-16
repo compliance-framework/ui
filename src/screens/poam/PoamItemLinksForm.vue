@@ -4,7 +4,7 @@
  * the item with its new links and emits `saved`.
  */
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { Finding, Observation, POAMItem, Risk } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { getErrorDetail } from '@/utils/httpErrors';

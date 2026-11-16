@@ -9,7 +9,7 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog } from '@/oscal';
 import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useFormSubmit } from '@/composables/useFormSubmit';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';

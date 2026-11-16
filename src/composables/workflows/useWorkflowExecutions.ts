@@ -1,6 +1,6 @@
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from '@/ds/toasts';
+import { useConfirm } from '@/ds/confirm';
 import { useUserStore } from '@/stores/auth';
 import type {
   WorkflowExecution,

@@ -21,7 +21,7 @@ vi.mock('@/composables/axios', () => ({
   }),
   useAuthenticatedInstance: () => ({ post: state.run }),
 }));
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toastAdd }),
 }));
 vi.mock('@/screens/ssp-templates/SspTemplateFormDialog.vue', () => ({

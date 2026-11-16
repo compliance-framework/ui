@@ -16,7 +16,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useWorkflowInstanceStore } from '@/stores/workflows/instances';
 import { useWorkflowExecutions } from '@/composables/workflows';
 import type { CadenceType } from '@/types/workflows';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 

@@ -17,7 +17,7 @@ import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

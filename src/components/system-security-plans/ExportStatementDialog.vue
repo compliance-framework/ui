@@ -167,7 +167,7 @@ import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { computed, ref, watch } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import {
   fullScopeProvidedDescription,

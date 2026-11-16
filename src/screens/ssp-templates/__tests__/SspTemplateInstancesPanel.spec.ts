@@ -33,7 +33,7 @@ vi.mock('@/composables/axios', () => ({
   },
   useAuthenticatedInstance: () => ({ delete: state.del }),
 }));
-vi.mock('primevue/usetoast', () => ({
+vi.mock('@/ds/toasts', () => ({
   useToast: () => ({ add: state.toast }),
 }));
 

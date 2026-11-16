@@ -22,7 +22,7 @@ vi.mock('@/composables/axios', () => ({
     execute: vi.fn(() => Promise.resolve()),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 describe('SystemComponentForm', () => {
   it('saves an edited component with its protocols, dropping empty ones', async () => {

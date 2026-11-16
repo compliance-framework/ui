@@ -6,7 +6,7 @@
  */
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';

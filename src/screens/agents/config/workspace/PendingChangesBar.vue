@@ -8,7 +8,7 @@ import {
   ref,
   watch,
 } from 'vue';
-import { useConfirm } from 'primevue/useconfirm';
+import { useConfirm } from '@/ds/confirm';
 import Button from '@/ds/components/Button/Button.vue';
 import Icon from '@/ds/components/Icon/Icon.vue';
 import IconButton from '@/ds/components/IconButton/IconButton.vue';

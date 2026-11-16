@@ -27,8 +27,8 @@ without a redesigned page around it. Pages fall into three kinds:
 - **Classic islands**: none left. Diagnostics and the agent Configuration tab were the last.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
-classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
-globally any more). The third live sweep (97 routes, including every record tab and Configure
+app's `useToast()` and `useConfirm()` now come from `src/ds`; PrimeVue, Volt and Tailwind
+are gone). The third live sweep (97 routes, including every record tab and Configure
 section) is clean apart from known API errors. Most record forms are design-system now too (task,
 POA&M item, observation, finding, back matter and local definitions, capability, component,
 component definition back matter, system user, leveraged authorization, system component, export
@@ -37,8 +37,7 @@ as one add-and-edit form. The e2e axe run now also covers the OSCAL record
 tabs, the Configure System sections, the user and group pages, Inventory, Build a profile, the
 catalog page, subject templates and the system template page.
 
-The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
-page below.
+No classic islands are left (`docs/REDESIGN.md` → Legacy islands); per-page notes are below.
 
 **Decisions most worth your review**
 
@@ -1300,3 +1299,22 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   The live check found long locked-key names (`REMOTE_CONFIG.TRUSTED_SOURCES`) running into the
   next column, so `DescriptionList` terms now wrap. The tab joins the axe run with a mocked
   instance.
+- **The classic stack is gone.** With no classic page left, the teardown deleted `LegacyPage`,
+  the vendored Volt wrappers (`src/volt`), PrimeVue and primeicons, Tailwind (its Vite plugin,
+  config and the `main.css`/`base.css` imports), the global `PrimaryButton`/`SecondaryButton`
+  and `v-tooltip`, and the dependencies nothing used any more: chart.js and its plugins, luxon,
+  date-fns, sortablejs, heroicons, bootstrap-icons, tailwind-merge and autoprefixer. Toasts and
+  confirmations moved off PrimeVue's event buses onto the design system: `useToast()` in
+  `src/ds/toasts.ts` and `useConfirm()` in `src/ds/confirm.ts` take the same arguments the app
+  already passed, so the change at about 200 call sites (and their spec mocks) was the import
+  path only. The shell renders every page the same way; the classic-only remount on switching
+  system went with the legacy frame (system pages take the system from their URL). AGENTS.md,
+  `docs/TOOLTIPS.md` (now `InfoTip`) and this tracker describe the design system only. The Inter
+  web font (classic pages only) is no longer loaded. **Tailwind's preflight reset had been
+  doing work the design system relied on**: the axe run caught an input overflowing onto its
+  Remove button (no `box-sizing: border-box`), and a layout and style comparison of 34 live
+  routes with and without preflight found `Stack`/`Cluster` lists (`as="ul"`) gaining bullets
+  and indents. The global `box-sizing` rule (in the mockup's base, dropped in the port because
+  Tailwind supplied it) is back, and the layout lists reset their own list styles. After that
+  the comparison shows no layout change on any route; the only visible differences are the skip
+  link's underline (as in the mockup) and bullets in the notification health warnings.

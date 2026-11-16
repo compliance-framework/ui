@@ -13,7 +13,7 @@ import Cluster from '@/ds/components/layout/Cluster.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import { computed, onMounted, ref, watchEffect } from 'vue';
 import type { AxiosError } from 'axios';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useConfigStore } from '@/stores/config';

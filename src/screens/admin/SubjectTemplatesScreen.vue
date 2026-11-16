@@ -7,7 +7,7 @@
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import {
   createEmptySubjectTemplateForm,
   createSubjectTemplateFormFromTemplate,

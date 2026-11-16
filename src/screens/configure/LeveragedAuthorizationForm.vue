@@ -4,7 +4,7 @@
  * (chosen from the parties), when, and remarks. Editing keeps its other fields.
  */
 import { computed, reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { LeveragedAuthorization, Party } from '@/oscal';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import { uuid } from '@/utils/uuid';

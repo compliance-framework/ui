@@ -50,7 +50,7 @@ vi.mock('@/composables/axios', () => ({
     execute: vi.fn(() => Promise.resolve()),
   }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 
 const agent = (over: Partial<Agent>): Agent => ({
   id: 'agent-1',

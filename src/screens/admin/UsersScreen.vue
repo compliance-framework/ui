@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { CCFUser } from '@/stores/types';
 import { formatDateTime, plural } from '@/ds/format';
 import { useApiQuery } from '@/ds/query';

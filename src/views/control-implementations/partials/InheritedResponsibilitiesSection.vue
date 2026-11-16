@@ -221,7 +221,7 @@
  * handle this" (the statement's satisfied entry) and the evidence filters linked to it.
  */
 import { computed, inject, reactive, ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
+import { useToast } from '@/ds/toasts';
 import type { AxiosError } from 'axios';
 import Button from '@/ds/components/Button/Button.vue';
 import FormField from '@/ds/components/FormField/FormField.vue';

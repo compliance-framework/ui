@@ -1,31 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, watch } from 'vue';
 import { TooltipProvider } from 'reka-ui';
-import ConfirmationEventBus from 'primevue/confirmationeventbus';
+import { confirmRequest as current } from '../../confirm';
 import Text from '../Text/Text.vue';
 import ConfirmDialog from './ConfirmDialog.vue';
 
 /**
- * Shows confirmations raised through PrimeVue's `useConfirm().require(...)` (classic pages and
- * shared composables) as design-system ConfirmDialogs, so those call sites don't change. Mounted
- * once in App, replacing PrimeVue's global ConfirmDialog. New screens use ConfirmDialog directly.
+ * Shows the confirmation raised through `useConfirm().require(...)` (`@/ds/confirm`) as a
+ * ConfirmDialog. Mounted once in App. Templates use ConfirmDialog directly.
  */
-interface ButtonProps {
-  label?: string;
-  severity?: string;
-}
-interface Confirmation {
-  header?: string;
-  message?: string;
-  acceptLabel?: string;
-  rejectLabel?: string;
-  acceptProps?: ButtonProps;
-  rejectProps?: ButtonProps;
-  accept?: () => unknown;
-  reject?: () => unknown;
-}
-
-const current = ref<Confirmation>();
 const open = computed({
   get: () => Boolean(current.value),
   set: (isOpen: boolean) => {
@@ -48,36 +31,23 @@ const tone = computed(() => {
     : 'primary';
 });
 
-// Closing clears `current` before ConfirmDialog emits cancel, so the open request is kept apart
-// until it settles one way or the other.
-let pending: Confirmation | undefined;
-function show(options: Confirmation): void {
-  pending = options;
-  current.value = options;
-}
-function confirm(): void {
+// Closing clears the request before ConfirmDialog emits cancel, so the open request is kept
+// apart until it settles one way or the other.
+let pending: typeof current.value;
+watch(
+  current,
+  (request) => {
+    if (request) pending = request;
+  },
+  { flush: 'sync' },
+);
+function settle(answer: 'accept' | 'reject'): void {
   const request = pending;
   pending = undefined;
-  void request?.accept?.();
+  void request?.[answer]?.();
 }
-function cancel(): void {
-  const request = pending;
-  pending = undefined;
-  void request?.reject?.();
-}
-const close = () => {
-  pending = undefined;
-  current.value = undefined;
-};
-
-onMounted(() => {
-  ConfirmationEventBus.on('confirm', show);
-  ConfirmationEventBus.on('close', close);
-});
-onBeforeUnmount(() => {
-  ConfirmationEventBus.off('confirm', show);
-  ConfirmationEventBus.off('close', close);
-});
+const confirm = () => settle('accept');
+const cancel = () => settle('reject');
 </script>
 
 <template>

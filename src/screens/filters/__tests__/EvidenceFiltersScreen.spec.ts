@@ -25,7 +25,7 @@ vi.mock('@/composables/axios', () => ({
   }),
   useAuthenticatedInstance: () => ({ delete: state.remove, post: state.post }),
 }));
-vi.mock('primevue/usetoast', () => ({ useToast: () => ({ add: vi.fn() }) }));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 vi.mock('@/screens/filters/EvidenceFilterEditDialog.vue', () => ({
   default: {
     name: 'EvidenceFilterEditDialog',
