@@ -24,7 +24,7 @@ without a redesigned page around it. Pages fall into three kinds:
   the component definition, POA&M and assessment plan records (every tab, form and dialog);
   Preferences (with the Slack link); the system template page; New evidence filter (and the
   edit dialog); Import; About; and every signed-out page.
-- **Design-system page with classic islands inside**: Configure System (the diagram editor), workflow run (step graph and panel), Diagnostics,
+- **Design-system page with classic islands inside**: Configure System (the diagram editor), Diagnostics,
   Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
@@ -1238,3 +1238,28 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   design-system pieces. **Not cleaned up yet:** `components/lineage/nodeMeta.ts` and
   `heatScale.ts` still carry the classic Tailwind class strings beside the logic the map
   uses.
+- **Unreachable code deleted (77 files).** A script followed imports by path from `main.ts` and
+  the router (including the template-string import of the evidence record tabs) to a fixpoint
+  and listed every file nothing reaches: the old dashboard widgets, the risk tabs and workflow
+  task, activity and step forms from the pre-redesign pages, the POA&M and SSP forms the record
+  pages replaced, Vue starter-template leftovers (`HelloWorld`, `TheWelcome`, icons), the old
+  fetch client (`composables/api`), and unused stores. Their 13 specs went with them. Two unused
+  design-system pieces (`FilterGroup`, `Split`) are kept as library parts. AGENTS.md no longer
+  points at the deleted `PageHeader.vue`, `LabelList.vue` or `composables/api`.
+- **Workflows have no classic islands left.** The definition Steps tab and the run page draw
+  their step graph with a new design-system `FlowGraph`: the classic layered layout (each step
+  right of what it depends on) ported to a pure helper, edges as SVG arrows, and each step a real
+  button (name, role, status badge or "Evidence required"), so the graph works from the
+  keyboard. Selecting a step on the Steps tab emphasises what it depends on. **Decision:** a
+  run's embedded step definitions arrive without their dependencies, so the run graph falls back
+  to step order, as the classic run view did; the step table beside it carries the same steps.
+  The run's progress bar is dropped, since the facts above already count completed steps. The
+  step panel (run page and My tasks), its evidence form and reassign dialog are rebuilt:
+  status and dates as facts, failure and completion notes as messages, evidence asked for,
+  submitted (with Download) and collected (with Remove), Start, Complete, Mark failed and
+  Reassign in the drawer footer with the reason they're unavailable when they are. Mark failed
+  is a confirm with the reason; Reassign picks from the selectable-users list (as the instance
+  Roles tab does) instead of the classic search-as-you-type. Checked live on the failed
+  Quarterly Access Review run and its definition: graphs, panel, no page errors. Specs ported
+  (stubs and button names only) plus specs for `FlowGraph`, its layout and the reassign form.
+  The Steps tab and a run page join the axe run, with mocked steps.

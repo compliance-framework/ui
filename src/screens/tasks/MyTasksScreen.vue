@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
  * My tasks (List template): workflow steps assigned to the signed-in user, unresolved and soonest
- * due first. A step opens in the classic step panel (a legacy island), which also reassigns it.
+ * due first. A step opens in the step panel, which also reassigns it.
  * The script is the classic page's; the template and the helpers at the end are new.
  */
 import { computed, ref, watch, onMounted } from 'vue';
 import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
 import type { StepExecution } from '@/types/workflows';
 import { REASSIGNABLE_STEP_EXECUTION_STATUSES } from '@/types/workflows';
-import StepExecutionPanel from '@/views/workflow-executions/partials/StepExecutionPanel.vue';
+import StepExecutionPanel from '@/screens/workflows/StepExecutionPanel.vue';
 import { plural } from '@/ds/format';
 import type { QueryStatus } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';

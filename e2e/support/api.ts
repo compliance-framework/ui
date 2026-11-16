@@ -425,6 +425,63 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           'label-schema': [{ key: 'organization', description: 'GitHub org' }],
         },
       });
+    // A definition's Steps tab and a run page: three steps, the last two depending on the first.
+    const workflowSteps = [
+      { id: 'step-1', name: 'Export access list', order: 1, deps: [] },
+      { id: 'step-2', name: 'Review access', order: 2, deps: ['step-1'] },
+      { id: 'step-3', name: 'Sign off', order: 3, deps: ['step-1'] },
+    ].map((step) => ({
+      id: step.id,
+      'workflow-definition-id': 'def-1',
+      name: step.name,
+      'responsible-role': 'Reviewer',
+      order: step.order,
+      'evidence-required': [],
+      'depends-on': step.deps.map((dep) => ({
+        id: `${step.id}-${dep}`,
+        'workflow-step-definition-id': step.id,
+        'depends-on-step-id': dep,
+      })),
+      'created-at': '2026-01-01T00:00:00Z',
+      'updated-at': '2026-01-01T00:00:00Z',
+    }));
+    if (path === '/api/workflows/definitions/def-1')
+      return json(route, {
+        data: {
+          id: 'def-1',
+          name: 'Quarterly access review',
+          description: 'Review privileged access',
+          version: '1.0.0',
+          status: 'published',
+        },
+      });
+    if (path === '/api/workflows/steps')
+      return json(route, { data: workflowSteps });
+    if (path === '/api/workflows/executions/run-1')
+      return json(route, {
+        data: {
+          id: 'run-1',
+          'workflow-instance-id': 'wi-1',
+          status: 'in_progress',
+          'started-at': '2026-01-05T09:00:00Z',
+          'created-at': '2026-01-05T09:00:00Z',
+          'updated-at': '2026-01-05T09:00:00Z',
+        },
+      });
+    if (/^\/api\/workflows\/executions\/run-1\/(status|metrics)$/.test(path))
+      return json(route, { data: {} });
+    if (path === '/api/workflows/step-executions' && method === 'GET')
+      return json(route, {
+        data: workflowSteps.map((step, index) => ({
+          id: `se-${index + 1}`,
+          'workflow-execution-id': 'run-1',
+          'workflow-step-definition-id': step.id,
+          'workflow-step-definition': step,
+          status: ['completed', 'in_progress', 'pending'][index],
+          'created-at': '2026-01-05T09:00:00Z',
+          'updated-at': '2026-01-05T09:00:00Z',
+        })),
+      });
     if (path === '/api/workflows/definitions') {
       const definitions = {
         data: [

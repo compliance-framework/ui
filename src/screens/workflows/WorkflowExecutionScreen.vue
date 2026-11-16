@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * A workflow run (/workflow-executions/:id): its status, dates, step counts and steps. The metrics,
- * step graph, step list and step panel are classic islands. The script is the classic page's,
- * apart from cancelling, which now asks for its reason in a dialog.
+ * A workflow run (/workflow-executions/:id): its status, dates, step counts, the step graph (each
+ * step's status) and the step table; a step opens in the step panel. The script is the classic
+ * page's, apart from cancelling, which now asks for its reason in a dialog.
  */
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -11,11 +11,10 @@ import {
   useStepExecutions,
 } from '@/composables/workflows';
 import type { StepExecution } from '@/types/workflows';
-import ExecutionDAGView from '@/views/workflow-executions/partials/ExecutionDAGView.vue';
+import FlowGraph from '@/ds/components/FlowGraph/FlowGraph.vue';
 import RunStepsTable from './RunStepsTable.vue';
 import { formatDuration } from './runDuration';
-import StepExecutionPanel from '@/views/workflow-executions/partials/StepExecutionPanel.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import StepExecutionPanel from './StepExecutionPanel.vue';
 import { formatDateTime } from '@/ds/format';
 import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';
 import Button from '@/ds/components/Button/Button.vue';
@@ -87,6 +86,36 @@ async function loadExecution() {
   } finally {
     loading.value = false;
   }
+}
+
+// The graph is keyed by step definition, which is what dependencies point at. A run's embedded
+// definitions may come without their dependencies; then the steps show in order, as the classic
+// run view did.
+const graphNodes = computed(() => {
+  const nodes = (stepExecutions.value ?? []).map((step) => {
+    const definition = step.workflowStepDefinition ?? step.stepDefinition;
+    return {
+      id: definition?.id ?? step.id,
+      title: definition?.name || 'Unnamed step',
+      order: definition?.order ?? 0,
+      dependsOn: (definition?.dependsOn ?? []).map((d) => d.dependsOnStepId),
+      detail: definition?.responsibleRole,
+      status: `step-${step.status.replace(/_/g, '-')}` as StatusKey,
+    };
+  });
+  if (nodes.some((n) => n.dependsOn.length)) return nodes;
+  const ordered = [...nodes].sort((a, b) => a.order - b.order);
+  return ordered.map((n, i) => ({
+    ...n,
+    dependsOn: i ? [ordered[i - 1].id] : [],
+  }));
+});
+function selectGraphStep(id: string) {
+  const step = (stepExecutions.value ?? []).find(
+    (s) =>
+      (s.workflowStepDefinition ?? s.stepDefinition)?.id === id || s.id === id,
+  );
+  if (step) handleStepClick(step);
 }
 
 function handleStepClick(step: StepExecution) {
@@ -269,12 +298,12 @@ const instanceCrumb = computed(() => ({
           </div>
         </Stack>
         <template v-else>
-          <LegacyPage>
-            <ExecutionDAGView
-              :steps="stepExecutions"
-              @step-click="handleStepClick"
-            />
-          </LegacyPage>
+          <FlowGraph
+            label="Step graph"
+            :nodes="graphNodes"
+            :selected="null"
+            @select="selectGraphStep"
+          />
           <RunStepsTable
             :steps="stepExecutions"
             :metrics="executionMetrics"

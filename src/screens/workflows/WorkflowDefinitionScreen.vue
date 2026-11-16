@@ -1,10 +1,8 @@
 <script setup lang="ts">
 /**
  * A workflow definition (/workflow-definitions/:id/...): status, version and its sections as route
- * tabs. The classic page's logic is kept; the sections (overview, steps, controls, JSON) are
- * classic islands until rebuilt.
+ * tabs. The classic page's logic is kept.
  */
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
@@ -80,12 +78,10 @@ const tabs = computed(() => {
         >Version {{ store.definition.version || '1.0.0' }}</Text
       >
     </template>
-    <LegacyPage>
-      <RouterView v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
-    </LegacyPage>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </RecordTemplate>
 </template>

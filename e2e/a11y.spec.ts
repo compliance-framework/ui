@@ -31,6 +31,8 @@ const routes = [
   '/admin/ssp-templates/tpl-1',
   '/dashboards',
   '/my-tasks',
+  '/workflow-definitions/def-1/steps',
+  '/workflow-executions/run-1',
   '/component-definitions/create',
   '/profiles/create',
   '/catalogs/new',

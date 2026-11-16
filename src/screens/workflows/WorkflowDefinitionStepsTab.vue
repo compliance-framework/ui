@@ -1,17 +1,16 @@
 <script setup lang="ts">
 /**
  * A workflow definition's Steps tab: the step graph, then every step in order with its role,
- * evidence and dependencies; Add, Edit and Delete. The graph and the step form are classic
- * islands. The script is the classic page's.
+ * evidence and dependencies; Add, Edit and Delete. Selecting a step in the graph emphasises what
+ * it depends on. The script is the classic page's.
  */
 import { ref, computed } from 'vue';
 import { useWorkflowDefinitionStore } from '@/stores/workflows/definitions';
 import { useWorkflowStepDefinitions } from '@/composables/workflows';
 import { hasEvidenceRequirement } from '@/utils/workflows';
 import type { StepDefinition } from '@/types/workflows';
-import StepDAGVisualization from '@/views/workflows/partials/StepDAGVisualization.vue';
 import StepForm from './StepForm.vue';
-import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import FlowGraph from '@/ds/components/FlowGraph/FlowGraph.vue';
 import { plural } from '@/ds/format';
 import Button from '@/ds/components/Button/Button.vue';
 import DataTable from '@/ds/components/DataTable/DataTable.vue';
@@ -83,6 +82,17 @@ function requiresEvidence(step: StepDefinition): boolean {
   return hasEvidenceRequirement(step.evidenceRequired);
 }
 
+const graphNodes = computed(() =>
+  store.steps.map((step) => ({
+    id: step.id,
+    title: step.name,
+    order: step.order,
+    dependsOn: (step.dependsOn ?? []).map((d) => d.dependsOnStepId),
+    detail: step.responsibleRole,
+    notes: requiresEvidence(step) ? ['Evidence required'] : [],
+  })),
+);
+
 const formOpen = computed({
   get: () => showForm.value,
   set: (open: boolean) => {
@@ -120,13 +130,12 @@ function stepActions(step: StepDefinition): MenuEntry[] {
       >
     </div>
     <template v-if="store.steps.length">
-      <LegacyPage>
-        <StepDAGVisualization
-          :steps="store.steps"
-          :selected-step-id="selectedStepId ?? undefined"
-          @step-click="selectStep"
-        />
-      </LegacyPage>
+      <FlowGraph
+        label="Step graph"
+        :nodes="graphNodes"
+        :selected="selectedStepId"
+        @select="selectStep"
+      />
       <DataTable
         :caption="plural(sortedSteps.length, 'step')"
         caption-hidden

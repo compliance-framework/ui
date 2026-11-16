@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import EvidenceSubmissionForm from '../EvidenceSubmissionForm.vue';
 import type { EvidenceRequirement, StepExecution } from '@/types/workflows';
@@ -14,30 +15,22 @@ const step = {
   evidence: [],
 } as unknown as StepExecution;
 
-const selectStub = {
-  props: ['options', 'optionLabel', 'optionValue', 'modelValue', 'placeholder'],
-  emits: ['update:modelValue'],
-  template: `
-    <div class="select-stub">
-      <span
-        v-for="(option, i) in options"
-        :key="i"
-        class="select-option"
-      >{{ optionLabel ? option[optionLabel] : option }}</span>
-    </div>
-  `,
-};
-
 const stubs = {
-  Select: selectStub,
-  Label: { template: '<label><slot /></label>' },
-  Textarea: { template: '<textarea />' },
-  InputText: { template: '<input />' },
-  PrimaryButton: { template: '<button><slot /></button>' },
-  Message: { template: '<div><slot /></div>' },
+  Tooltip: { template: '<slot />' },
+  Select: {
+    props: ['options', 'modelValue', 'placeholder'],
+    emits: ['update:modelValue'],
+    template: `
+      <div class="select-stub">
+        <span v-for="(option, i) in options" :key="i" class="select-option">{{ option.label }}</span>
+      </div>
+    `,
+  },
 };
 
 describe('EvidenceSubmissionForm', () => {
+  beforeEach(() => setActivePinia(createPinia()));
+
   it('displays description from EvidenceRequirement objects in the type selector', () => {
     const requirements: EvidenceRequirement[] = [
       {
@@ -135,7 +128,6 @@ describe('EvidenceSubmissionForm', () => {
 
     const vm = wrapper.vm as unknown as {
       evidenceForm: { type: string };
-      handleFileChange: (e: Event) => void;
       submitError: string;
     };
 

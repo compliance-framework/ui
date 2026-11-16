@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { ref } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import StepExecutionPanel from '../StepExecutionPanel.vue';
 import type { StepExecution } from '@/types/workflows';
 
@@ -9,8 +9,6 @@ const mockCompleteStep = vi.fn();
 const mockFailStep = vi.fn();
 const mockCanTransition = vi.fn();
 const mockReassignStepExecution = vi.fn();
-const mockSearchUsers = vi.fn();
-const mockUserSuggestions = ref([]);
 
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
@@ -23,10 +21,6 @@ vi.mock('@/composables/workflows', () => ({
     failStep: mockFailStep,
     canTransition: mockCanTransition,
     reassignStepExecution: mockReassignStepExecution,
-  }),
-  useUserSearch: () => ({
-    userSuggestions: mockUserSuggestions,
-    searchUsers: mockSearchUsers,
   }),
 }));
 
@@ -62,23 +56,29 @@ function mountComponent(step: StepExecution) {
     },
     global: {
       stubs: {
-        Drawer: { template: '<div><slot /></div>' },
+        Tooltip: { template: '<slot />' },
+        Drawer: { template: '<div><slot /><slot name="footer" /></div>' },
         Dialog: {
-          props: ['visible'],
-          template: '<div v-if="visible"><slot /><slot name="footer" /></div>',
+          props: ['open'],
+          template: '<div v-if="open"><slot /></div>',
         },
-        Badge: { template: '<span><slot /></span>' },
-        Label: { template: '<label><slot /></label>' },
+        ConfirmDialog: {
+          props: ['open'],
+          template: '<div v-if="open"><slot /></div>',
+        },
         Textarea: {
           props: ['modelValue'],
           emits: ['update:modelValue'],
           template:
             '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
-        PrimaryButton: { template: '<button><slot /></button>' },
-        SecondaryButton: { template: '<button><slot /></button>' },
-        Message: { template: '<div><slot /></div>' },
-        AutoComplete: { template: '<div class="autocomplete-stub"></div>' },
+        StepReassignForm: {
+          name: 'StepReassignForm',
+          props: ['error'],
+          emits: ['submit', 'cancel'],
+          template:
+            "<form id=\"reassign-form\" @submit.prevent=\"$emit('submit', { userId: '', reason: '' })\"><p>{{ error }}</p></form>",
+        },
         EvidenceSubmissionForm: { template: '<div></div>' },
       },
     },
@@ -93,6 +93,7 @@ function hasButton(wrapper: ReturnType<typeof mount>, text: string): boolean {
 
 describe('StepExecutionPanel reassignment', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockCanTransition.mockResolvedValue(true);
     mockReassignStepExecution.mockResolvedValue({});
@@ -101,17 +102,17 @@ describe('StepExecutionPanel reassignment', () => {
   it('shows reassignment action only when user can transition and status is reassignable', async () => {
     const wrapper = mountComponent(createStep('pending'));
     await flushPromises();
-    expect(hasButton(wrapper, 'Reassign Task')).toBe(true);
+    expect(hasButton(wrapper, 'Reassign task')).toBe(true);
 
     mockCanTransition.mockResolvedValueOnce(false);
     const noPermissionWrapper = mountComponent(createStep('pending'));
     await flushPromises();
-    expect(hasButton(noPermissionWrapper, 'Reassign Task')).toBe(false);
+    expect(hasButton(noPermissionWrapper, 'Reassign task')).toBe(false);
 
     mockCanTransition.mockResolvedValueOnce(true);
     const completedWrapper = mountComponent(createStep('completed'));
     await flushPromises();
-    expect(hasButton(completedWrapper, 'Reassign Task')).toBe(false);
+    expect(hasButton(completedWrapper, 'Reassign task')).toBe(false);
   });
 
   it('blocks reassignment submission when no valid user is selected', async () => {
@@ -120,7 +121,7 @@ describe('StepExecutionPanel reassignment', () => {
 
     const reassignButton = wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Reassign Task'));
+      .find((button) => button.text().includes('Reassign task'));
     expect(reassignButton).toBeDefined();
     await reassignButton!.trigger('click');
     await flushPromises();
@@ -130,7 +131,7 @@ describe('StepExecutionPanel reassignment', () => {
     await form.trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Please select a valid user.');
+    expect(wrapper.text()).toContain('Choose who to assign it to.');
     expect(mockReassignStepExecution).not.toHaveBeenCalled();
   });
 
@@ -140,23 +141,14 @@ describe('StepExecutionPanel reassignment', () => {
 
     const reassignButton = wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Reassign Task'));
+      .find((button) => button.text().includes('Reassign task'));
     await reassignButton!.trigger('click');
     await flushPromises();
 
-    (wrapper.vm as unknown as Record<string, unknown>).selectedReassignUser = {
-      id: 'user-2',
-      displayName: 'Delegate User',
-      email: '',
-      firstName: '',
-      lastName: '',
-      failedLogins: 0,
-    };
-    (wrapper.vm as unknown as Record<string, unknown>).reassignReason =
-      'Out of office handoff';
-    await flushPromises();
-
-    await wrapper.find('#reassign-form').trigger('submit');
+    wrapper.findComponent({ name: 'StepReassignForm' }).vm.$emit('submit', {
+      userId: 'user-2',
+      reason: 'Out of office handoff',
+    });
     await flushPromises();
 
     expect(mockReassignStepExecution).toHaveBeenCalledWith('step-1', {
@@ -171,6 +163,7 @@ describe('StepExecutionPanel reassignment', () => {
 // BCH-1149: estimatedDuration is not used operationally and should not be shown
 describe('StepExecutionPanel estimated duration', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockCanTransition.mockResolvedValue(false);
   });
@@ -198,6 +191,7 @@ describe('StepExecutionPanel estimated duration', () => {
 
 describe('StepExecutionPanel overdue behavior', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     mockCanTransition.mockResolvedValue(true);
   });
@@ -209,14 +203,15 @@ describe('StepExecutionPanel overdue behavior', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Overdue since');
-    expect(wrapper.find('#completionNotes').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Completion notes');
+    expect(wrapper.find('textarea').exists()).toBe(true);
   });
 
   it('shows complete/fail actions for overdue steps when user can transition', async () => {
     const wrapper = mountComponent(createStep('overdue'));
     await flushPromises();
 
-    expect(hasButton(wrapper, 'Complete Step')).toBe(true);
-    expect(hasButton(wrapper, 'Mark Failed')).toBe(true);
+    expect(hasButton(wrapper, 'Complete step')).toBe(true);
+    expect(hasButton(wrapper, 'Mark failed')).toBe(true);
   });
 });

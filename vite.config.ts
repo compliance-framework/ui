@@ -19,6 +19,8 @@ export default defineConfig({
     host: true,
     watch: {
       usePolling: true,
+      // Agent worktrees (Claude Code) live here; edits in them must not reload this server.
+      ignored: ['**/.claude/**'],
     },
     ...(apiProxy
       ? { proxy: { '/api': { target: apiProxy, changeOrigin: true } } }

@@ -76,7 +76,7 @@ function mountComponent() {
     {
       global: {
         stubs: {
-          ExecutionDAGView: { template: '<div></div>' },
+          FlowGraph: { template: '<div></div>' },
           RunStepsTable: { template: '<div></div>' },
           StepExecutionPanel: { template: '<div></div>' },
         },
