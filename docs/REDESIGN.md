@@ -88,9 +88,8 @@ large enough to rebuild separately. They work and keep their tests; they still l
 Replace each with a design-system version, then delete the classic component.
 
 - Agents: the Configuration tab (`AgentConfigTab` and its editor, about 6,000 lines).
-- Admin bodies under design-system headers (`embedded`): Diagnostics sections.
 
-Rebuilt so far (no longer islands): every JSON tab, the four OSCAL Overview tabs, profile
+Rebuilt so far (no longer islands): Admin Diagnostics (notifications and AI suggestions), every JSON tab, the four OSCAL Overview tabs, profile
 Controls, Compliance and Merge, workflow definition Overview, Steps (table) and Controls, workflow
 instance Overview and Runs, assessment plan Tasks list, every visible Configure System tab
 (Overview, Characteristics, Authorization Boundary, Components, Scope, JSON), component

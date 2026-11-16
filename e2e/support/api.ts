@@ -278,7 +278,12 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     // Compliance Map: two roots (one with open risk and a posture breakdown); no children.
     if (path === '/api/lineage/roots') {
-      const node = (key: string, type: string, title: string, open: number) => ({
+      const node = (
+        key: string,
+        type: string,
+        title: string,
+        open: number,
+      ) => ({
         key,
         'node-type': type,
         title,
@@ -355,19 +360,199 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         },
         { data: [] },
       );
+    // Admin > Diagnostics: notifications (four tabs) and AI suggestions (on, with one run).
+    if (path === '/api/admin/notifications')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              name: 'EVIDENCE_DIGEST',
+              'configured-destinations': [
+                {
+                  'provider-type': 'slack',
+                  'destination-target': '#compliance',
+                },
+              ],
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/admin/notifications/providers')
+      return json(route, {
+        data: [
+          {
+            'provider-type': 'email',
+            'display-name': 'Email',
+            description: 'SMTP delivery',
+            enabled: true,
+            metadata: { host: 'smtp.example.com' },
+          },
+          {
+            'provider-type': 'slack',
+            'display-name': 'Slack',
+            description: 'Slack app',
+            enabled: false,
+            metadata: {},
+          },
+        ],
+      });
+    if (path === '/api/admin/notifications/health')
+      return json(route, {
+        data: {
+          worker: {
+            enabled: true,
+            mode: 'notify',
+            'poll-only': false,
+            queues: [
+              {
+                name: 'notifications',
+                'max-workers': 4,
+                available: 1,
+                retryable: 0,
+                running: 0,
+                scheduled: 2,
+                'completed24-h': 12,
+                'discarded24-h': 0,
+                'oldest-available-at': '2026-11-16T09:00:00Z',
+                'stale-count': 0,
+              },
+            ],
+          },
+          providers: [],
+          notifications: [
+            {
+              name: 'EVIDENCE_DIGEST',
+              'configured-destinations': [],
+              'subscriber-counts': { email: 3, slack: 1, 'total-users': 4 },
+            },
+          ],
+          schedules: [
+            {
+              name: 'evidence-digest',
+              'job-kind': 'digest',
+              queue: 'notifications',
+              enabled: true,
+              'next-run-at': '2026-11-17T09:00:00Z',
+              'last-job': { id: 7, state: 'completed' },
+            },
+          ],
+          warnings: [
+            {
+              code: 'slack-disabled',
+              severity: 'warning',
+              message: 'Slack is not configured.',
+              target: 'slack',
+            },
+          ],
+        },
+      });
+    if (path === '/api/admin/notifications/jobs')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 7,
+              state: 'completed',
+              queue: 'notifications',
+              kind: 'notification',
+              attempt: 1,
+              'max-attempts': 5,
+              'created-at': '2026-11-16T09:00:00Z',
+              'notification-kind': 'EVIDENCE_DIGEST',
+              provider: 'email',
+              target: 'admin@example.com',
+              'correlation-id': 'c-1',
+              'last-error': '',
+              stale: false,
+            },
+          ],
+          pagination: {},
+        },
+        { data: [], pagination: {} },
+      );
+    if (path === '/api/admin/notifications/EVIDENCE_DIGEST/diagnostics')
+      return json(route, {
+        data: {
+          'notification-name': 'EVIDENCE_DIGEST',
+          status: 'warning',
+          checks: [
+            {
+              code: 'subscribers',
+              label: 'Has subscribers',
+              status: 'pass',
+              message: '4 people subscribe.',
+            },
+          ],
+          'subscriber-counts': { email: 3, slack: 1, 'total-users': 4 },
+          'system-destinations': [],
+          'recommended-actions': ['Configure Slack.'],
+        },
+      });
+    if (path === '/api/dashboard-suggestions/config')
+      return json(route, { data: { enabled: true } });
+    if (path === '/api/admin/ai-diagnostics/summary')
+      return json(route, {
+        data: {
+          enabled: true,
+          config: { model: 'claude-sonnet-5-5', 'prompt-version': 'v3' },
+          totals: {
+            runs: 3,
+            'runs-by-status': {
+              pending: 0,
+              running: 1,
+              completed: 1,
+              failed: 1,
+            },
+            'cells-completed': 20,
+            'cells-failed': 1,
+            'input-tokens': 12000,
+            'output-tokens': 3000,
+            'cache-read-input-tokens': 6000,
+            'cache-creation-input-tokens': 1000,
+            'cache-hit-ratio': 0.5,
+            'mappings-returned': 40,
+            'mappings-rejected': 2,
+            'suggestions-accepted': 10,
+            'suggestions-rejected': 3,
+            'suggestions-pending': 5,
+            'rate-limited-total': 0,
+          },
+          queue: null,
+          checks: [
+            { id: 'api-key', status: 'pass', message: 'The API key works.' },
+          ],
+        },
+      });
+    if (path === '/api/admin/ai-diagnostics/runs')
+      return list(route, lists, { data: [], meta: {} }, { data: [], meta: {} });
     if (path === '/api/admin/agents')
-      return list(route, lists, { data: [{
-          id: 'ag-1',
-          name: 'collector',
-          description: 'Collects evidence',
-          'is-active': true,
-          'service-account-key-count': 1,
-          'last-authenticated-at': '2026-09-09T00:00:00Z',
-          'created-at': '2026-09-01T00:00:00Z',
-          'updated-at': '2026-09-09T00:00:00Z',
-        }] }, { data: [] });
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'ag-1',
+              name: 'collector',
+              description: 'Collects evidence',
+              'is-active': true,
+              'service-account-key-count': 1,
+              'last-authenticated-at': '2026-09-09T00:00:00Z',
+              'created-at': '2026-09-01T00:00:00Z',
+              'updated-at': '2026-09-09T00:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/admin/agents/ag-1')
-      return json(route, { data: {
+      return json(route, {
+        data: {
           id: 'ag-1',
           name: 'collector',
           description: 'Collects evidence',
@@ -376,7 +561,8 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           'last-authenticated-at': '2026-09-09T00:00:00Z',
           'created-at': '2026-09-01T00:00:00Z',
           'updated-at': '2026-09-09T00:00:00Z',
-        } });
+        },
+      });
     if (path === '/api/admin/agents/ag-1/keys')
       return list(
         route,

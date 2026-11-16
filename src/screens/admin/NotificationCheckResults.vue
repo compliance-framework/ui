@@ -49,7 +49,7 @@ const checkColumns: DataTableColumn[] = [
       </template>
       <PanelSection title="Checks">
         <DataTable
-          caption="Checks"
+          caption="Check results"
           caption-hidden
           :columns="checkColumns"
           :rows="diagnostics.checks"

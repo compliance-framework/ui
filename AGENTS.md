@@ -49,7 +49,7 @@ npm run format:fix                           # prettier --write src/
 
 - `src/views/`: route pages. `src/router/index.ts` defines routes and gates them on
   `meta.requiresAuth` and permissions.
-- `src/components/`: feature folders plus shared building blocks (`PageCard.vue`, buttons).
+- `src/components/`: feature folders plus shared building blocks.
 - `src/volt/`: vendored Volt wrappers around unstyled PrimeVue. Not linted. Don't restyle or
   refactor them as part of feature work.
 - `src/composables/axios/`: **the API client to use**: `useDataApi`,
@@ -94,7 +94,7 @@ These cause most API-related bugs in this repo:
 ## Conventions
 
 - Components use `<script setup lang="ts">`; there is no Options API.
-- Style with Tailwind classes, include `dark:` variants, and use `PageCard` for page sections.
+- Style with Tailwind classes, include `dark:` variants.
 - Only `PrimaryButton`, `SecondaryButton` and `v-tooltip` are registered globally. Import
   everything else explicitly: there are no auto-imports.
 - API types are written by hand in `src/types` or `src/oscal`. Match the API's JSON tags, after

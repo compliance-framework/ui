@@ -57,6 +57,11 @@ const routes = [
   '/dashboards/create',
   '/users/u1',
   '/admin/groups/g1',
+  ...['', '?tab=health', '?tab=deliveries', '?tab=diagnostics'].map(
+    (tab) => `/admin/diagnostics/notifications${tab}`,
+  ),
+  '/admin/diagnostics/ai-suggestions',
+  '/admin/diagnostics/ai-suggestions?tab=runs',
   ...['', '/components', '/capabilities', '/back-matter'].map(
     (tab) => `/component-definitions/cd-1${tab}`,
   ),

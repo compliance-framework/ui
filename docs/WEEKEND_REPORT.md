@@ -1273,3 +1273,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   spec is ported (the test of the classic dialog's inline width is dropped: the design-system
   dialog sizes itself). `FormTextarea` is deleted, now unused. `.claude/worktrees/` is
   gitignored.
+- **Admin Diagnostics has no classic parts left.** Notifications and AI suggestions are
+  rebuilt as screens (`src/screens/admin`), split into sections, with the chart helpers now
+  returning design-system `LineChart` series (the chart.js `LineChart` is deleted). Sections that
+  were in-page buttons are tabs in the address (`?tab=health|deliveries|diagnostics`,
+  `?tab=runs`), so they can be linked; each still loads the first time it opens. **Decision:**
+  rows are no longer clickable; the job ID (Deliveries) or SSP name (Runs) is the button that
+  opens the drawer, so it works from the keyboard. Busy buttons show a spinner instead of
+  "Sending…"; while one destination is being removed, the other Remove buttons say why they
+  wait. Copy is sentence case. `MetricTile` takes an optional link; new status keys for checks,
+  jobs and providers. The unused `PageCard` and `FormInput` shims are deleted. Checked live
+  against local-dev (notifications, all four tabs, a real delivery job; AI is off locally, so
+  its enabled views are covered by specs and the axe run's mocks). All six diagnostics views
+  join the axe run.

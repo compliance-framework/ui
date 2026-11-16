@@ -175,7 +175,7 @@ const subscriberRows = computed(() =>
         <PanelSection title="Provider readiness">
           <DataTable
             v-if="providers.length > 0"
-            caption="Provider readiness"
+            caption="Providers"
             caption-hidden
             :columns="providerColumns"
             :rows="providers"
@@ -198,7 +198,7 @@ const subscriberRows = computed(() =>
         <PanelSection title="Queue summary">
           <DataTable
             v-if="queueRows.length > 0"
-            caption="Queue summary"
+            caption="Queues"
             caption-hidden
             :columns="queueColumns"
             :rows="queueRows"
@@ -210,7 +210,7 @@ const subscriberRows = computed(() =>
         <PanelSection title="Subscribers and destinations">
           <DataTable
             v-if="subscriberRows.length > 0"
-            caption="Subscribers and destinations"
+            caption="Subscribers by notification"
             caption-hidden
             :columns="subscriberColumns"
             :rows="subscriberRows"
@@ -224,7 +224,7 @@ const subscriberRows = computed(() =>
         <PanelSection title="Upcoming scheduled runs">
           <DataTable
             v-if="schedules.length > 0"
-            caption="Upcoming scheduled runs"
+            caption="Scheduled runs"
             caption-hidden
             :columns="scheduleColumns"
             :rows="schedules"
