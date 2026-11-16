@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref } from 'vue';
-import RiskDetailView from '../RiskDetailView.vue';
+import { defineComponent, h, reactive, ref } from 'vue';
+import { TooltipProvider } from 'reka-ui';
+import { createPinia, setActivePinia } from 'pinia';
+import RiskScreen from '../RiskScreen.vue';
 
-const mockRoute = {
+// Reactive, as the screen keeps its tab in the query.
+const mockRoute = reactive({
   name: 'system-security-plan-risk-detail',
   params: {
     id: 'ssp-1',
     riskId: 'risk-1',
   },
   query: {} as Record<string, string | string[] | undefined>,
-};
+});
 
 type MockRisk = {
   uuid: string;
@@ -287,7 +290,21 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockRouterPush,
     back: mockRouterBack,
+    // Back steps over tab entries with go(-n).
+    go: (delta: number) => mockRouterBack(delta),
+    replace: async (to: { query?: Record<string, string> }) => {
+      mockRoute.query = { ...(to.query ?? {}) };
+    },
+    resolve: (to: { query?: Record<string, string> }) => ({
+      name: mockRoute.name,
+      query: to.query ?? {},
+      href: '#',
+    }),
   }),
+  RouterLink: {
+    props: ['to'],
+    template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+  },
 }));
 
 vi.mock('@/stores/system', () => ({
@@ -759,102 +776,179 @@ vi.mock('@/composables/axios', () => ({
 }));
 
 function mountComponent() {
-  return mount(RiskDetailView, {
-    global: {
-      stubs: {
-        PageHeader: { template: '<div><slot /></div>' },
-        Message: { template: '<div><slot /></div>' },
-        Dialog: { template: '<div><slot /></div>' },
-        TertiaryButton: { template: '<button><slot /></button>' },
-        RouterLinkButton: { template: '<button><slot /></button>' },
-        RiskAcceptModal: {
-          props: ['visible'],
-          emits: ['update:visible', 'submit'],
-          setup() {
-            return { mockApiState };
+  setActivePinia(createPinia());
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(RiskScreen)),
+    }),
+    {
+      global: {
+        stubs: {
+          // Route tabs need a real router; the tab labels are enough here.
+          Tabs: {
+            props: ['tabs', 'label'],
+            template:
+              '<div><span v-for="t in tabs" :key="t.label" role="tab">{{ t.label }}</span><slot /></div>',
           },
-          template:
-            '<div v-if="visible" data-testid="accept-modal"><button data-testid="accept-modal-submit" @click="$emit(\'submit\', mockApiState.acceptModalPayload)">Submit Accept</button></div>',
-        },
-        RiskReviewModal: {
-          props: ['visible'],
-          emits: ['update:visible', 'submit'],
-          setup() {
-            return { mockApiState };
+          // Inline, so dialog content is found in the wrapper; Close stands in for the dialog's own.
+          Dialog: {
+            props: ['open', 'title'],
+            emits: ['update:open'],
+            template:
+              '<div v-if="open"><h2>{{ title }}</h2><slot /><button type="button" @click="$emit(\'update:open\', false)">Close</button></div>',
           },
-          template:
-            '<div v-if="visible" data-testid="review-modal"><button data-testid="review-modal-submit" @click="$emit(\'submit\', mockApiState.reviewModalPayload)">Submit Review</button></div>',
-        },
-        RiskScoreReviewModal: {
-          props: ['visible'],
-          emits: ['update:visible', 'submit'],
-          setup() {
-            return { mockApiState };
+          RiskAcceptModal: {
+            props: ['visible'],
+            emits: ['update:visible', 'submit'],
+            setup() {
+              return { mockApiState };
+            },
+            template:
+              '<div v-if="visible" data-testid="accept-modal"><button data-testid="accept-modal-submit" @click="$emit(\'submit\', mockApiState.acceptModalPayload)">Submit Accept</button></div>',
           },
-          template:
-            '<div v-if="visible" data-testid="score-review-modal"><button data-testid="score-review-modal-submit" @click="$emit(\'submit\', mockApiState.scoreReviewModalPayload)">Submit Score Review</button></div>',
-        },
-        PromoteToPoamModal: {
-          props: ['visible'],
-          emits: ['update:visible', 'submit'],
-          setup() {
-            return { mockApiState };
+          RiskReviewModal: {
+            props: ['visible'],
+            emits: ['update:visible', 'submit'],
+            setup() {
+              return { mockApiState };
+            },
+            template:
+              '<div v-if="visible" data-testid="review-modal"><button data-testid="review-modal-submit" @click="$emit(\'submit\', mockApiState.reviewModalPayload)">Submit Review</button></div>',
           },
-          template:
-            '<div v-if="visible" data-testid="promote-to-poam-modal"><button data-testid="promote-to-poam-modal-submit" @click="$emit(\'submit\', mockApiState.promoteToPoamPayload)">Submit Create Mitigation</button></div>',
-        },
-        RiskOwnerAssignment: {
-          emits: ['change', 'save'],
-          setup() {
-            return { mockApiState };
+          RiskScoreReviewModal: {
+            props: ['visible'],
+            emits: ['update:visible', 'submit'],
+            setup() {
+              return { mockApiState };
+            },
+            template:
+              '<div v-if="visible" data-testid="score-review-modal"><button data-testid="score-review-modal-submit" @click="$emit(\'submit\', mockApiState.scoreReviewModalPayload)">Submit Score Review</button></div>',
           },
-          template:
-            '<div data-testid="owner-assignment"><button data-testid="owner-assignment-change" @click="$emit(\'change\', mockApiState.ownerAssignmentChangePayload)">Emit Owner Change</button><button data-testid="owner-assignment-save" @click="$emit(\'save\')">Save Owner</button></div>',
-        },
-        LineChart: {
-          name: 'LineChart',
-          template: '<div data-testid="line-chart" />',
+          PromoteToPoamModal: {
+            props: ['visible'],
+            emits: ['update:visible', 'submit'],
+            setup() {
+              return { mockApiState };
+            },
+            template:
+              '<div v-if="visible" data-testid="promote-to-poam-modal"><button data-testid="promote-to-poam-modal-submit" @click="$emit(\'submit\', mockApiState.promoteToPoamPayload)">Submit Create Mitigation</button></div>',
+          },
+          RiskOwnerAssignment: {
+            emits: ['change', 'save'],
+            setup() {
+              return { mockApiState };
+            },
+            template:
+              '<div data-testid="owner-assignment"><button data-testid="owner-assignment-change" @click="$emit(\'change\', mockApiState.ownerAssignmentChangePayload)">Emit Owner Change</button><button data-testid="owner-assignment-save" @click="$emit(\'save\')">Save Owner</button></div>',
+          },
+          LineChart: {
+            name: 'LineChart',
+            template: '<div data-testid="line-chart" />',
+          },
         },
       },
     },
-  });
+  );
 }
+
+// A button's label: disabled buttons also hold their reason as hidden text.
+function buttonLabel(
+  button: ReturnType<ReturnType<typeof mountComponent>['find']>,
+) {
+  const span = button.find('span');
+  return (span.exists() ? span.text() : button.text()).trim();
+}
+
+// Saving is submitting the dialog's form.
+async function submitFormOf(
+  wrapper: ReturnType<typeof mountComponent>,
+  testid: string,
+) {
+  const form = wrapper.get(`[data-testid="${testid}"]`).element.closest('form');
+  expect(form, `No form around ${testid}`).toBeTruthy();
+  form!.dispatchEvent(new Event('submit', { cancelable: true }));
+  await flushPromises();
+}
+
+// In the link picker, each option has its own Link button.
+async function linkOption(
+  wrapper: ReturnType<typeof mountComponent>,
+  text: string,
+) {
+  const option = wrapper.findAll('li').find((li) => li.text().includes(text));
+  expect(option, `Missing option: ${text}`).toBeDefined();
+  await option!
+    .findAll('button')
+    .find((b) => buttonLabel(b) === 'Link')!
+    .trigger('click');
+}
+
+// The classic page's labels, as the design-system page words them.
+const LABELS: Record<string, string> = {
+  'Start Investigation': 'Start investigation',
+  'Close Risk': 'Close risk',
+  'Accept Risk': 'Accept risk',
+  'Review Risk': 'Review risk',
+  'Review Risk Score': 'Review risk score',
+  'Mitigate Risk': 'Mitigate risk',
+  'Mark Mitigating Implemented': 'Mark mitigation implemented',
+  'Create Mitigation': 'Create mitigation',
+  'Add Evidence': 'Link evidence',
+  'Add Control': 'Link control',
+  'Add Component': 'Link component',
+  'Add Threat': 'Add threat',
+  'Add Remediation': 'Add remediation',
+  'Edit Remediation': 'Edit remediation',
+  'Save Threat': 'Save threat',
+  'Save Remediation': 'Save remediation',
+};
+// Tabs are links that set ?tab=; "clicking" one sets the query.
+const TABS: Record<string, string> = {
+  Overview: 'overview',
+  Evidence: 'evidence',
+  Controls: 'controls',
+  Components: 'components',
+  Threats: 'threats',
+  'Suggested Remediations': 'remediations',
+  Reviews: 'reviews',
+  'History & Events': 'history-events',
+  'Mitigation Plan': 'poam-items',
+};
 
 function findButtonByText(
   wrapper: ReturnType<typeof mountComponent>,
   text: string,
 ) {
-  return wrapper.findAll('button').find((button) => button.text() === text);
-}
-
-function findButtonContainingText(
-  wrapper: ReturnType<typeof mountComponent>,
-  text: string,
-) {
-  return wrapper
-    .findAll('button')
-    .find((button) => button.text().includes(text));
+  const label = LABELS[text] ?? text;
+  const buttons = wrapper.findAll('button');
+  const tab = TABS[text]
+    ? wrapper.findAll('[role="tab"]').find((t) => t.text() === text)
+    : undefined;
+  return (
+    buttons.find((button) => buttonLabel(button) === label) ??
+    tab ??
+    // Evidence, controls and components are unlinked, not removed.
+    (text === 'Remove'
+      ? buttons.find((button) => button.text() === 'Unlink')
+      : undefined)
+  );
 }
 
 async function clickButtonByText(
   wrapper: ReturnType<typeof mountComponent>,
   text: string,
 ) {
+  if (TABS[text]) {
+    mockRoute.query = TABS[text] === 'overview' ? {} : { tab: TABS[text]! };
+    await flushPromises();
+    return;
+  }
   const button = findButtonByText(wrapper, text);
   expect(button, `Missing button: ${text}`).toBeDefined();
   await button!.trigger('click');
 }
 
-async function clickButtonContainingText(
-  wrapper: ReturnType<typeof mountComponent>,
-  text: string,
-) {
-  const button = findButtonContainingText(wrapper, text);
-  expect(button, `Missing button containing: ${text}`).toBeDefined();
-  await button!.trigger('click');
-}
-
-describe('RiskDetailView', () => {
+describe('RiskScreen', () => {
   beforeEach(() => {
     mockRoute.name = 'system-security-plan-risk-detail';
     mockRoute.params.id = 'ssp-1';
@@ -923,8 +1017,7 @@ describe('RiskDetailView', () => {
     expect(text).toContain('History & Events');
 
     // Test that the Mitigation Plan tab is not rendered
-    const tabsContainer = wrapper.find('.flex.flex-wrap.gap-2.pb-2');
-    const tabs = tabsContainer.findAll('button');
+    const tabs = wrapper.findAll('[role="tab"]');
     const tabTexts = tabs.map((t) => t.text());
     expect(tabTexts).not.toContain('Mitigation Plan');
     expect(tabTexts).not.toContain('Log');
@@ -950,8 +1043,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    const tabsContainer = wrapper.find('.flex.flex-wrap.gap-2.pb-2');
-    const tabs = tabsContainer.findAll('button');
+    const tabs = wrapper.findAll('[role="tab"]');
     const tabTexts = tabs.map((t) => t.text());
     expect(tabTexts).toContain('Mitigation Plan');
   });
@@ -1233,7 +1325,7 @@ describe('RiskDetailView', () => {
 
     expect(findButtonByText(wrapper, 'Threats')).toBeDefined();
     expect(findButtonByText(wrapper, 'Suggested Remediations')).toBeDefined();
-    expect(wrapper.text()).toContain('Threat IDs:');
+    expect(wrapper.text()).toContain('Threat IDs');
     expect(wrapper.text()).toContain('T-001, T-002');
 
     await clickButtonByText(wrapper, 'Reviews');
@@ -1276,7 +1368,7 @@ describe('RiskDetailView', () => {
     await wrapper
       .get('[data-testid="threat-title-input"]')
       .setValue('POAM Threat');
-    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await submitFormOf(wrapper, 'save-threat-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1298,9 +1390,7 @@ describe('RiskDetailView', () => {
     await wrapper
       .get('[data-testid="remediation-title-input"]')
       .setValue('POAM remediation');
-    await wrapper
-      .get('[data-testid="save-remediation-button"]')
-      .trigger('click');
+    await submitFormOf(wrapper, 'save-remediation-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1388,7 +1478,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Threat IDs:');
+    expect(wrapper.text()).toContain('Threat IDs');
     expect(wrapper.text()).toContain('T-001, T-002');
 
     await clickButtonByText(wrapper, 'Threats');
@@ -1490,10 +1580,10 @@ describe('RiskDetailView', () => {
     const editButton = findButtonByText(wrapper, 'Edit');
     const removeButton = findButtonByText(wrapper, 'Remove');
 
-    expect(editButton?.attributes('disabled')).toBeDefined();
-    expect(removeButton?.attributes('disabled')).toBeDefined();
-    expect(editButton?.attributes('title')).toContain('cannot be edited');
-    expect(removeButton?.attributes('title')).toContain('cannot be removed');
+    expect(editButton?.attributes('aria-disabled')).toBe('true');
+    expect(removeButton?.attributes('aria-disabled')).toBe('true');
+    expect(editButton?.text()).toContain("can't be edited");
+    expect(removeButton?.text()).toContain("can't be removed");
   });
 
   it('creates threats through the threat-ids endpoint', async () => {
@@ -1511,7 +1601,7 @@ describe('RiskDetailView', () => {
     await wrapper
       .get('[data-testid="threat-url-input"]')
       .setValue('https://threats.local/3');
-    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await submitFormOf(wrapper, 'save-threat-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1539,7 +1629,7 @@ describe('RiskDetailView', () => {
     await wrapper
       .get('[data-testid="threat-title-input"]')
       .setValue('Updated Threat Title');
-    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await submitFormOf(wrapper, 'save-threat-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1575,7 +1665,7 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Edit Remediation');
-    expect(wrapper.text()).toContain('Edit Remediation');
+    expect(wrapper.text()).toContain('Edit remediation');
     await wrapper
       .get('[data-testid="remediation-title-input"]')
       .setValue('Updated remediation');
@@ -1583,14 +1673,13 @@ describe('RiskDetailView', () => {
       .get('[data-testid="remediation-description-input"]')
       .setValue('Updated remediation details');
     await wrapper
-      .get('[data-testid="add-remediation-task-button"]')
+      .findAll('button')
+      .find((b) => buttonLabel(b) === 'Add task')!
       .trigger('click');
     await wrapper
       .get('[data-testid="remediation-task-input-1"]')
       .setValue('Validate rollout');
-    await wrapper
-      .get('[data-testid="save-remediation-button"]')
-      .trigger('click');
+    await submitFormOf(wrapper, 'save-remediation-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1631,18 +1720,16 @@ describe('RiskDetailView', () => {
     expect(findButtonByText(wrapper, 'Edit Remediation')).toBeUndefined();
     const editButton = findButtonByText(wrapper, 'Edit');
     const removeButton = findButtonByText(wrapper, 'Remove');
-    expect(editButton?.attributes('disabled')).toBeDefined();
-    expect(removeButton?.attributes('disabled')).toBeDefined();
-    expect(editButton?.attributes('title')).toContain('cannot be edited');
-    expect(removeButton?.attributes('title')).toContain('cannot be removed');
+    expect(editButton?.attributes('aria-disabled')).toBe('true');
+    expect(removeButton?.attributes('aria-disabled')).toBe('true');
+    expect(editButton?.text()).toContain("can't be edited");
+    expect(removeButton?.text()).toContain("can't be removed");
 
     await clickButtonByText(wrapper, 'Add Remediation');
     await wrapper
       .get('[data-testid="remediation-title-input"]')
       .setValue('New remediation');
-    await wrapper
-      .get('[data-testid="save-remediation-button"]')
-      .trigger('click');
+    await submitFormOf(wrapper, 'save-remediation-button');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -1675,6 +1762,24 @@ describe('RiskDetailView', () => {
         method: 'DELETE',
       }),
     );
+  });
+
+  it('steps back over tab changes to where the risk was opened from', async () => {
+    window.history.replaceState(
+      { back: '/system/risks', position: 3 },
+      '',
+      window.location.href,
+    );
+    const wrapper = mountComponent();
+    await flushPromises();
+    // Two tab changes later:
+    window.history.replaceState(
+      { back: '/risks/risk-1', position: 5 },
+      '',
+      window.location.href,
+    );
+    await clickButtonByText(wrapper, 'Back');
+    expect(mockRouterBack).toHaveBeenCalledWith(-3);
   });
 
   it('uses router back when an in-app back target exists', async () => {
@@ -1727,13 +1832,13 @@ describe('RiskDetailView', () => {
 
     const text = wrapper.text();
     expect(text).toContain('Lifecycle');
-    expect(text).toContain('Workflow State');
-    expect(text).toContain('Transition Matrix');
-    expect(text).toContain('Risk Accepted');
-    expect(text).toContain('Acceptance Justification');
-    expect(text).toContain('Review Deadline');
-    expect(text).toContain('Last Reviewed At');
-    expect(text).toContain('Source Type');
+    expect(text).toContain('Workflow state');
+    // The transitions list marks the current status.
+    expect(text).toContain('Risk Accepted (now)');
+    expect(text).toContain('Acceptance justification');
+    expect(text).toContain('Review deadline');
+    expect(text).toContain('Last reviewed');
+    expect(text).toContain('Source');
   });
 
   it('hides acceptance justification when risk is not accepted', async () => {
@@ -1741,8 +1846,8 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain('Acceptance Justification');
-    expect(wrapper.text()).not.toContain('Last Reviewed At');
+    expect(wrapper.text()).not.toContain('Acceptance justification');
+    expect(wrapper.text()).not.toContain('Last reviewed');
   });
 
   it('shows Accept Risk button only for investigating status', async () => {
@@ -2346,9 +2451,7 @@ describe('RiskDetailView', () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain('Fallback Log Event');
-    expect(wrapper.text()).toContain(
-      'No events have been recorded for this risk.',
-    );
+    expect(wrapper.text()).toContain('No events yet');
     expect(wrapper.text()).toContain('Page 2');
     expect(apiCalls).toContainEqual(
       expect.objectContaining({
@@ -2443,7 +2546,7 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'Add Evidence');
     await flushPromises();
 
-    await clickButtonContainingText(wrapper, 'Evidence One');
+    await linkOption(wrapper, 'Evidence One');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -2466,7 +2569,7 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'Add Control');
     await flushPromises();
 
-    await clickButtonContainingText(wrapper, 'Access Control');
+    await linkOption(wrapper, 'Access Control');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(

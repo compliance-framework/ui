@@ -699,11 +699,6 @@ const authenticatedRoutes = [
         component: () => import('../screens/poam/PoamCollectionTab.vue'),
       },
       {
-        path: 'risks/:riskId',
-        name: 'plan-of-action-and-milestones-risk-detail',
-        component: () => import('../views/risk/RiskDetailView.vue'),
-      },
-      {
         path: 'findings',
         name: 'plan-of-action-and-milestones-findings',
         component: () => import('../screens/poam/PoamCollectionTab.vue'),
@@ -1182,6 +1177,13 @@ const designSystemRoutes = [
         }),
       },
     ],
+  },
+  {
+    // A POA&M's risk is a page of its own too (its own title and tabs), at the same URL.
+    path: '/plan-of-action-and-milestones/:id/risks/:riskId',
+    name: 'plan-of-action-and-milestones-risk-detail',
+    component: () => import('../screens/risks/RiskScreen.vue'),
+    meta: { requiresAuth: true, ds: true },
   },
   {
     // Risk detail keeps its SSP-scoped URL as a page of its own (its SSP editor parent is gone).

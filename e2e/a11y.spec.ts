@@ -78,6 +78,8 @@ const routes = [
   `/systems/${SYSTEMS.scoped}/workflows`,
   `/systems/${SYSTEMS.scoped}/risks`,
   `/systems/${SYSTEMS.scoped}/risks/register`,
+  `/system-security-plans/${SYSTEMS.scoped}/risks/risk-1`,
+  `/system-security-plans/${SYSTEMS.scoped}/risks/risk-1?tab=threats`,
   `/systems/${SYSTEMS.unscoped}/evidence`,
   ...[
     'characteristics',

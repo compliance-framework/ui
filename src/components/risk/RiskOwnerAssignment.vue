@@ -1,139 +1,95 @@
 <template>
-  <div
-    class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-4"
+  <Panel
+    title="Owners"
+    description="A primary owner is required for workflow accountability."
+    :level="3"
   >
-    <div class="flex items-center justify-between gap-3">
-      <div>
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-slate-200">
-          Owner Assignment
-        </h3>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-          Primary owner is required for workflow accountability.
-        </p>
-      </div>
-      <button
-        v-if="mode === 'overview'"
-        type="button"
-        class="px-3 py-1.5 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
-        :disabled="disabled"
+    <template v-if="mode === 'overview'" #actions>
+      <Button
+        :variant="isEditing ? 'primary' : 'secondary'"
+        :disabled-reason="
+          disabled ? 'Wait for the current change to finish.' : undefined
+        "
         @click="onHeaderAction"
+        >{{ isEditing ? 'Save owners' : 'Assign owners' }}</Button
       >
-        {{ isEditing ? 'Save' : 'Assign Owner' }}
-      </button>
-    </div>
-
-    <div class="space-y-2 text-sm text-gray-700 dark:text-slate-300">
-      <p>
-        <span class="font-semibold">Primary Owner:</span>
-        <span class="ml-1">{{ primaryOwnerLabel || 'Unassigned' }}</span>
-      </p>
-
-      <div>
-        <span class="font-semibold">Additional Owners:</span>
-        <span v-if="!secondaryOwners.length" class="ml-1 text-gray-500"
-          >None</span
-        >
-        <ul v-else class="mt-1 list-disc list-inside">
-          <li v-for="owner in secondaryOwners" :key="owner.key">
-            {{ owner.label }}
+    </template>
+    <Stack gap="4">
+      <DescriptionList v-if="!showEditor" :items="ownerFacts" />
+      <template v-else>
+        <Text v-if="!rows.length" variant="caption">No owners yet.</Text>
+        <Stack v-else gap="2" as="ul">
+          <li v-for="(row, index) in rows" :key="row.key">
+            <Cluster gap="2" align="end">
+              <FormField :label="`Owner ${index + 1}`">
+                <Combobox
+                  :model-value="row.user?.id || row.ownerRef"
+                  :options="userOptions"
+                  :loading="users.status.value === 'loading'"
+                  placeholder="Name or email"
+                  @update:model-value="(id: string) => chooseUser(row, id)"
+                />
+              </FormField>
+              <IconButton
+                icon="close"
+                :label="`Remove owner ${index + 1}`"
+                :disabled-reason="
+                  disabled
+                    ? 'Wait for the current change to finish.'
+                    : undefined
+                "
+                @click="removeRow(row.key)"
+              />
+            </Cluster>
           </li>
-        </ul>
-      </div>
-    </div>
-
-    <p
-      v-if="ownerValidationError && showEditor"
-      class="text-xs text-red-600 dark:text-red-400"
-    >
-      {{ ownerValidationError }}
-    </p>
-
-    <div
-      v-if="showEditor"
-      class="space-y-3 border border-ccf-300 dark:border-slate-700 rounded-md p-3"
-    >
-      <div
-        v-if="!rows.length"
-        class="text-xs text-gray-500 dark:text-slate-400 italic"
-      >
-        No owner assignments configured.
-      </div>
-
-      <div
-        v-for="row in rows"
-        :key="row.key"
-        class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto]"
-      >
-        <AutoComplete
-          v-model="row.user"
-          :suggestions="userSuggestions"
-          optionLabel="displayName"
-          :filterBy="['displayName', 'id']"
-          placeholder="Search users..."
-          class="w-full"
-          :forceSelection="true"
-          :disabled="disabled"
-          @complete="searchUsers"
-          @update:modelValue="onUserSelected(row, $event)"
+        </Stack>
+        <div>
+          <Button
+            icon="add"
+            :disabled-reason="
+              disabled ? 'Wait for the current change to finish.' : undefined
+            "
+            @click="addRow"
+            >Add owner</Button
+          >
+        </div>
+        <RadioGroup
+          v-if="primaryOptions.length"
+          v-model="primaryKey"
+          legend="Primary owner"
+          :options="primaryOptions"
+          :error="ownerValidationError || undefined"
+        />
+        <InlineMessage
+          v-else-if="ownerValidationError"
+          tone="error"
+          title="Not saved"
+          ><p>{{ ownerValidationError }}</p></InlineMessage
         >
-          <template #item="{ item }">
-            <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-slate-100">
-                {{ item.displayName }}
-              </span>
-              <span class="text-xs text-gray-500 dark:text-slate-400">
-                {{ item.id }}
-              </span>
-            </div>
-          </template>
-          <template #selected="{ value }">
-            <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-slate-100">
-                {{ value?.displayName || row.ownerRef || 'Select user' }}
-              </span>
-              <span class="text-xs text-gray-500 dark:text-slate-400">
-                {{ value?.id || row.ownerRef || '' }}
-              </span>
-            </div>
-          </template>
-        </AutoComplete>
-
-        <label class="flex items-center gap-2 text-xs text-gray-600">
-          <input
-            type="radio"
-            :name="primaryOwnerInputName"
-            :checked="row.isPrimary"
-            :disabled="disabled"
-            @change="setPrimary(row.key)"
-          />
-          Primary
-        </label>
-
-        <button
-          type="button"
-          class="text-xs px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-60"
-          :disabled="disabled"
-          @click="removeRow(row.key)"
-        >
-          Remove
-        </button>
-      </div>
-
-      <button
-        type="button"
-        class="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-60"
-        :disabled="disabled"
-        @click="addRow"
-      >
-        + Add Owner
-      </button>
-    </div>
-  </div>
+      </template>
+    </Stack>
+  </Panel>
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, ref, watch } from 'vue';
-import AutoComplete from '@/volt/AutoComplete.vue';
+/**
+ * A risk's owners: who the primary owner is and who else owns it. On the risk's overview it is
+ * read-only until Assign owners (then Save); inside the accept dialog it is always editable. It
+ * emits each change and, on the overview, `save`. The script is the classic panel's.
+ */
+import { computed, ref, watch } from 'vue';
+import { useApiQuery } from '@/ds/query';
+import Button from '@/ds/components/Button/Button.vue';
+import Combobox from '@/ds/components/Combobox/Combobox.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import RadioGroup from '@/ds/components/RadioGroup/RadioGroup.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import {
   useUserSearch,
   type DisplayUser,
@@ -171,17 +127,31 @@ const emit = defineEmits<{
   save: [];
 }>();
 
-const {
-  userSuggestions,
-  userCache,
-  searchUsers,
-  loadUsersByIds,
-  getCachedUser,
-} = useUserSearch();
+const { userCache, loadUsersByIds, getCachedUser } = useUserSearch();
+
+// Every selectable user, for the pickers (as on the workflow roles tab).
+const users =
+  useApiQuery<{ id: string; displayName: string }[]>('/api/users/select');
+const userOptions = computed(() =>
+  (users.data.value ?? []).map((u) => ({
+    value: u.id,
+    label: u.displayName || u.id,
+  })),
+);
+function chooseUser(row: OwnerRow, id: string) {
+  const picked = users.data.value?.find((u) => u.id === id);
+  onUserSelected(
+    row,
+    picked
+      ? { ...makeFallbackUser(picked.id), displayName: picked.displayName }
+      : id
+        ? makeFallbackUser(id)
+        : null,
+  );
+}
 
 const rows = ref<OwnerRow[]>([]);
 const isEditing = ref(false);
-const primaryOwnerInputName = `primary-owner-${getCurrentInstance()?.uid ?? Date.now()}`;
 const ownerValidationError = ref('');
 
 const showEditor = computed(() => props.mode === 'embedded' || isEditing.value);
@@ -200,6 +170,29 @@ const primaryOwnerLabel = computed(() => {
   const primary = rows.value.find((row) => row.isPrimary && row.ownerRef);
   if (!primary) return '';
   return ownerLabel(primary);
+});
+
+const ownerFacts = computed(() => [
+  {
+    key: 'primary',
+    label: 'Primary owner',
+    value: primaryOwnerLabel.value || 'Unassigned',
+  },
+  {
+    key: 'others',
+    label: 'Other owners',
+    value:
+      secondaryOwners.value.map((owner) => owner.label).join(', ') || 'None',
+  },
+]);
+const primaryOptions = computed(() =>
+  rows.value
+    .filter((row) => row.ownerRef)
+    .map((row) => ({ value: row.key, label: ownerLabel(row) })),
+);
+const primaryKey = computed({
+  get: () => rows.value.find((row) => row.isPrimary && row.ownerRef)?.key ?? '',
+  set: (key: string) => setPrimary(key),
 });
 
 const secondaryOwners = computed(() =>

@@ -28,7 +28,7 @@ without a redesigned page around it. Pages fall into three kinds:
   editor and shared-responsibility panel), Configure System (the hidden Control Implementation
   section, the diagram editor, the component risks list and evidence-filter drawer), catalog
   page (add/edit modals), workflow run (step graph and panel), Compliance Map, Diagnostics, risk
-  page, Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
+  page (child panels and dialogs), Agents (the Configuration tab). On the assessment results and workflow instance pages, every tab is design-system too.
 - **Design-system header over a classic body**: Diagnostics sections.
 
 App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
@@ -1133,3 +1133,25 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   tabs and the Generate form with its estimate (not run: it calls the AI provider). **Gap:**
   local-dev has no pending suggestions, so groups, accept, reject and edit were checked only by
   the specs.
+- **Risk page** is design-system (`RiskScreen`, for `/risks/:riskId` and both record-scoped URLs).
+  The classic 4,400-line page's script is transplanted unchanged, so the register it belongs to,
+  the lifecycle rules, links, threats, remediations, reviews, history and Back keep their
+  behaviour. The template is new: a design-system header (title, status, description, Back),
+  route tabs in the address (`?tab=threats`), panels per linked item, and design-system threat,
+  remediation and link-picker dialogs. **Decisions:** the POA&M risk is now a page of its own at
+  the same URL (like the system one) instead of sitting inside the POA&M record, which gave it two
+  page headings. Lifecycle buttons use sentence case ("Start investigation"); "Add evidence/
+  control/component" reads "Link …" and "Remove" on links reads "Unlink"; the "Transition Matrix"
+  is a list of statuses with the current one marked "(now)". Because route tabs add history
+  entries, Back steps back over them to wherever the risk was opened from (new; a spec covers it).
+  Edit and Remove on older threats and remediations are disabled with the reason. The owners
+  panel (`RiskOwnerAssignment`, also inside the accept dialog) is design-system too: read-only
+  facts, then on Assign owners a person picker per owner (all selectable users, as on the
+  workflow roles tab) and a "Primary owner" radio group; it had no spec and now has one. It was
+  also where the axe run found two contrast failures on this page. **Gap (islands):** the score
+  history panel, the Mitigation Plan tab and the four lifecycle dialogs are still classic (next). Removing a threat or remediation still uses the
+  browser's confirm, as before. The classic 2,552-line spec is ported (52 cases, plus one for
+  Back). Checked live: a system risk (every tab, add and remove a threat, the link picker, Back
+  before and after changing tabs) and a POA&M risk (created and deleted again). A risk page is in
+  the axe run. **Found (API):** for a POA&M risk, `.../reviews` and `/api/risks/:id/score-history`
+  answer 404 (the classic page asked for them too).

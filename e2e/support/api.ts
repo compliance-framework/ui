@@ -935,6 +935,21 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           { data: [] },
         );
       if (rest === '/risks/score-timeseries') return json(route, { data: [] });
+      // The risk page: the risk, and empty links, threats, reviews and history.
+      if (rest === '/risks/risk-1')
+        return json(route, {
+          data: {
+            uuid: 'risk-1',
+            id: 'risk-1',
+            title: 'Backups not tested',
+            description: 'Restores have not been rehearsed this quarter.',
+            statement: 'Data could be lost.',
+            status: 'open',
+            likelihood: 'moderate',
+            impact: 'high',
+          },
+        });
+      if (rest.startsWith('/risks/risk-1/')) return json(route, { data: [] });
       if (rest === '/profiles')
         return json(route, {
           data: [
@@ -954,6 +969,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       if (rest === '/evidence/search') return searchResponse(route, url, lists);
     }
 
+    if (/^\/api\/risks\/risk-1\//.test(path)) return json(route, { data: [] });
     return json(route, { errors: { body: `Unmocked ${method} ${path}` } }, 404);
   });
 }
