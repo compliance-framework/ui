@@ -18,6 +18,9 @@
   --ds-size-icon-md: 16px;
   --ds-size-icon-lg: 20px;
   --ds-size-target-min: 24px;
+  /* The CCF logo mark: app header, guest pages. */
+  --ds-size-mark-md: 28px;
+  --ds-size-mark-lg: 36px;
 
   --ds-width-column-sm: 200px;
   --ds-width-column-md: 280px;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TooltipProvider } from 'reka-ui';
+import BrandMark from '../../components/BrandMark/BrandMark.vue';
 import Stack from '../../components/layout/Stack.vue';
 import Text from '../../components/Text/Text.vue';
 
@@ -17,7 +18,7 @@ defineProps<{ title: string; description?: string }>();
     <main id="main" class="guest">
       <div class="guest__column">
         <p class="guest__brand">
-          <span class="guest__mark" aria-hidden="true" />
+          <BrandMark size="lg" />
           <span class="guest__wordmark">CCF</span>
           <span class="guest__name">Continuous Compliance Framework</span>
         </p>
@@ -65,13 +66,6 @@ defineProps<{ title: string; description?: string }>();
   align-items: center;
   gap: var(--ds-space-2);
   margin: 0;
-}
-
-.guest__mark {
-  width: var(--ds-size-icon-sm);
-  height: var(--ds-size-icon-sm);
-  background: var(--ds-color-action-primary-bg);
-  border: var(--ds-border-width) solid var(--ds-color-action-primary-border);
 }
 
 .guest__wordmark {

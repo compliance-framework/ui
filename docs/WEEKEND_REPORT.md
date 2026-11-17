@@ -63,9 +63,9 @@ No classic islands are left (`docs/REDESIGN.md` → Legacy islands); per-page no
    dialog for every role. Assessment results lost their View and Edit buttons, which led to
    routes that never existed.
 10. `useApiQuery` now treats `{"data": null}` as empty and accepts reactive URLs; `FileField`
-   takes several files with `multiple`. Small design-system changes, worth a look.
+    takes several files with `multiple`. Small design-system changes, worth a look.
 11. Permission-gated actions are shown disabled with a reason throughout, where classic pages hid
-   them.
+    them.
 
 **Bugs found that probably affect `main` too** (worth tickets)
 
@@ -95,7 +95,7 @@ No classic islands are left (`docs/REDESIGN.md` → Legacy islands); per-page no
 - Saving an assessment plan task with a date schedule failed: the classic timing editor sent bare
   dates and the API wants RFC 3339 timestamps (classic UI; fixed in the new task form).
 - Adding a component definition back matter resource never saved: the API's `POST
-  .../back-matter` replaces the whole back matter and expects `{resources: [...]}`, but the
+.../back-matter` replaces the whole back matter and expects `{resources: [...]}`, but the
   classic form sent a single resource (answered 200, stored nothing). Fixed in the new form,
   which sends the existing resources plus the new one.
 - Editing a POA&M observation showed its Collected and Expires times blank (an ISO timestamp in a
@@ -787,7 +787,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   - **B. Rebuild it as an "Advanced (OSCAL)" Configure tab**, a RecordCollection of implemented
     requirements with the classic forms as islands: about a day.
   - **C. Leave it as is** (current state): hidden, classic, working.
-  My recommendation is **A** if no one uses those three capabilities, otherwise **B**.
+    My recommendation is **A** if no one uses those three capabilities, otherwise **B**.
 - **Implementation drawer: AI suggestions and component statements** are design-system
   (`ControlSuggestions`, `ByComponentStatement`). Each component statement is a panel with its
   status tag, open risks for the control (linking to the register), the markdown statement and
@@ -799,9 +799,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   2. The drawer listed only requirement-level component statements, while nearly all live on
      the requirement's statements, so it said "Components (0)" for controls the tree counts as
      implemented. It now lists both, and saves each kind to its own endpoint.
-  Checked live on Payments Processing Platform (INT-CI): edit, save, revert. **Decision:** AI
-  suggestion reasoning is shown in full instead of clamped behind "Show more". **Gap (island):**
-  the shared-responsibility panel and blocks and the export dialog are still classic.
+     Checked live on Payments Processing Platform (INT-CI): edit, save, revert. **Decision:** AI
+     suggestion reasoning is shown in full instead of clamped behind "Show more". **Gap (island):**
+     the shared-responsibility panel and blocks and the export dialog are still classic.
 - **Second live sweep (89 routes**: the earlier 66 plus every POA&M and assessment results tab
   and all twelve Configure System sections): one h1 each, no page errors. Remaining API
   responses are known: a 404 for a system with no network-architecture diagram (handled as "Not
@@ -869,9 +869,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
      soon", so it's dropped.
   3. Items are named by asset-id, then description, then their `name`/`app_name` prop, so
      evidence items are no longer all blank.
-  **Found (fixed, design system):** `useApiQuery` showed an error for `{"data": null}`, which Go
-  APIs send for an empty list (here, filtering inventory by type). It now shows the empty state.
-  `useApiQuery` also accepts a reactive URL now, fetching again when it changes.
+     **Found (fixed, design system):** `useApiQuery` showed an error for `{"data": null}`, which Go
+     APIs send for an empty list (here, filtering inventory by type). It now shows the empty state.
+     `useApiQuery` also accepts a reactive URL now, fetching again when it changes.
 - **Subject templates list**: design-system list page with search, type and source-mode
   filters and sorting (all in the address), names linking to the template page, and a menu to
   edit or duplicate (with a unique "(Copy n)" name). `?edit=<id>` still opens the editor (the
@@ -882,7 +882,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   2. A 403 now shows the design-system "no access" state instead of a toast.
   3. Edit for a template without an ID is disabled with the reason instead of erroring on
      click.
-  The classic spec is split into list and form specs. Checked live: list, edit and save.
+     The classic spec is split into list and form specs. Checked live: list, edit and save.
 - **Subject templates list and page in the axe run** (every state and theme): pass.
 - **Catalog page: the control tree** is design-system (`CatalogGroupNode`, `CatalogControlNode`,
   recursive). Each group or control is a disclosure whose open state is remembered across
@@ -895,8 +895,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   1. Actions live inside an opened node, not on its header row; the design-system disclosure
      has no header actions.
   2. Evidence counts show inside the control, not on its row.
-  Checked live on "Meridian Internal Controls — Delivery": open, reload (stays open), menus,
-  edit modal.
+     Checked live on "Meridian Internal Controls — Delivery": open, reload (stays open), menus,
+     edit modal.
 - **Catalog page in the axe run** (a mocked catalog with a group and a control, every state and
   theme): passes.
 - **Profile Controls: control groups and catalog import** are design-system, so the profile
@@ -1318,3 +1318,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Tailwind supplied it) is back, and the layout lists reset their own list styles. After that
   the comparison shows no layout change on any route; the only visible differences are the skip
   link's underline (as in the mockup) and bullets in the notification health warnings.
+- **The CCF logo is back.** The shell and guest pages showed a placeholder (an orange square
+  beside "CCF"). A new design-system **`BrandMark`** draws the classic logo's mark (circular
+  arrows around a tick, from `src/assets/logo-*-mini.svg`) inline in `currentColor`, so one
+  file follows the theme instead of separate light and dark images. It sits beside the "CCF"
+  wordmark in the header and on guest pages (larger there); the collapsed rail shows the mark
+  alone (it used to show the wordmark alone). New tokens `--ds-size-mark-md`/`-lg`. The full
+  classic logo (with "Continuous Compliance Framework ♥ Container Solutions") isn't used: at
+  header height its small print is unreadable.

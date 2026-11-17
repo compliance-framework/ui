@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
+import BrandMark from '@/ds/components/BrandMark/BrandMark.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import Icon from '@/ds/components/Icon/Icon.vue';
 import IconButton from '@/ds/components/IconButton/IconButton.vue';
@@ -166,7 +167,7 @@ const userMenu = computed<MenuEntry[]>(() => [
           class="shell__corner"
           aria-label="CCF, Continuous Compliance Framework, home"
         >
-          <span class="shell__mark" aria-hidden="true" />
+          <BrandMark />
           <span class="shell__wordmark" aria-hidden="true">CCF</span>
         </RouterLink>
         <div class="shell__header">
@@ -183,7 +184,7 @@ const userMenu = computed<MenuEntry[]>(() => [
             class="shell__brand"
             aria-label="CCF, Continuous Compliance Framework, home"
           >
-            <span class="shell__mark" aria-hidden="true" />
+            <BrandMark />
             <span class="shell__wordmark" aria-hidden="true">CCF</span>
           </RouterLink>
           <div
@@ -343,7 +344,7 @@ const userMenu = computed<MenuEntry[]>(() => [
   width: var(--ds-width-rail);
 }
 
-.shell--rail .shell__corner .shell__mark {
+.shell--rail .shell__corner .shell__wordmark {
   display: none;
 }
 
@@ -378,13 +379,6 @@ const userMenu = computed<MenuEntry[]>(() => [
   min-height: var(--ds-size-target-min);
   color: var(--ds-color-text-primary);
   text-decoration: none;
-}
-
-.shell__mark {
-  width: var(--ds-size-icon-sm);
-  height: var(--ds-size-icon-sm);
-  background: var(--ds-color-action-primary-bg);
-  border: var(--ds-border-width) solid var(--ds-color-action-primary-border);
 }
 
 .shell__wordmark {
