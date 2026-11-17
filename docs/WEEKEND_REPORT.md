@@ -1333,3 +1333,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `code` text variant and `<code>`/`<kbd>`/`<samp>` used the interface font, which happened to be
   the mono, so they now use the code font explicitly. Space Grotesk is uninstalled. Uppercase,
   letter-spaced buttons, labels and column headings (a monospace convention) are unchanged here.
+- **No top bar.** The header existed only for the logo and the account menu. On wide screens
+  (expanded nav and rail) the logo now heads the navigation, and the account menu (preferences,
+  theme, sign out) sits at its foot beside the collapse button, opening upwards (to the side in
+  the rail, where it shows only the avatar). Below 1024px the navigation is a drawer, so a slim
+  top bar stays for the menu button, mark and system switcher; the account menu moved into the
+  drawer's footer. The account trigger is its own component (`AppShell/AccountMenu.vue`), and
+  `Menu` gained `side="top"`. Its accessible name is unchanged ("Account menu, <name>").

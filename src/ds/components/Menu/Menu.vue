@@ -29,8 +29,9 @@ const props = withDefaults(
   defineProps<{
     label: string;
     items: MenuEntry[];
-    /** Where the menu opens; `right` suits triggers in the navigation rail. */
-    side?: 'bottom' | 'right';
+    /** Where the menu opens; `right` suits triggers in the navigation rail, `top` triggers at the
+        foot of the navigation. */
+    side?: 'bottom' | 'right' | 'top';
   }>(),
   { side: 'bottom' },
 );
@@ -72,7 +73,7 @@ function onSelect(event: Event, entry: MenuAction): void {
       <DropdownMenuContent
         as-child
         :side="side"
-        :align="side === 'right' ? 'start' : 'end'"
+        :align="side === 'bottom' ? 'end' : 'start'"
         :side-offset="4"
         :collision-padding="8"
         :reference="reference"

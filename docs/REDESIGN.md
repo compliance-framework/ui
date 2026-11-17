@@ -20,7 +20,7 @@ VITE_API_PROXY=http://localhost:8080 npm run dev
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/ds/tokens/`     | Design tokens, all prefixed `--ds-`, and the global element defaults.                                                                                             |
 | `src/ds/components/` | Shared components from the mockup (Button, DataTable, DataState, FilterBar, Menu, Dialog, Tabs, LineChart, CodeBlock, layout primitives…), on reka-ui and Lucide. |
-| `src/ds/templates/`  | `AppShell` (the app's only frame: header, nav, system switcher, account menu) and `ListTemplate`.                                                                 |
+| `src/ds/templates/`  | `AppShell` (the app's only frame: nav with mark, system switcher and account menu) and `ListTemplate`.                                                            |
 | `src/ds/query.ts`    | `useApiQuery`: `useDataApi` mapped to the DataState states (loading, ready, empty, error, forbidden).                                                             |
 | `src/screens/`       | Migrated pages. Screens compose templates and components and contain no CSS or class attributes.                                                                  |
 
@@ -167,7 +167,9 @@ Made during the work (open to review):
   list.
 - **Look and feel moves towards the classic app** (2026-11-17), on the design system: the
   classic logo mark replaces the placeholder, and all text is set in Inter, as before (self-hosted
-  variable font). JetBrains Mono stays for code, identifiers and queries; Space Grotesk is gone.
+  variable font). JetBrains Mono stays for code, identifiers and queries; Space Grotesk is gone. There is no
+  top bar on wide screens: the logo heads the navigation and the account menu sits at its foot
+  (in the drawer's footer on narrow screens, whose slim top bar keeps the menu button).
 - **ESLint's `vue/multi-word-component-names` is off for `src/ds/**`**; components are namespaced
   by folder. Copied files use the repo's Prettier settings.
 

@@ -4,27 +4,25 @@ import { useRoute, useRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
 import BrandMark from '@/ds/components/BrandMark/BrandMark.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
-import Icon from '@/ds/components/Icon/Icon.vue';
 import IconButton from '@/ds/components/IconButton/IconButton.vue';
-import Menu from '@/ds/components/Menu/Menu.vue';
-import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import ScrollArea from '@/ds/components/ScrollArea/ScrollArea.vue';
 import SystemSwitcher from '@/ds/components/SystemSwitcher/SystemSwitcher.vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
-import { useTheme } from '@/composables/useTheme';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { SystemSecurityPlan } from '@/oscal';
 import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useSystemStore } from '@/stores/system';
 import type { DataResponse } from '@/stores/types';
+import AccountMenu from './AccountMenu.vue';
 import PrimaryNav from './PrimaryNav.vue';
 import { useContentScroll } from './useContentScroll';
 import { useNavMode } from './useNavMode';
 
 /**
- * The app shell: skip link, header (product mark, account menu with theme), primary nav as
- * drawer / rail / expanded by width, and one scrolling <main>.
+ * The app shell: skip link, primary nav as drawer / rail / expanded by width, and one scrolling
+ * <main>. The nav holds the product mark at its head and the account menu (with theme) at its
+ * foot; only the drawer layout has a top bar, for the menu button.
  * The catalog view is kept alive between visits.
  */
 const route = useRoute();
@@ -33,7 +31,6 @@ const userStore = useUserStore();
 const permissions = usePermissionsStore();
 const systemStore = useSystemStore();
 const api = useAuthenticatedInstance();
-const { theme, isSystemTheme, toggleTheme, useSystemValue } = useTheme();
 
 const { mode, toggle } = useNavMode();
 const drawerOpen = ref(false);
@@ -105,54 +102,6 @@ function switchSystem(id: string): void {
   );
   if (plan) systemStore.setSecurityPlan(plan);
 }
-
-// Account ------------------------------------------------------------------------------------
-
-const userName = computed(() => {
-  const user = userStore.user;
-  return (
-    [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
-    user?.email ||
-    'Unknown user'
-  );
-});
-const initials = computed(() => {
-  const user = userStore.user;
-  return (
-    `${user?.firstName?.trim()[0] ?? ''}${user?.lastName?.trim()[0] ?? ''}`.toUpperCase() ||
-    'U'
-  );
-});
-
-const themeChoice = computed(() =>
-  isSystemTheme.value ? 'system' : theme.value,
-);
-function chooseTheme(value: string): void {
-  if (value === 'system') return useSystemValue();
-  // toggleTheme flips the theme and pins it as an explicit choice; flipping twice pins the current one.
-  if (value !== theme.value) toggleTheme();
-  else if (isSystemTheme.value) {
-    toggleTheme();
-    toggleTheme();
-  }
-}
-
-const userMenu = computed<MenuEntry[]>(() => [
-  { label: 'Preferences', icon: 'preferences', to: { name: 'preferences' } },
-  {
-    type: 'radio',
-    label: 'Theme',
-    value: themeChoice.value,
-    options: [
-      { value: 'light', label: 'Light', icon: 'themeLight' },
-      { value: 'dark', label: 'Dark', icon: 'themeDark' },
-      { value: 'system', label: 'Match system', icon: 'themeSystem' },
-    ],
-    onChange: chooseTheme,
-  },
-  { type: 'separator' },
-  { label: 'Sign out', icon: 'signOut', to: { name: 'logout' } },
-]);
 </script>
 
 <template>
@@ -160,70 +109,28 @@ const userMenu = computed<MenuEntry[]>(() => [
     <div class="shell" :class="`shell--${mode}`">
       <a href="#main" class="shell__skip">Skip to main content</a>
 
-      <header class="shell__top">
+      <header v-if="mode === 'drawer'" class="shell__top">
+        <IconButton
+          icon="menu"
+          label="Open navigation"
+          aria-haspopup="dialog"
+          @click="drawerOpen = true"
+        />
         <RouterLink
-          v-if="mode !== 'drawer'"
           :to="{ name: 'home' }"
-          class="shell__corner"
+          class="shell__brand"
           aria-label="CCF, Continuous Compliance Framework, home"
         >
           <BrandMark />
           <span class="shell__wordmark" aria-hidden="true">CCF</span>
         </RouterLink>
-        <div class="shell__header">
-          <IconButton
-            v-if="mode === 'drawer'"
-            icon="menu"
-            label="Open navigation"
-            aria-haspopup="dialog"
-            @click="drawerOpen = true"
+        <div v-if="canReadSystems" class="shell__switcher">
+          <SystemSwitcher
+            :systems="systems"
+            :current-id="systemStore.system.securityPlan?.uuid"
+            :all-systems-to="{ name: 'systems' }"
+            @select="switchSystem"
           />
-          <RouterLink
-            v-if="mode === 'drawer'"
-            :to="{ name: 'home' }"
-            class="shell__brand"
-            aria-label="CCF, Continuous Compliance Framework, home"
-          >
-            <BrandMark />
-            <span class="shell__wordmark" aria-hidden="true">CCF</span>
-          </RouterLink>
-          <div
-            v-if="mode === 'drawer' && canReadSystems"
-            class="shell__switcher"
-          >
-            <SystemSwitcher
-              :systems="systems"
-              :current-id="systemStore.system.securityPlan?.uuid"
-              :all-systems-to="{ name: 'systems' }"
-              @select="switchSystem"
-            />
-          </div>
-          <div class="shell__tools">
-            <Menu :label="`Account menu, ${userName}`" :items="userMenu">
-              <template #trigger>
-                <button type="button" class="shell__account">
-                  <!-- Named by hidden text rather than aria-label, so the name always includes
-                       what is visible (WCAG 2.5.3) even when the name is hidden on narrow screens. -->
-                  <span class="visually-hidden"
-                    >Account menu, {{ userName }}</span
-                  >
-                  <span class="shell__avatar" aria-hidden="true">{{
-                    initials
-                  }}</span>
-                  <span class="shell__account-name" aria-hidden="true">{{
-                    userName
-                  }}</span>
-                  <Icon name="expand" />
-                </button>
-              </template>
-              <template #header>
-                <span class="shell__menu-name">{{ userName }}</span>
-                <span class="shell__menu-meta">{{
-                  userStore.user?.email
-                }}</span>
-              </template>
-            </Menu>
-          </div>
         </div>
       </header>
 
@@ -234,6 +141,14 @@ const userMenu = computed<MenuEntry[]>(() => [
           class="shell__nav"
           aria-label="Primary"
         >
+          <RouterLink
+            :to="{ name: 'home' }"
+            class="shell__corner"
+            aria-label="CCF, Continuous Compliance Framework, home"
+          >
+            <BrandMark />
+            <span class="shell__wordmark" aria-hidden="true">CCF</span>
+          </RouterLink>
           <div v-if="canReadSystems" class="shell__nav-switcher">
             <SystemSwitcher
               :systems="systems"
@@ -247,6 +162,7 @@ const userMenu = computed<MenuEntry[]>(() => [
             ><PrimaryNav :mode="mode"
           /></ScrollArea>
           <div class="shell__nav-footer">
+            <AccountMenu :compact="mode === 'rail'" />
             <IconButton
               :icon="mode === 'expanded' ? 'railCollapse' : 'railExpand'"
               :label="
@@ -270,6 +186,9 @@ const userMenu = computed<MenuEntry[]>(() => [
           <nav aria-label="Primary">
             <PrimaryNav mode="drawer" @navigate="drawerOpen = false" />
           </nav>
+          <template #footer>
+            <div class="shell__drawer-footer"><AccountMenu /></div>
+          </template>
         </Drawer>
 
         <main
@@ -294,9 +213,9 @@ const userMenu = computed<MenuEntry[]>(() => [
 
 <style scoped>
 .shell {
-  /* App frame (scroll model): header and nav stay put; only the content scrolls. */
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  /* App frame (scroll model): the nav stays put; only the content scrolls. */
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   overflow: hidden;
   background: var(--ds-color-surface-base);
@@ -321,9 +240,16 @@ const userMenu = computed<MenuEntry[]>(() => [
   transform: none;
 }
 
+/* The drawer layout's top bar: menu button, mark and system switcher. */
 .shell__top {
+  z-index: var(--ds-z-header);
   display: flex;
+  flex: none;
   min-width: 0;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  height: var(--ds-height-header);
+  padding: 0 var(--ds-space-page-x);
   border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
   background: var(--ds-color-surface-raised);
 }
@@ -334,14 +260,10 @@ const userMenu = computed<MenuEntry[]>(() => [
   align-items: center;
   justify-content: center;
   gap: var(--ds-space-2);
-  width: var(--ds-width-nav);
-  border-right: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  height: var(--ds-height-header);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
   color: var(--ds-color-text-primary);
   text-decoration: none;
-}
-
-.shell--rail .shell__corner {
-  width: var(--ds-width-rail);
 }
 
 .shell--rail .shell__corner .shell__wordmark {
@@ -357,18 +279,6 @@ const userMenu = computed<MenuEntry[]>(() => [
 
 .shell__nav-switcher > * {
   flex: 1;
-}
-
-.shell__header {
-  z-index: var(--ds-z-header);
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  align-items: center;
-  gap: var(--ds-space-2) var(--ds-space-3);
-  height: var(--ds-height-header);
-  padding: 0 var(--ds-space-page-x);
-  background: var(--ds-color-surface-raised);
 }
 
 .shell__brand {
@@ -393,65 +303,9 @@ const userMenu = computed<MenuEntry[]>(() => [
   min-width: 0;
 }
 
-.shell__tools {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--ds-space-1);
-  margin-left: auto;
-}
-
-.shell__work,
-.shell__account {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  height: var(--ds-size-control-md);
-  padding: 0 var(--ds-space-2);
-  border: var(--ds-border-width) solid transparent;
-  background: transparent;
-  color: var(--ds-color-text-primary);
-  font-size: var(--ds-font-size-label);
-  font-weight: var(--ds-font-weight-bold);
-  letter-spacing: var(--ds-tracking-wide);
-  text-decoration: none;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.shell__work:hover,
-.shell__account:hover {
-  background: var(--ds-color-surface-hover);
-}
-
-.shell__avatar {
-  display: inline-grid;
-  place-items: center;
-  width: var(--ds-size-control-sm);
-  height: var(--ds-size-control-sm);
-  border: var(--ds-border-width) solid var(--ds-color-border-strong);
-  border-radius: var(--ds-radius-round);
-  background: var(--ds-color-surface-sunken);
-}
-
-.shell__account-name {
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.shell__menu-name {
-  display: block;
-  font-weight: var(--ds-font-weight-bold);
-}
-
-.shell__menu-meta {
-  display: block;
-  color: var(--ds-color-text-secondary);
-  font-size: var(--ds-font-size-caption);
-}
-
 .shell__body {
   display: flex;
+  flex: 1;
   min-width: 0;
   min-height: 0;
 }
@@ -472,13 +326,20 @@ const userMenu = computed<MenuEntry[]>(() => [
 
 .shell__nav-footer {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: var(--ds-space-2);
   padding: var(--ds-space-2) var(--ds-space-3);
   border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .shell--rail .shell__nav-footer {
-  justify-content: center;
+  flex-direction: column;
+}
+
+.shell__drawer-footer {
+  display: flex;
+  flex: 1;
+  min-width: 0;
 }
 
 .shell__main {
@@ -498,18 +359,13 @@ const userMenu = computed<MenuEntry[]>(() => [
   outline: none;
 }
 
-/* Below 640px labels give way to icons, and the system switcher takes its own full-width row. */
+/* Below 640px the system switcher takes its own full-width row. */
 @media (max-width: 639px) {
-  .shell__header {
+  .shell__top {
     flex-wrap: wrap;
     column-gap: var(--ds-space-1);
     height: auto;
     padding-block: var(--ds-space-2);
-  }
-
-  .shell__work,
-  .shell__account {
-    padding-inline: var(--ds-space-1);
   }
 
   .shell__switcher {
@@ -519,18 +375,6 @@ const userMenu = computed<MenuEntry[]>(() => [
 
   .shell__switcher > * {
     flex: 1;
-  }
-
-  .shell__wordmark,
-  .shell__work-label,
-  .shell__account-name {
-    display: none;
-  }
-}
-
-@media (max-width: 1023px) {
-  .shell__account-name {
-    display: none;
   }
 }
 </style>
