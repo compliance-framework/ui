@@ -1,10 +1,10 @@
-/* Type: Space Grotesk for h1–h3, metrics and long-form prose (D-23); JetBrains Mono for everything
-   else (ui-remake): labels, navigation, buttons, tables, identifiers, queries and captions.
-   12px floor (D-09); h1 is fluid 28→40 with line-height 1.1 (D-10); titles keep source case (D-11). */
+/* Type: Inter for all text, as in the classic app; JetBrains Mono for code, identifiers and
+   queries. 12px floor (D-09); h1 is fluid 28→40 with line-height 1.1 (D-10); titles keep source
+   case (D-11). */
 :root {
-  --ds-font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --ds-font-ui:
-    'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --ds-font-display:
+    'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --ds-font-ui: var(--ds-font-display);
   /* Long-form prose: control, implementation and risk statements, descriptions and remarks. */
   --ds-font-prose: var(--ds-font-display);
   --ds-font-code: 'JetBrains Mono', ui-monospace, monospace;
@@ -16,7 +16,7 @@
   --ds-font-size-h2: 1.125rem;
   --ds-font-size-h3: 0.875rem;
   --ds-font-size-body: 0.875rem;
-  /* Space Grotesk runs narrower than the mono, so prose is a step larger to read at the same size. */
+  /* Long-form text is a step larger than interface text, for reading. */
   --ds-font-size-prose: 0.9375rem;
   --ds-font-size-label: 0.75rem;
   --ds-font-size-caption: 0.75rem;

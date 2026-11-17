@@ -12,7 +12,7 @@
   font-family: var(--ds-font-ui);
   font-size: 100%;
   line-height: var(--ds-leading-body);
-  /* JetBrains Mono would draw != as ≠; users must see what they type. */
+  /* Ligatures could draw != as ≠ (JetBrains Mono); users must see what they type. */
   font-variant-ligatures: none;
   -webkit-text-size-adjust: 100%;
 }
@@ -59,7 +59,7 @@
 }
 
 :where(code, kbd, samp) {
-  font-family: var(--ds-font-ui);
+  font-family: var(--ds-font-code);
   font-size: 1em;
 }
 

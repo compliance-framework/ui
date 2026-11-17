@@ -73,7 +73,7 @@ withDefaults(
   padding: 0 var(--ds-space-1);
   border: var(--ds-border-width) solid var(--ds-color-border-subtle);
   background: var(--ds-color-surface-sunken);
-  font-family: var(--ds-font-ui);
+  font-family: var(--ds-font-code);
   font-size: var(--ds-font-size-body);
   overflow-wrap: anywhere;
 }

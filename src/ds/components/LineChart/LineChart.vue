@@ -42,7 +42,7 @@ type Shape = (typeof shapes)[number];
 const HEIGHT = 260;
 const MARGIN = { top: 12, right: 16, bottom: 52, left: 64 };
 const MARKER = 4;
-/** Approximate advance of one monospace character at the caption size, for tick thinning. */
+/** Generous advance of one character at the caption size, for tick thinning. */
 const CHAR_WIDTH = 7.5;
 const TICK_GAP = 16;
 

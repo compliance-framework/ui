@@ -1326,3 +1326,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   alone (it used to show the wordmark alone). New tokens `--ds-size-mark-md`/`-lg`. The full
   classic logo (with "Continuous Compliance Framework ♥ Container Solutions") isn't used: at
   header height its small print is unreadable.
+- **Inter, as in the classic app.** Look and feel now moves towards the classic design. Text was
+  set in JetBrains Mono (interface) and Space Grotesk (headings, metrics, prose); all of it is now
+  Inter, self-hosted as a variable font with optical sizing (`@fontsource-variable/inter`, the
+  same axes the classic app requested from Google Fonts). JetBrains Mono stays for code: the
+  `code` text variant and `<code>`/`<kbd>`/`<samp>` used the interface font, which happened to be
+  the mono, so they now use the code font explicitly. Space Grotesk is uninstalled. Uppercase,
+  letter-spaced buttons, labels and column headings (a monospace convention) are unchanged here.
