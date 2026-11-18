@@ -1419,3 +1419,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   without a border). `Tag` gains `code` for the monospace font, used for evidence labels
   (`key=value` is search syntax); subjects are names and keep the UI font. Added/removed tags keep
   their tints.
+- **Saved filters and view filters, separated.** The evidence page's filter bar is now only the
+  search, which is what "Save as filter" saves; the button moved from the page header to beside
+  Search (secondary, so it doesn't outshout it) and saves what's in the box, run or not, once it
+  checks out. The subject filter, which a saved filter can't hold (the API's filter is a label
+  expression), moved to the Subjects column's header: click the title and it becomes the subject
+  search; the choice shows in the header as `subject = <name>` with a clear button; Escape or
+  leaving restores the title. The URL, Share and CSV export still include it. When nothing
+  matches, the empty state still names the subject and clears it (the header isn't shown then).
+  New in the design system: `ColumnFilter` (for a `header-<key>` slot, which now replaces the
+  column title), `FilterBar`'s `search-actions` slot, and `Combobox` `v-model:open`.
+  **Known issue (not new):** a list reload swaps the table for a skeleton, so keyboard focus is
+  lost after choosing a subject, as it already is after sorting; keeping the table up, marked
+  busy, while it reloads would fix both.

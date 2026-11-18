@@ -241,6 +241,8 @@ for (const theme of themes) {
 
     await open(page, `/systems/${SYSTEMS.scoped}/evidence`);
     await page.getByRole('button', { name: 'See hidden labels' }).click();
+    await page.getByRole('button', { name: /filter by subject/ }).click();
+    await page.getByRole('combobox', { name: 'Filter by subject' }).waitFor();
     await page.getByRole('button', { name: 'Show as table' }).first().click();
     violations.push(
       ...(await axe(page, `${theme} evidence filters and chart table open`)),

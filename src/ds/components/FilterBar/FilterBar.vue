@@ -9,7 +9,8 @@ import TextInput from '../TextInput/TextInput.vue';
  * The filter bar of a list (04 §4.2; F-14 AC2, F-22). A search field that applies on Enter or
  * the Search button, never per keystroke, with its problem shown at the field in plain language
  * (F-13 AC3). The default slot holds the other filter fields; everything wraps on the narrowest
- * (320 pixel) screens. Active filters show as chips that name what they filter ("Status: Not
+ * (320 pixel) screens. The `search-actions` slot adds buttons after Search that act on the search,
+ * e.g. "Save as filter". Active filters show as chips that name what they filter ("Status: Not
  * satisfied"), each with its own remove button, plus "Clear filters". `summary` is the result
  * count, announced politely when it changes (4.1.3). After a chip goes, focus moves to the next
  * chip, or to the search field.
@@ -90,6 +91,7 @@ function clear(): void {
               :placeholder="searchPlaceholder"
             />
             <Button type="submit">Search</Button>
+            <slot name="search-actions" />
           </div>
         </FormField>
       </form>
@@ -150,11 +152,12 @@ function clear(): void {
 
 .filter-bar__search-row {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ds-space-2);
 }
 
 .filter-bar__search-row > :first-child {
-  flex: 1 1 auto;
+  flex: 1 1 var(--ds-width-column-sm);
 }
 
 .filter-bar__active {

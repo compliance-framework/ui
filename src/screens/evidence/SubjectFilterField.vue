@@ -2,19 +2,17 @@
 import { computed, ref, watch } from 'vue';
 import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
 import { describeSubject, type SubjectSummary } from '@/types/subjects';
-import Combobox from '@/ds/components/Combobox/Combobox.vue';
-import FormField from '@/ds/components/FormField/FormField.vue';
+import ColumnFilter from '@/ds/components/DataTable/ColumnFilter.vue';
 
 /**
- * Filter evidence by what it is about, like the classic page's subject filter: type to find a
- * subject and choose it, in one field (GET /api/subjects; inside a system, narrowed to its
- * components). The chosen
- * subject's UUID lives in the URL; its title is looked up so the chip can name it. Hidden when the
- * API has no subjects endpoint.
+ * The Subjects column's title, which filters the list by what evidence is about, like the classic
+ * page's subject filter: type to find a subject and choose it (GET /api/subjects; inside a system,
+ * narrowed to its components). It filters this view only; a saved filter holds the search alone.
+ * The chosen subject's UUID lives in the URL; its title is looked up so the header can name it.
+ * Without the API's subjects endpoint it is the plain title.
  */
-const props = defineProps<{ systemId?: string }>();
+const props = defineProps<{ label: string; systemId?: string }>();
 const subject = defineModel<string>({ default: '' });
-const emit = defineEmits<{ titled: [title: string] }>();
 
 const { suggestions, unsupported, search, lookup } = useSubjectSearch();
 const chosen = ref<SubjectSummary>();
@@ -26,7 +24,8 @@ function find(text: string): void {
 }
 void search('', { ssp: props.systemId });
 
-// Name the subject in the URL, whether it was chosen here or arrived in a link.
+// Name the subject in the URL, whether it was chosen here or arrived in a link, so it can head the
+// column and stay among the options.
 watch(
   subject,
   async (uuid) => {
@@ -37,7 +36,6 @@ watch(
     if (chosen.value?.subjectUuid === uuid) return;
     const known = suggestions.value.find((s) => s.subjectUuid === uuid);
     chosen.value = known ?? (await lookup([uuid]))[0];
-    emit('titled', chosen.value?.title ?? 'Unknown subject');
   },
   { immediate: true },
 );
@@ -57,15 +55,15 @@ const options = computed(() => {
 </script>
 
 <template>
-  <FormField v-if="!unsupported" label="Subject">
-    <Combobox
-      v-model="subject"
-      :options="options"
-      remote
-      clearable
-      placeholder="Type a name, e.g. payments-db"
-      empty-text="No subjects match."
-      @search="find"
-    />
-  </FormField>
+  <template v-if="unsupported">{{ label }}</template>
+  <ColumnFilter
+    v-else
+    v-model="subject"
+    :label="label"
+    name="subject"
+    :options="options"
+    :value-label="chosen?.title"
+    remote
+    @search="find"
+  />
 </template>

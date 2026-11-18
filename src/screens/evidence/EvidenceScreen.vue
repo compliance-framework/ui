@@ -5,6 +5,7 @@ import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { sspHasScopeEntries } from '@/composables/useSspScope';
+import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
 import type { Evidence } from '@/stores/evidence';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useSystemStore } from '@/stores/system';
@@ -107,21 +108,39 @@ function search(): void {
   if (!draftError.value) go({ filter: draft.value.trim() });
 }
 
+// The subject's name for the empty state, which shows when the header naming it doesn't.
+const { lookup: lookupSubjects } = useSubjectSearch();
 const subjectName = ref('…');
+watch(
+  () => view.value.subject,
+  async (uuid) => {
+    if (!uuid) return;
+    subjectName.value = '…';
+    const [found] = await lookupSubjects([uuid]);
+    if (uuid === view.value.subject)
+      subjectName.value = found?.title ?? 'Unknown subject';
+  },
+  { immediate: true },
+);
 const subject = computed({
   get: () => view.value.subject,
   set: (uuid: string) => go({ subject: uuid }),
 });
 
-const chips = computed(() => [
-  ...(view.value.filter
+/** The search's chip, in the filter bar: the saved-filter half of the page. */
+const chips = computed(() =>
+  view.value.filter
     ? [{ label: `Search: ${view.value.filter}`, remove: { filter: '' } }]
-    : []),
-  ...(view.value.subject
-    ? [{ label: `Subject: ${subjectName.value}`, remove: { subject: '' } }]
-    : []),
+    : [],
+);
+/**
+ * Everything narrowing the list, for the empty state: the subject filter lives in the Subjects
+ * header, which isn't shown when nothing matches, so the empty state names it and clears it.
+ */
+const chipLabels = computed(() => [
+  ...chips.value.map((chip) => chip.label),
+  ...(view.value.subject ? [`Subject: ${subjectName.value}`] : []),
 ]);
-const chipLabels = computed(() => chips.value.map((chip) => chip.label));
 
 function clearFilters(): void {
   go({ filter: '', subject: '' });
@@ -205,8 +224,11 @@ const rows = computed(() =>
     lastSeenAt: item.end,
   })),
 );
-const showSubjects = computed(() =>
-  evidence.value.some((item) => item.subjectReferences !== undefined),
+// Kept while a subject is chosen, as its header holds the filter.
+const showSubjects = computed(
+  () =>
+    Boolean(view.value.subject) ||
+    evidence.value.some((item) => item.subjectReferences !== undefined),
 );
 
 const columns = computed<DataTableColumn[]>(() => [
@@ -292,17 +314,19 @@ async function share(): Promise<void> {
   }
 }
 
-/** Saving opens the classic "new evidence filter" page with this search and system. */
+/**
+ * Saving opens the "new evidence filter" page with the search in the box (run or not) and this
+ * system. The subject filter isn't part of a saved filter.
+ */
 const saveDenied = computed(() => {
   if (!permissions.can(RESOURCES.FILTER, ACTIONS.CREATE))
     return "Your access doesn't include saving filters.";
-  if (draft.value.trim() !== view.value.filter || draftError.value)
-    return 'Apply the search before saving it as a filter.';
-  return undefined;
+  const problem = searchError(draft.value);
+  return problem ? `Fix the search first. ${problem}` : undefined;
 });
 const saveLink = computed(() => ({
   name: 'dashboards.create',
-  query: { filter: view.value.filter || undefined, sspId: systemId },
+  query: { filter: draft.value.trim() || undefined, sspId: systemId },
 }));
 
 // Export: every row of the applied search, fetched page by page, as the classic page does.
@@ -385,13 +409,6 @@ const trendRequest = computed(() => {
         @click="beginExport"
         >Export CSV</Button
       >
-      <Button
-        variant="primary"
-        icon="save"
-        :to="saveDenied ? undefined : saveLink"
-        :disabled-reason="saveDenied"
-        >Save as filter</Button
-      >
     </template>
 
     <template v-if="hasScope !== false" #filters>
@@ -406,13 +423,16 @@ const trendRequest = computed(() => {
         :summary="summary"
         @search="search"
         @remove="(index) => go(chips[index]!.remove)"
-        @clear="clearFilters"
+        @clear="go({ filter: '' })"
       >
-        <SubjectFilterField
-          v-model="subject"
-          :system-id="systemId"
-          @titled="(title) => (subjectName = title)"
-        />
+        <template #search-actions>
+          <Button
+            icon="save"
+            :to="saveDenied ? undefined : saveLink"
+            :disabled-reason="saveDenied"
+            >Save as filter</Button
+          >
+        </template>
       </FilterBar>
     </template>
 
@@ -468,6 +488,13 @@ const trendRequest = computed(() => {
         <template #cell-name="{ row: r }">
           <TextLink :to="evidenceLink(r.id)">{{ r.name }}</TextLink>
         </template>
+        <template #header-subjects="{ label }">
+          <SubjectFilterField
+            v-model="subject"
+            :label="label"
+            :system-id="systemId"
+          />
+        </template>
         <template #cell-subjects="{ row: r }">
           <Cluster v-if="r.subjects?.length" gap="1">
             <Tag
@@ -484,7 +511,8 @@ const trendRequest = computed(() => {
           </Cluster>
           <Text v-else as="span" variant="caption">Unattributed</Text>
         </template>
-        <template #header-labels>
+        <template #header-labels="{ label }">
+          {{ label }}
           <IconButton
             icon="show"
             size="sm"

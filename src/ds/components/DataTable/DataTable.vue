@@ -13,7 +13,8 @@ import type { DataTableColumn, DataTableSort } from './types';
  * with `aria-sort` on the th. Sorting is the parent's job: the component only emits v-model:sort.
  * `rowLink` makes the first cell a link to the record instead of a clickable row (F-9 AC4).
  * The `actions` slot fills a final column; name row actions with the row ("Actions for risk …").
- * A `header-<key>` slot adds a control after a column's title, e.g. a toggle for what it shows.
+ * A `header-<key>` slot replaces a column's title (given as `label`), e.g. to put a toggle after it
+ * or turn it into a filter (ColumnFilter).
  */
 const props = withDefaults(
   defineProps<{
@@ -30,7 +31,7 @@ const props = withDefaults(
 const sort = defineModel<DataTableSort | null>('sort', { default: null });
 const slots = defineSlots<{
   [name: `cell-${string}`]: (props: { row: T }) => unknown;
-  [name: `header-${string}`]: () => unknown;
+  [name: `header-${string}`]: (props: { label: string }) => unknown;
   actions?: (props: { row: T }) => unknown;
   'row-expanded'?: (props: { row: T }) => unknown;
 }>();
@@ -123,8 +124,7 @@ function cellClasses(column: DataTableColumn): Record<string, boolean> {
                 column.label
               }}</template>
               <span v-else class="data-table__header">
-                {{ column.label }}
-                <slot :name="`header-${column.key}`" />
+                <slot :name="`header-${column.key}`" :label="column.label" />
               </span>
             </th>
             <th v-if="slots.actions" scope="col" class="data-table__actions">

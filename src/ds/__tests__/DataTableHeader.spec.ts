@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils';
 import DataTable from '../components/DataTable/DataTable.vue';
 
 describe('DataTable header slots', () => {
-  it("puts a header-<key> slot after that column's title", () => {
+  it("replaces a column's title with its header-<key> slot", () => {
     const wrapper = mount(DataTable, {
       props: {
         caption: 'Evidence',
@@ -15,11 +15,16 @@ describe('DataTable header slots', () => {
         rows: [{ id: '1', name: 'A', labels: 'x' }],
         rowKey: (row: unknown) => (row as { id: string }).id,
       },
-      slots: { 'header-labels': () => h('button', 'Toggle') },
+      slots: {
+        'header-labels': ({ label }: { label: string }) => [
+          label,
+          h('button', 'Toggle'),
+        ],
+      },
     });
     const [name, labels] = wrapper.findAll('thead th');
     expect(name!.text()).toBe('Name');
-    expect(labels!.text()).toBe('Labels Toggle');
+    expect(labels!.text()).toBe('LabelsToggle');
     expect(labels!.find('button').exists()).toBe(true);
   });
 });

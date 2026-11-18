@@ -57,7 +57,8 @@ const { controlAttrs, invalid, readonly } = useFieldControl(() => props.label);
 /** At most this many matches render; typing narrows the rest. */
 const LIMIT = 100;
 
-const open = ref(false);
+/** Whether the list is open; bind it to open the list from outside, e.g. when the field appears. */
+const open = defineModel<boolean>('open', { default: false });
 const search = ref('');
 /** True once the user has typed since opening, so a fresh open shows every option. */
 const typed = ref(false);
