@@ -9,7 +9,9 @@ import { buttonSizeKey } from '../Button/buttonSize';
 /**
  * An icon-only action. `label` is required: it is the accessible name and the tooltip (F-11, F-27).
  * Include the object in the label for repeated actions, e.g. "Delete risk Log retention gap".
- * Other attributes (e.g. data-test) reach the button or link itself.
+ * Other attributes (e.g. data-test) reach the button or link itself. `pressed` makes it an on/off
+ * toggle (aria-pressed): off, the icon is light and secondary; on, bold. Keep the label the same in
+ * both states, e.g. "See hidden labels".
  */
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
@@ -23,6 +25,8 @@ const props = withDefaults(
     /** For toggle buttons, e.g. collapsing the nav rail. */
     expanded?: boolean;
     controls?: string;
+    /** On/off toggles, e.g. showing hidden labels. */
+    pressed?: boolean;
   }>(),
   {
     variant: 'tertiary',
@@ -31,6 +35,7 @@ const props = withDefaults(
     disabledReason: undefined,
     expanded: undefined,
     controls: undefined,
+    pressed: undefined,
   },
 );
 const scopedSize = inject(buttonSizeKey, 'md');
@@ -48,7 +53,10 @@ const classes = computed(() => [
   'icon-button',
   `icon-button--${props.variant}`,
   `icon-button--${size.value}`,
-  { 'icon-button--disabled': props.disabledReason },
+  {
+    'icon-button--disabled': props.disabledReason,
+    'icon-button--off': props.pressed === false,
+  },
 ]);
 
 function onClick(event: MouseEvent): void {
@@ -81,9 +89,10 @@ function onClick(event: MouseEvent): void {
       :aria-disabled="disabledReason ? 'true' : undefined"
       :aria-expanded="expanded"
       :aria-controls="controls"
+      :aria-pressed="pressed"
       @click="onClick"
     >
-      <Icon :name="icon" />
+      <Icon :name="icon" :weight="pressed ? 'bold' : 'regular'" />
     </button>
   </Tooltip>
 </template>
@@ -115,6 +124,10 @@ function onClick(event: MouseEvent): void {
 
 .icon-button:hover {
   background: var(--ds-color-surface-hover);
+}
+
+.icon-button--off {
+  color: var(--ds-color-text-secondary);
 }
 
 .icon-button--secondary {

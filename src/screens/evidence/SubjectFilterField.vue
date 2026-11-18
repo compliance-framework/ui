@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue';
 import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
 import { describeSubject, type SubjectSummary } from '@/types/subjects';
 import Combobox from '@/ds/components/Combobox/Combobox.vue';
-import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
 import FormField from '@/ds/components/FormField/FormField.vue';
 
 /**
@@ -19,7 +18,6 @@ const emit = defineEmits<{ titled: [title: string] }>();
 
 const { suggestions, unsupported, search, lookup } = useSubjectSearch();
 const chosen = ref<SubjectSummary>();
-const open = ref(Boolean(subject.value));
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 function find(text: string): void {
@@ -59,17 +57,15 @@ const options = computed(() => {
 </script>
 
 <template>
-  <Disclosure v-if="!unsupported" v-model:open="open" label="Subject">
-    <FormField label="Subject">
-      <Combobox
-        v-model="subject"
-        :options="options"
-        remote
-        clearable
-        placeholder="Type a name, e.g. payments-db"
-        empty-text="No subjects match."
-        @search="find"
-      />
-    </FormField>
-  </Disclosure>
+  <FormField v-if="!unsupported" label="Subject">
+    <Combobox
+      v-model="subject"
+      :options="options"
+      remote
+      clearable
+      placeholder="Type a name, e.g. payments-db"
+      empty-text="No subjects match."
+      @search="find"
+    />
+  </FormField>
 </template>

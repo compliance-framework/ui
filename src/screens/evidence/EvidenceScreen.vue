@@ -5,7 +5,6 @@ import { useToast } from '@/ds/toasts';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { sspHasScopeEntries } from '@/composables/useSspScope';
-import { useConfigStore } from '@/stores/config';
 import type { Evidence } from '@/stores/evidence';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useSystemStore } from '@/stores/system';
@@ -15,7 +14,6 @@ import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
 import { formatLocalDateTime, plural } from '@/ds/format';
 import type { QueryStatus } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
-import Checkbox from '@/ds/components/Checkbox/Checkbox.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
@@ -24,14 +22,13 @@ import type {
   DataTableColumn,
   DataTableSort,
 } from '@/ds/components/DataTable/types';
-import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
 import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
 import Pagination from '@/ds/components/Pagination/Pagination.vue';
 import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
-import Stack from '@/ds/components/layout/Stack.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import EvidenceTrends from './EvidenceTrends.vue';
 import SubjectFilterField from './SubjectFilterField.vue';
@@ -59,7 +56,6 @@ const router = useRouter();
 const toast = useToast();
 const api = useAuthenticatedInstance();
 const systemStore = useSystemStore();
-const configStore = useConfigStore();
 const permissions = usePermissionsStore();
 
 const systemId =
@@ -194,11 +190,7 @@ watch(
 
 const SUBJECT_PREVIEW = 3;
 
-/** Shared with the classic page's Labels toggle. System labels (`_policy`…) are opt-in. */
-const showLabels = computed({
-  get: () => configStore.showLabels,
-  set: (value: boolean) => (configStore.showLabels = value),
-});
+/** Hidden labels are the system ones (`_policy`…), shown from the Labels column's header. */
 const showSystemLabels = ref(false);
 
 const rows = computed(() =>
@@ -230,9 +222,7 @@ const columns = computed<DataTableColumn[]>(() => [
     nowrap: true,
     initialDirection: 'descending',
   },
-  ...(showLabels.value
-    ? [{ key: 'labels', label: 'Labels', minWidth: 'md' as const }]
-    : []),
+  { key: 'labels', label: 'Labels', minWidth: 'md' },
 ]);
 
 const sort = computed<DataTableSort>({
@@ -423,17 +413,6 @@ const trendRequest = computed(() => {
           :system-id="systemId"
           @titled="(title) => (subjectName = title)"
         />
-        <Disclosure label="Columns">
-          <Stack gap="2">
-            <Checkbox v-model="showLabels" label="Labels" />
-            <Checkbox
-              v-if="showLabels"
-              v-model="showSystemLabels"
-              label="System labels"
-              description="Labels starting with _, such as _policy."
-            />
-          </Stack>
-        </Disclosure>
       </FilterBar>
     </template>
 
@@ -501,6 +480,15 @@ const trendRequest = computed(() => {
             >
           </Cluster>
           <Text v-else as="span" variant="caption">Unattributed</Text>
+        </template>
+        <template #header-labels>
+          <IconButton
+            icon="show"
+            size="sm"
+            label="See hidden labels"
+            :pressed="showSystemLabels"
+            @click="showSystemLabels = !showSystemLabels"
+          />
         </template>
         <template #cell-labels="{ row: r }">
           <Cluster v-if="r.labels.length" gap="1">

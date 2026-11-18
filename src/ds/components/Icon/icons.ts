@@ -86,6 +86,7 @@ import {
   Users,
   Workflow,
   X,
+  Eye,
 } from 'lucide-vue-next';
 
 /**
@@ -132,6 +133,7 @@ export const icons = {
   more: EllipsisVertical,
   menu: Menu,
   search: Search,
+  show: Eye,
   expand: ChevronDown,
   next: ChevronRight,
   back: ArrowLeft,

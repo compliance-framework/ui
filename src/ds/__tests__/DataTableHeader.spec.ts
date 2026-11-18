@@ -1,0 +1,25 @@
+import { describe, expect, it } from 'vitest';
+import { h } from 'vue';
+import { mount } from '@vue/test-utils';
+import DataTable from '../components/DataTable/DataTable.vue';
+
+describe('DataTable header slots', () => {
+  it("puts a header-<key> slot after that column's title", () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        caption: 'Evidence',
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'labels', label: 'Labels' },
+        ],
+        rows: [{ id: '1', name: 'A', labels: 'x' }],
+        rowKey: (row: unknown) => (row as { id: string }).id,
+      },
+      slots: { 'header-labels': () => h('button', 'Toggle') },
+    });
+    const [name, labels] = wrapper.findAll('thead th');
+    expect(name!.text()).toBe('Name');
+    expect(labels!.text()).toBe('Labels Toggle');
+    expect(labels!.find('button').exists()).toBe(true);
+  });
+});

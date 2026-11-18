@@ -240,8 +240,7 @@ for (const theme of themes) {
     await page.keyboard.press('Escape');
 
     await open(page, `/systems/${SYSTEMS.scoped}/evidence`);
-    await page.getByRole('button', { name: 'Subject' }).click();
-    await page.getByRole('button', { name: 'Columns' }).click();
+    await page.getByRole('button', { name: 'See hidden labels' }).click();
     await page.getByRole('button', { name: 'Show as table' }).first().click();
     violations.push(
       ...(await axe(page, `${theme} evidence filters and chart table open`)),

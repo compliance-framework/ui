@@ -1394,3 +1394,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   server searches such as `GET /api/subjects`) and `clearable` (a × once something is chosen; an
   option's value can't be empty, so "Any subject" became "nothing chosen"). The subject filter
   now uses both; choosing still sets the URL and the chip. New spec: `Combobox.spec.ts`.
+- **Evidence filters lose their disclosures.** Subject sits beside the search, always shown.
+  The Columns disclosure is gone: the Labels column always shows (it can no longer be hidden),
+  and an eye button in its header, "See hidden labels", toggles the system labels (`_agent`,
+  `_policy`…). It is light when off and bold when on. New in the design system: `DataTable`
+  `header-<key>` slots (a control after a column's title), `IconButton` `pressed` (an on/off
+  toggle, `aria-pressed`, bold when on), `Icon` `weight` and the `show` (eye) icon. The classic
+  page's `showLabels` store setting is no longer read by this screen.

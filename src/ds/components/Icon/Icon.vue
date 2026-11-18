@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { icons, type IconName } from './icons';
 
-/** Decorative by default (aria-hidden); pass `label` only when the icon carries meaning on its own. */
+/**
+ * Decorative by default (aria-hidden); pass `label` only when the icon carries meaning on its own.
+ * `weight="bold"` thickens the stroke, e.g. to show a toggle is on.
+ */
 withDefaults(
-  defineProps<{ name: IconName; size?: 'sm' | 'md' | 'lg'; label?: string }>(),
+  defineProps<{
+    name: IconName;
+    size?: 'sm' | 'md' | 'lg';
+    label?: string;
+    weight?: 'regular' | 'bold';
+  }>(),
   {
     size: 'md',
     label: undefined,
+    weight: 'regular',
   },
 );
 </script>
@@ -16,7 +25,7 @@ withDefaults(
     :is="icons[name]"
     class="icon"
     :class="`icon--${size}`"
-    :stroke-width="2"
+    :stroke-width="weight === 'bold' ? 3 : 2"
     focusable="false"
     :aria-hidden="label ? undefined : 'true'"
     :aria-label="label"
