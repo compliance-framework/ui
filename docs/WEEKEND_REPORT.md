@@ -1387,3 +1387,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   line above 120 points per series (a safety net for any chart). The page has 739 elements and
   12 resizes take 0.4 s instead of 36 s. **API to-do:** `/api/agent/heartbeat/over-time` needs a
   time range; the UI still downloads 2.2 MB per visit and it grows by ~720 buckets a day.
+- **Subject filter is one type-to-search field.** The evidence page's subject filter was a
+  search box plus a separate dropdown of its results (two steps for one choice). `Combobox`, the
+  design system's existing type-to-search field, only filtered options it already held; it gains
+  `remote` (it emits `search` with the typed text and shows the caller's results unfiltered, for
+  server searches such as `GET /api/subjects`) and `clearable` (a × once something is chosen; an
+  option's value can't be empty, so "Any subject" became "nothing chosen"). The subject filter
+  now uses both; choosing still sets the URL and the chip. New spec: `Combobox.spec.ts`.

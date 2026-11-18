@@ -20,6 +20,11 @@ import Icon from '../Icon/Icon.vue';
  * input shows the chosen option's label; typing narrows the list (label or value, ignoring case),
  * and leaving the field without choosing restores the chosen label, so only listed values can be
  * chosen. Wired by its FormField like TextInput. For a short fixed list, use Select.
+ *
+ * When the options come from a server search, set `remote` and listen to `search`: it fires with
+ * the typed text (and with '' on opening), the field stops filtering, and `options` should be the
+ * results. Keep the chosen option among them so its label shows. Option values can't be empty:
+ * an empty model means nothing is chosen, and `clearable` adds a button that returns to it.
  */
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
@@ -31,15 +36,22 @@ const props = withDefaults(
     /** Shown while the options load. */
     loading?: boolean;
     emptyText?: string;
+    /** The caller searches (see above); `options` are the matches. */
+    remote?: boolean;
+    /** Show a clear button once an option is chosen, e.g. for an optional filter. */
+    clearable?: boolean;
   }>(),
   {
     placeholder: undefined,
     label: undefined,
     loading: false,
     emptyText: 'Nothing matches.',
+    remote: false,
+    clearable: false,
   },
 );
 const model = defineModel<string>({ default: '' });
+const emit = defineEmits<{ search: [text: string] }>();
 const { controlAttrs, invalid, readonly } = useFieldControl(() => props.label);
 
 /** At most this many matches render; typing narrows the rest. */
@@ -54,6 +66,7 @@ const input = ref<InstanceType<typeof ComboboxInput>>();
 const labelOf = (value: unknown) =>
   props.options.find((o) => o.value === value)?.label ?? '';
 const matches = computed(() => {
+  if (props.remote) return props.options;
   const needle = typed.value ? search.value.trim().toLowerCase() : '';
   return needle
     ? props.options.filter(
@@ -66,8 +79,15 @@ const matches = computed(() => {
 const shown = computed(() => matches.value.slice(0, LIMIT));
 
 watch(open, (isOpen) => {
-  if (isOpen) typed.value = false;
+  if (!isOpen) return;
+  typed.value = false;
+  if (props.remote) emit('search', '');
 });
+
+function onInput(): void {
+  typed.value = true;
+  if (props.remote) emit('search', search.value);
+}
 
 // Menus portal next to their landmark, so axe's region rule and dialog focus traps hold.
 const portalTarget = computed(() => {
@@ -113,10 +133,22 @@ function choose(value: unknown): void {
         v-bind="{ ...$attrs, ...controlAttrs }"
         :display-value="labelOf"
         class="combobox__input"
-        :class="{ 'combobox__input--invalid': invalid }"
+        :class="{
+          'combobox__input--invalid': invalid,
+          'combobox__input--clearable': clearable && model,
+        }"
         :placeholder="loading ? 'Loading…' : placeholder"
-        @input="typed = true"
+        @input="onInput"
       />
+      <button
+        v-if="clearable && model"
+        type="button"
+        class="combobox__clear"
+        :aria-label="label ? `Clear ${label}` : 'Clear'"
+        @click="model = ''"
+      >
+        <Icon name="close" />
+      </button>
       <ComboboxTrigger
         class="combobox__trigger"
         tabindex="-1"
@@ -192,7 +224,14 @@ function choose(value: unknown): void {
   border-color: var(--ds-color-status-error-fg);
 }
 
-.combobox__trigger {
+.combobox__input--clearable {
+  padding-right: calc(
+    (var(--ds-size-icon-md) + var(--ds-space-3) * 2) * 2 - var(--ds-space-3)
+  );
+}
+
+.combobox__trigger,
+.combobox__clear {
   position: absolute;
   top: 0;
   right: 0;
@@ -206,6 +245,15 @@ function choose(value: unknown): void {
   border: 0;
   color: var(--ds-color-text-secondary);
   cursor: pointer;
+}
+
+.combobox__clear {
+  right: calc(var(--ds-size-icon-md) + var(--ds-space-3));
+  width: calc(var(--ds-size-icon-md) + var(--ds-space-2) * 2);
+}
+
+.combobox__clear:hover {
+  color: var(--ds-color-text-primary);
 }
 
 .combobox__choice {

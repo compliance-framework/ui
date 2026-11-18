@@ -82,8 +82,9 @@ test('every action is reachable at 1280×800 with the navigation expanded', asyn
   for (const url of routes) {
     await page.goto(url);
     await page.locator('main h1').waitFor();
+    // Visible ones only: actions inside a closed Disclosure aren't on screen to reach.
     for (const button of await page
-      .locator('main button, main a[href]')
+      .locator('main button:visible, main a[href]:visible')
       .all()) {
       await button.scrollIntoViewIfNeeded();
       await expect(
