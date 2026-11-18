@@ -159,7 +159,7 @@ describe('RiskCreateForm', () => {
   it('applies selected template values to the risk form', async () => {
     const wrapper = mountForm();
 
-    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    const useTemplateButton = findButtonByText(wrapper, 'Use template');
     expect(useTemplateButton).toBeDefined();
 
     await useTemplateButton!.trigger('click');
@@ -199,7 +199,7 @@ describe('RiskCreateForm', () => {
   it('submits prefilled template values when creating a risk', async () => {
     const wrapper = mountForm();
 
-    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    const useTemplateButton = findButtonByText(wrapper, 'Use template');
     expect(useTemplateButton).toBeDefined();
 
     await useTemplateButton!.trigger('click');
@@ -265,7 +265,7 @@ describe('RiskCreateForm', () => {
 
     const wrapper = mountForm();
 
-    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    const useTemplateButton = findButtonByText(wrapper, 'Use template');
     expect(useTemplateButton).toBeDefined();
 
     await useTemplateButton!.trigger('click');
@@ -277,7 +277,7 @@ describe('RiskCreateForm', () => {
       }),
     );
 
-    const unavailableButton = findButtonByText(wrapper, 'Use Template');
+    const unavailableButton = findButtonByText(wrapper, 'Use template');
     expect(unavailableButton).toBeDefined();
     expect(unavailableButton!.attributes('aria-disabled')).toBe('true');
     expect(document.body.textContent).toContain(

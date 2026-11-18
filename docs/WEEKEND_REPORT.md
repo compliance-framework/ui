@@ -1372,3 +1372,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   button's own `size` still wins, and buttons in a panel's body are unchanged. This applies to
   every panel with actions (34 screens), with no screen changes. Selects and links in the actions
   move too but keep their size.
+- **Buttons in sentence case.** `Button` dropped its uppercase, letter-spaced label style (a
+  monospace convention) for sentence case at body size, semibold, as the classic app had: "Add
+  diagram", not "ADD DIAGRAM". Labels were already written in sentence case; the one in Title Case
+  ("Use Template") is now "Use template". Field labels, tabs, table headings, status badges and
+  nav items keep their capitals for now.

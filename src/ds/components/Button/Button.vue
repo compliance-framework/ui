@@ -120,11 +120,9 @@ function onClick(event: MouseEvent): void {
   border: var(--ds-border-width) solid transparent;
   border-radius: var(--ds-radius-none);
   font-family: var(--ds-font-ui);
-  font-size: var(--ds-font-size-label);
-  font-weight: var(--ds-font-weight-bold);
-  letter-spacing: var(--ds-tracking-wide);
+  font-size: var(--ds-font-size-body);
+  font-weight: var(--ds-font-weight-semibold);
   line-height: var(--ds-leading-tight);
-  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;

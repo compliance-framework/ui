@@ -14,7 +14,7 @@
               : undefined
           "
           @click="openTemplateSelector"
-          >Use Template</Button
+          >Use template</Button
         >
       </Cluster>
       <FormField label="Title" required>
