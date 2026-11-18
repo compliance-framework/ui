@@ -18,6 +18,7 @@ import ControlTreeNode from './ControlTreeNode.vue';
 import ProfilesField from './ProfilesField.vue';
 import { provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useSystemStore } from '@/stores/system.ts';
 import {
@@ -170,12 +171,12 @@ const bulkSuggestionsOperationLocked = computed(
 );
 const bulkSuggestionsButtonLabel = computed(() => {
   if (applyingBulkSuggestions.value) {
-    return 'Applying Suggestions...';
+    return 'Applying suggestions…';
   }
   if (preparingBulkSuggestions.value) {
-    return 'Preparing Suggestions...';
+    return 'Preparing suggestions…';
   }
-  return 'Apply All Suggestions';
+  return 'Apply all suggestions';
 });
 
 const pendingDashboardSuggestionsByControl = computed(() => {
@@ -640,7 +641,7 @@ async function loadResolvedProfileCatalogs() {
     if (failedCount > 0) {
       toast.add({
         severity: 'error',
-        summary: 'Error Loading Catalogs',
+        summary: 'Error loading catalogs',
         detail: `Failed to load resolved catalog for ${failedCount} profile${failedCount > 1 ? 's' : ''}.`,
         life: 3000,
       });
@@ -823,7 +824,7 @@ async function applySuggestionPlan(
       console.error('Failed to refresh control implementations:', error);
       toast.add({
         severity: 'error',
-        summary: 'Refresh Failed',
+        summary: 'Refresh failed',
         detail:
           'Some suggestions may have been applied, but the page failed to refresh automatically.',
         life: 5000,
@@ -833,21 +834,21 @@ async function applySuggestionPlan(
     if (createdCount > 0 && failedCount === 0) {
       toast.add({
         severity: 'success',
-        summary: 'Suggestions Applied',
+        summary: 'Suggestions applied',
         detail: `${createdCount} suggested component${createdCount === 1 ? '' : 's'} added across statements.`,
         life: 4000,
       });
     } else if (createdCount > 0 && failedCount > 0) {
       toast.add({
         severity: 'warn',
-        summary: 'Partially Applied',
+        summary: 'Partially applied',
         detail: `${createdCount} suggestion${createdCount === 1 ? '' : 's'} added, ${failedCount} failed.`,
         life: 5000,
       });
     } else if (failedCount > 0) {
       toast.add({
         severity: 'error',
-        summary: 'Bulk Apply Failed',
+        summary: 'Bulk apply failed',
         detail: `${failedCount} suggestion${failedCount === 1 ? '' : 's'} failed to apply.`,
         life: 5000,
       });
@@ -875,7 +876,7 @@ async function prepareApplyAllSuggestions() {
       const failedLabel = failedFetchCount === 1 ? 'statement' : 'statements';
       toast.add({
         severity: 'warn',
-        summary: 'Some Suggestions Could Not Be Loaded',
+        summary: 'Some suggestions could not be loaded',
         detail: `${failedFetchCount} ${failedLabel} failed to load suggestions. Results may be incomplete.`,
         life: 4500,
       });
@@ -887,7 +888,7 @@ async function prepareApplyAllSuggestions() {
       }
       toast.add({
         severity: 'info',
-        summary: 'No Pending Suggestions',
+        summary: 'No pending suggestions',
         detail: 'All current statement suggestions are already applied.',
         life: 3000,
       });
@@ -896,7 +897,7 @@ async function prepareApplyAllSuggestions() {
 
     bulkSuggestionsConfirmOpen.value = true;
     confirm.require({
-      header: 'Apply All Suggestions',
+      header: 'Apply all suggestions',
       message: `Apply ${suggestionsToAdd} suggested component${suggestionsToAdd === 1 ? '' : 's'} across ${plannedItems.length} statement${plannedItems.length === 1 ? '' : 's'}?`,
       rejectProps: {
         label: 'Cancel',
@@ -921,7 +922,7 @@ async function prepareApplyAllSuggestions() {
     bulkSuggestionsConfirmOpen.value = false;
     toast.add({
       severity: 'error',
-      summary: 'Unable to Load Suggestions',
+      summary: 'Unable to load suggestions',
       detail:
         bulkError instanceof Error
           ? bulkError.message
@@ -946,7 +947,7 @@ watch(profileBindings, async () => {
     error.value = err;
     toast.add({
       severity: 'error',
-      summary: 'Error Loading Catalogs',
+      summary: 'Error loading catalogs',
       detail: await getErrorDetail(
         err,
         'An error occurred while loading profile catalogs.',
@@ -1189,7 +1190,7 @@ async function handleProfilesUpdated() {
     error.value = err;
     toast.add({
       severity: 'error',
-      summary: 'Error Loading Profile Bindings',
+      summary: 'Error loading profile bindings',
       detail: await getErrorDetail(
         err,
         'An error occurred while loading the profiles linked to this SSP.',
@@ -1211,7 +1212,7 @@ onMounted(async () => {
     error.value = err;
     toast.add({
       severity: 'error',
-      summary: 'Error Loading Profile Bindings',
+      summary: 'Error loading profile bindings',
       detail: await getErrorDetail(
         err,
         'An error occurred while loading the profiles linked to this SSP.',
@@ -1228,6 +1229,15 @@ onMounted(async () => {
 });
 
 // Redesigned presentation ----------------------------------------------------------------------
+
+// Controls and Profiles are tabs; the tab is in the address (?tab=profiles), like other in-page
+// tabs.
+const route = useRoute();
+const onProfilesTab = dsComputed(() => route.query.tab === 'profiles');
+const tabs = [
+  { label: 'Controls', to: { query: {} } },
+  { label: 'Profiles', to: { query: { tab: 'profiles' } } },
+];
 
 const treeQuery = dsRef('');
 const treeDraft = dsRef('');
@@ -1267,8 +1277,9 @@ provideControlTree({
   <ListTemplate
     title="Implementation"
     :description="`How ${selectedSspTitle} implements its controls.`"
+    :tabs="tabs"
   >
-    <template v-if="activeProfile" #actions>
+    <template v-if="activeProfile && !onProfilesTab" #actions>
       <Button
         :loading="bulkSuggestionsBusy"
         :disabled-reason="
@@ -1281,19 +1292,7 @@ provideControlTree({
       >
     </template>
 
-    <template #banner>
-      <Panel
-        title="Profiles"
-        description="The profiles this system implements decide the controls below."
-      >
-        <ProfilesField
-          :ssp-id="selectedSspId"
-          @updated="handleProfilesUpdated"
-        />
-      </Panel>
-    </template>
-
-    <template v-if="pageStatus === 'ready'" #filters>
+    <template v-if="pageStatus === 'ready' && !onProfilesTab" #filters>
       <FilterBar
         v-model:query="treeDraft"
         label="Filter controls"
@@ -1306,7 +1305,16 @@ provideControlTree({
       />
     </template>
 
+    <Panel
+      v-if="onProfilesTab"
+      title="Profiles"
+      :level="2"
+      description="The profiles this system implements decide its controls."
+    >
+      <ProfilesField :ssp-id="selectedSspId" @updated="handleProfilesUpdated" />
+    </Panel>
     <DataState
+      v-else
       :status="pageStatus"
       subject="controls"
       :empty-title="
@@ -1317,11 +1325,16 @@ provideControlTree({
       :empty-body="
         activeProfile
           ? 'The attached profile has no catalog to resolve controls from.'
-          : 'Attach one or more profiles above to choose which controls this system implements. Their controls appear here, ready to document.'
+          : 'Attach one or more profiles on the Profiles tab to choose which controls this system implements. Their controls appear here, ready to document.'
       "
       icon="controls"
       skeleton="panel"
     >
+      <template v-if="!activeProfile" #empty-actions>
+        <Button variant="primary" :to="{ query: { tab: 'profiles' } }"
+          >Attach profiles</Button
+        >
+      </template>
       <Panel title="Controls" :level="2">
         <Stack gap="3" as="ul">
           <li v-for="node in nodes" :key="node.key">

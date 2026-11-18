@@ -68,14 +68,31 @@ vi.mock('@/stores/ai-config', () => ({
   }),
 }));
 
-vi.mock('vue-router', () => ({
-  RouterLink: {
-    name: 'RouterLink',
-    props: ['to'],
-    template: '<a><slot /></a>',
-  },
-  useRouter: () => ({ push: vi.fn() }),
-}));
+// The current route; tests set `query.tab` to switch between the Controls and Profiles tabs.
+const route = vi.hoisted(() => ({ value: undefined as unknown }));
+vi.mock('vue-router', async () => {
+  const { reactive } = await import('vue');
+  route.value = reactive({ name: 'system-implementation', query: {} });
+  return {
+    RouterLink: {
+      name: 'RouterLink',
+      props: ['to'],
+      template: '<a><slot /></a>',
+    },
+    useRouter: () => ({
+      push: vi.fn(),
+      resolve: (to: { query?: Record<string, string> }) => ({
+        name: 'system-implementation',
+        query: to.query ?? {},
+      }),
+    }),
+    useRoute: () => route.value,
+  };
+});
+const showTab = async (tab?: 'profiles') => {
+  (route.value as { query: Record<string, string> }).query = tab ? { tab } : {};
+  await waitForMountedControls();
+};
 
 vi.mock('@/composables/useCatalogTree', () => ({
   buildTreeNodesWithPrefix: () => [
@@ -241,6 +258,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
   beforeEach(() => setActivePinia(createPinia()));
 
   beforeEach(() => {
+    if (route.value) (route.value as { query: object }).query = {};
     vi.clearAllMocks();
     aiConfigState.dashboardSuggestionsEnabled = false;
     aiConfigState.dashboardSuggestionsConfigFetched = false;
@@ -758,6 +776,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
       .mockReturnValueOnce(newerReload.promise);
     axiosGet.mockClear();
 
+    await showTab('profiles');
     const picker = wrapper.findComponent(ProfilePickerStub);
     picker.vm.$emit('updated', ['profile-old']);
     picker.vm.$emit('updated', ['profile-new']);
@@ -783,8 +802,10 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     expect(wrapper.text()).toContain('Access Control');
 
     listProfiles.mockRejectedValueOnce(new Error('reload failed'));
+    await showTab('profiles');
     wrapper.findComponent(ProfilePickerStub).vm.$emit('updated', ['profile-2']);
     await waitForMountedControls();
+    await showTab();
 
     expect(wrapper.text()).toContain('Access Control');
     expect(wrapper.text()).not.toContain('No profile attached yet');

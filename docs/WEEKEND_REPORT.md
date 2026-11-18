@@ -1432,3 +1432,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   **Known issue (not new):** a list reload swaps the table for a skeleton, so keyboard focus is
   lost after choosing a subject, as it already is after sorting; keeping the table up, marked
   busy, while it reloads would fix both.
+- **Implementation: Controls and Profiles are tabs.** The Profiles panel sat above the controls
+  list on every visit. Now Controls (the default: search, "Apply all suggestions" and the list)
+  and Profiles (`?tab=profiles`, like other in-page tabs) are `ListTemplate` tabs. With no profile
+  attached, the Controls empty state points to the Profiles tab with an "Attach profiles" button.
+  The screen's button, dialog and toast titles are now in sentence case ("Apply all
+  suggestions"); other screens still have Title Case toast titles.
