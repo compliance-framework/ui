@@ -1362,3 +1362,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   to `Disclosure`: `Panel` is the one white section (it replaced ten card styles), and AGENTS.md
   now says content sits in one. Left on the page: table captions (headings above each table) and
   a risk's statement under its title.
+- **Disclosure chevrons lead.** On a wide row the chevron sat at the far right, easy to miss
+  beside a short label. It now leads the label, pointing right when closed and down when open.
+  The sidebar's nav groups (`variant="nav"`) keep theirs at the end, since their icon leads.

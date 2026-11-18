@@ -5,7 +5,9 @@ import type { IconName } from '../Icon/icons';
 
 /**
  * Show/hide a region with a real button (F-09 AC1): aria-expanded, aria-controls, a visible
- * chevron, Enter and Space via the native button. `nav` is the compact sidebar group style.
+ * chevron, Enter and Space via the native button. The chevron leads the label, pointing right
+ * when closed and down when open, so it is seen however short the label on a wide row. `nav` is
+ * the compact sidebar group style, with the chevron at the end (the group's icon leads).
  */
 withDefaults(
   defineProps<{
@@ -34,9 +36,18 @@ const regionId = useId();
       :aria-current="active ? 'location' : undefined"
       @click="open = !open"
     >
+      <Icon
+        v-if="variant === 'default'"
+        name="next"
+        class="disclosure__chevron disclosure__chevron--lead"
+      />
       <Icon v-if="icon" :name="icon" />
       <span class="disclosure__label">{{ label }}</span>
-      <Icon name="expand" class="disclosure__chevron" />
+      <Icon
+        v-if="variant === 'nav'"
+        name="expand"
+        class="disclosure__chevron"
+      />
     </button>
     <div v-show="open" :id="regionId" class="disclosure__region">
       <slot />
@@ -75,6 +86,10 @@ const regionId = useId();
 
 .disclosure__trigger[aria-expanded='true'] .disclosure__chevron {
   transform: rotate(180deg);
+}
+
+.disclosure__trigger[aria-expanded='true'] .disclosure__chevron--lead {
+  transform: rotate(90deg);
 }
 
 .disclosure--default .disclosure__trigger {
