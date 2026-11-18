@@ -19,5 +19,12 @@ COPY deployment/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 
+FROM node:22@sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb AS badges
+WORKDIR /app
+COPY --chown=node:node deployment/badges/server.mjs ./server.mjs
+USER node
+EXPOSE 3001
+CMD ["node", "server.mjs"]
+
 # Default to production build
 FROM production
