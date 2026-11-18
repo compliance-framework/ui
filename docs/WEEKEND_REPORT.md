@@ -1401,3 +1401,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `header-<key>` slots (a control after a column's title), `IconButton` `pressed` (an on/off
   toggle, `aria-pressed`, bold when on), `Icon` `weight` and the `show` (eye) icon. The classic
   page's `showLabels` store setting is no longer read by this screen.
+- **Status trends in green and red.** Satisfied and not satisfied were the first two chart
+  colours (blue and brown), by position. `LineChart` series take an optional `tone` (`success` or
+  `error`), drawn in the status colours the badges use; `statusSeries` sets them, so the evidence
+  pages and saved-filter trends both change. The circle and square markers stay, so the lines
+  don't rely on colour alone.

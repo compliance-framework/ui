@@ -8,14 +8,17 @@ import Text from '../Text/Text.vue';
 /**
  * A line chart for trends (F-17 AC3, F-29). It has a y axis with gridlines and tick labels, x tick
  * labels thinned to fit, axis titles, and a legend. Each series has its own colour
- * (--ds-color-chart-1…3) and marker shape (circle, square, triangle), drawn on every point, so the
- * chart still works in greyscale. The SVG is an image named by a text summary, and "Show as table"
+ * (--ds-color-chart-1…3, or its `tone` when it means good or bad, e.g. satisfied and not
+ * satisfied) and marker shape (circle, square, triangle), drawn on every point, so the chart still
+ * works in greyscale. The SVG is an image named by a text summary, and "Show as table"
  * swaps in the same values as an accessible table. The surrounding Panel supplies the title.
  * The viewBox follows the rendered width, so tick labels keep their token size on a phone.
  */
 interface LineChartSeries {
   name: string;
   points: { x: string; y: number }[];
+  /** A status colour for a series that means good or bad, in place of the next chart colour. */
+  tone?: 'success' | 'error';
 }
 
 const props = withDefaults(
@@ -130,7 +133,7 @@ const lines = computed(() =>
   props.series.map((s, index) => ({
     name: s.name,
     shape: shapes[index % shapes.length]!,
-    colour: `line-chart__series--${(index % 3) + 1}`,
+    colour: `line-chart__series--${s.tone ?? (index % 3) + 1}`,
     path: s.points
       .map((p, i) => `${i === 0 ? 'M' : 'L'}${xPos(p.x)},${yPos(p.y)}`)
       .join(' '),
@@ -401,6 +404,14 @@ const tableRows = computed(() => {
 
 .line-chart__series--3 {
   color: var(--ds-color-chart-3);
+}
+
+.line-chart__series--success {
+  color: var(--ds-color-status-success-fg);
+}
+
+.line-chart__series--error {
+  color: var(--ds-color-status-error-fg);
 }
 
 .line-chart__line {

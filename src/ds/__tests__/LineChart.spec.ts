@@ -49,4 +49,25 @@ describe('LineChart', () => {
       .map((step) => Number(step.slice(1).split(',')[0]));
     expect(xs[0]).toBeLessThan(xs[4999]!);
   });
+
+  it('colours a series by its tone, not its position, when it has one', () => {
+    const points = [{ x: 't1', y: 1 }];
+    const wrapper = mount(LineChart, {
+      props: {
+        label: 'Evidence status over time',
+        series: [
+          { name: 'Satisfied', points, tone: 'success' as const },
+          { name: 'Not satisfied', points, tone: 'error' as const },
+          { name: 'Other', points },
+        ],
+        yLabel: 'Evidence',
+        xLabel: 'Time',
+      },
+      global: { stubs: { Tooltip: { template: '<slot />' } } },
+    });
+    for (const colour of ['success', 'error', '3'])
+      expect(wrapper.find(`.line-chart__series--${colour}`).exists()).toBe(
+        true,
+      );
+  });
 });

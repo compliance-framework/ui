@@ -9,23 +9,25 @@ import type { HeartbeatInterval } from '@/stores/heartbeats';
 export interface TrendSeries {
   name: string;
   points: { x: string; y: number }[];
+  tone?: 'success' | 'error';
 }
 
 /** The classic page's intervals: now back to an hour ago. */
 export const STATUS_INTERVAL = '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
 
 const STATUS_SERIES = [
-  { status: 'satisfied', name: 'Satisfied' },
-  { status: 'not-satisfied', name: 'Not satisfied' },
-];
+  { status: 'satisfied', name: 'Satisfied', tone: 'success' },
+  { status: 'not-satisfied', name: 'Not satisfied', tone: 'error' },
+] as const;
 
 const byTime = <T extends { interval: string }>(a: T, b: T) =>
   Date.parse(a.interval) - Date.parse(b.interval);
 
 export function statusSeries(intervals: ComplianceInterval[]): TrendSeries[] {
   const sorted = [...intervals].sort(byTime);
-  return STATUS_SERIES.map(({ status, name }) => ({
+  return STATUS_SERIES.map(({ status, name, tone }) => ({
     name,
+    tone,
     points: sorted.map((interval) => ({
       x: interval.interval,
       y: interval.statuses.find((s) => s.status === status)?.count ?? 0,
