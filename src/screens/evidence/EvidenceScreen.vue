@@ -457,10 +457,13 @@ const trendRequest = computed(() => {
       >
         <template #cell-status="{ row: r }">
           <StatusBadge
-            v-if="r.status === 'satisfied' || r.status === 'not-satisfied'"
-            :status="r.status"
+            :status="
+              r.status === 'satisfied' || r.status === 'not-satisfied'
+                ? r.status
+                : 'unknown'
+            "
+            dot
           />
-          <StatusBadge v-else status="unknown" />
         </template>
         <template #cell-name="{ row: r }">
           <TextLink :to="evidenceLink(r.id)">{{ r.name }}</TextLink>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Icon from '../Icon/Icon.vue';
+import Tooltip from '../Tooltip/Tooltip.vue';
 import { statuses, toneVars, type StatusKey } from './statuses';
 
 /**
@@ -10,6 +11,10 @@ import { statuses, toneVars, type StatusKey } from './statuses';
  * `compact` is for dense rows such as a tree: the icon (and `count`, if given) on the tone colours,
  * with the text kept for assistive technology. Each status has its own icon shape (F-12 AC5), so it
  * still isn't colour alone; use it only where a key or the full badge nearby says what each means.
+ *
+ * `dot` is a status column's marker: the status icon as a filled circle in the tone colour, its
+ * symbol (tick, cross…) in white so it isn't colour alone, the label in a tooltip on hover and in
+ * text for assistive technology.
  */
 const props = withDefaults(
   defineProps<{
@@ -17,18 +22,31 @@ const props = withDefaults(
     label?: string;
     compact?: boolean;
     count?: number;
+    dot?: boolean;
   }>(),
   {
     label: undefined,
     compact: false,
     count: undefined,
+    dot: false,
   },
 );
 const definition = computed(() => statuses[props.status]);
 </script>
 
 <template>
+  <Tooltip v-if="dot" :text="label ?? definition.label">
+    <span
+      class="status-dot"
+      :class="`status-dot--${definition.tone}`"
+      :style="toneVars(definition.tone)"
+    >
+      <Icon :name="definition.icon" size="lg" weight="bold" />
+      <span class="visually-hidden">{{ label ?? definition.label }}</span>
+    </span>
+  </Tooltip>
   <span
+    v-else
     class="status-badge"
     :class="[
       `status-badge--${definition.tone}`,
@@ -72,5 +90,21 @@ const definition = computed(() => statuses[props.status]);
 
 .status-badge--neutral {
   border-color: var(--ds-color-border-strong);
+}
+
+.status-dot {
+  display: inline-flex;
+  vertical-align: middle;
+  color: var(--tone-fg);
+}
+
+/* The icon's ring becomes the filled circle; its symbol is drawn on top in the panel colour. */
+.status-dot :deep(circle) {
+  fill: currentColor;
+}
+
+.status-dot :deep(path),
+.status-dot :deep(line) {
+  stroke: var(--ds-color-surface-raised);
 }
 </style>

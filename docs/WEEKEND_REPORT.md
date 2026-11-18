@@ -1406,3 +1406,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `error`), drawn in the status colours the badges use; `statusSeries` sets them, so the evidence
   pages and saved-filter trends both change. The circle and square markers stay, so the lines
   don't rely on colour alone.
+- **Evidence status as a dot.** The Status column repeated "SATISFIED" / "NOT SATISFIED" badges
+  on every row. `StatusBadge` gains `dot`: the status icon as a filled circle in its tone colour
+  (green, red, grey for unknown) with its symbol (tick, cross, question mark) in white, the label
+  in a tooltip on hover and in hidden text for screen readers. **Decision:** not a plain coloured
+  circle, which would be colour alone (red/green is the commonest colour-blind confusion, and a
+  hover tooltip doesn't reach touch or keyboard users); the symbol keeps it readable without
+  colour. Other tables keep the full badge.
