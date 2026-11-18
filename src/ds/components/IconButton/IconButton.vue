@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
 import Icon from '../Icon/Icon.vue';
 import type { IconName } from '../Icon/icons';
 import Tooltip from '../Tooltip/Tooltip.vue';
+import { buttonSizeKey } from '../Button/buttonSize';
 
 /**
  * An icon-only action. `label` is required: it is the accessible name and the tooltip (F-11, F-27).
@@ -25,13 +26,16 @@ const props = withDefaults(
   }>(),
   {
     variant: 'tertiary',
-    size: 'md',
+    size: undefined,
     to: undefined,
     disabledReason: undefined,
     expanded: undefined,
     controls: undefined,
   },
 );
+const scopedSize = inject(buttonSizeKey, 'md');
+// Unset, the size comes from the nearest ButtonSizeScope (small in panel header actions).
+const size = computed(() => props.size ?? scopedSize);
 const emit = defineEmits<{ click: [event: MouseEvent] }>();
 
 const open = ref(false);
@@ -43,7 +47,7 @@ const tip = computed(() =>
 const classes = computed(() => [
   'icon-button',
   `icon-button--${props.variant}`,
-  `icon-button--${props.size}`,
+  `icon-button--${size.value}`,
   { 'icon-button--disabled': props.disabledReason },
 ]);
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, useId } from 'vue';
+import { computed, inject, ref, useId } from 'vue';
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
 import Icon from '../Icon/Icon.vue';
 import type { IconName } from '../Icon/icons';
 import Tooltip from '../Tooltip/Tooltip.vue';
+import { buttonSizeKey } from './buttonSize';
 
 /**
  * The one button (F-15). Four tiers: primary (one per region), secondary, tertiary, danger.
@@ -30,7 +31,7 @@ const props = withDefaults(
   }>(),
   {
     variant: 'secondary',
-    size: 'md',
+    size: undefined,
     icon: undefined,
     iconEnd: undefined,
     to: undefined,
@@ -40,6 +41,9 @@ const props = withDefaults(
     disabledReason: undefined,
   },
 );
+const scopedSize = inject(buttonSizeKey, 'md');
+// Unset, the size comes from the nearest ButtonSizeScope (small in panel header actions).
+const size = computed(() => props.size ?? scopedSize);
 const emit = defineEmits<{ click: [event: MouseEvent] }>();
 
 const reasonId = useId();
@@ -48,7 +52,7 @@ const disabled = computed(() => Boolean(props.disabledReason) || props.loading);
 const classes = computed(() => [
   'button',
   `button--${props.variant}`,
-  `button--${props.size}`,
+  `button--${size.value}`,
   { 'button--disabled': props.disabledReason, 'button--wrap': props.wrap },
 ]);
 

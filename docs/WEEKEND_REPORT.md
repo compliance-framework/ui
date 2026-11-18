@@ -1365,3 +1365,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Disclosure chevrons lead.** On a wide row the chevron sat at the far right, easy to miss
   beside a short label. It now leads the label, pointing right when closed and down when open.
   The sidebar's nav groups (`variant="nav"`) keep theirs at the end, since their icon leads.
+- **Panel actions sit beneath the title, and are smaller.** A panel's header actions (e.g. "Add
+  diagram") sat at its far right, easily missed on a wide screen with the content on the left.
+  `Panel` now stacks them under its title and description, and a new `ButtonSizeScope` (which
+  `Panel` wraps them in) makes their Buttons and IconButtons default to the small size; a
+  button's own `size` still wins, and buttons in a panel's body are unchanged. This applies to
+  every panel with actions (34 screens), with no screen changes. Selects and links in the actions
+  move too but keep their size.

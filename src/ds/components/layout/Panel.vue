@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useId } from 'vue';
+import ButtonSizeScope from '../Button/ButtonSizeScope.vue';
 
 /**
  * A titled region on a raised surface: the one card style (F-30 had ten). With a title it is a
- * labelled section landmark; actions sit top-right; padding is the ui-remake 20px.
+ * labelled section landmark; actions sit beneath the title, where they're seen on a wide panel,
+ * and their buttons default to the small size; padding is the ui-remake 20px.
  */
 withDefaults(
   defineProps<{
@@ -52,7 +54,7 @@ const headingId = useId();
         <p v-if="description" class="panel__description">{{ description }}</p>
       </div>
       <div v-if="$slots.actions" class="panel__actions">
-        <slot name="actions" />
+        <ButtonSizeScope size="sm"><slot name="actions" /></ButtonSizeScope>
       </div>
     </header>
     <slot />
@@ -91,9 +93,8 @@ const headingId = useId();
 
 .panel__header {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
   gap: var(--ds-space-3);
 }
 
@@ -127,6 +128,7 @@ const headingId = useId();
 .panel__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--ds-space-2);
 }
 </style>
