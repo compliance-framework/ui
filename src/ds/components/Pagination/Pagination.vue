@@ -120,7 +120,7 @@ const items = computed(() => pageItems(props.page, props.pageCount));
   min-height: var(--ds-size-control-sm);
   padding: 0 var(--ds-space-2);
   border: var(--ds-border-width) solid var(--ds-color-border-strong);
-  background: var(--ds-color-surface-base);
+  background: var(--ds-color-surface-raised);
   color: var(--ds-color-text-primary);
   font-size: var(--ds-font-size-body);
   font-weight: var(--ds-font-weight-medium);

@@ -62,7 +62,9 @@ npm run format:fix                           # prettier --write src/
   its rules, URL scheme and decisions. In `src/ds` and `src/screens`: scoped CSS using only
   `--ds-` tokens (`npm run lint:css` enforces them, and checks the contrast of every colour pair in
   `src/ds/tokens/color.css`); screens contain no CSS or class
-  attributes; read data through `useApiQuery` and render states with `DataState`. Raise toasts
+  attributes; read data through `useApiQuery` and render states with `DataState`. Page
+  content sits in a `Panel`, the one white section style: put lists, `Disclosure`s and facts
+  inside one rather than on the grey page, and don't give other components a card background. Raise toasts
   with `useToast()` from `@/ds/toasts` (the `ToastRegion` in `App.vue` shows them; errors stay
   until dismissed) and script confirmations with `useConfirm().require(...)` from
   `@/ds/confirm` (shown by `ConfirmHost`); in templates use `ConfirmDialog`. Add each new route

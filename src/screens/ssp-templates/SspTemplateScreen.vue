@@ -15,6 +15,7 @@ import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
@@ -122,7 +123,9 @@ async function runNow(): Promise<void> {
       >
     </template>
     <Stack gap="6">
-      <DescriptionList :items="facts" />
+      <Panel title="Details" :level="2">
+        <DescriptionList :items="facts" />
+      </Panel>
       <SspTemplatePreviewSection
         :key="`${template.data.value.id}-${template.data.value.updatedAt}`"
         :template="template.data.value"

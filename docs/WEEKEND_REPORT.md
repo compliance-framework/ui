@@ -1351,3 +1351,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the tokens; it is now `scripts/check-ds-contrast.mjs`, run by `npm run lint:css`, and tests
   200 colour pairs in light, dark and the nav scope (it fails on a deliberately bad value). Chart
   series 2 moved from info blue to warning orange so it stays distinct from the blue accent.
+- **Content on white.** With panels white, anything placed straight on the page showed grey. The
+  cause was systemic: in the Catppuccin palette the page colour (`surface-base`) was the lightest
+  surface, so components wanting a light background used it. `DataTable` (35+ routes) and
+  `Pagination` now use the panel colour. An audit of every route (the axe run's mocked routes and
+  49 live local-dev routes) then flagged content with no white behind it: the configure
+  Components tab, a catalog's groups and controls, This System > Implementation's controls, the
+  workflow run's progress, a system template's details and About. Each now sits in a `Panel`
+  (Components keeps "New component" in the panel header). **Decision:** no card style was added
+  to `Disclosure`: `Panel` is the one white section (it replaced ten card styles), and AGENTS.md
+  now says content sits in one. Left on the page: table captions (headings above each table) and
+  a risk's statement under its title.

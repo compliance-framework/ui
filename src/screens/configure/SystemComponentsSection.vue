@@ -18,6 +18,7 @@ import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 
 import SystemComponentForm from './SystemComponentForm.vue';
@@ -425,8 +426,8 @@ function componentActions(component: SystemComponent): MenuEntry[] {
 </script>
 
 <template>
-  <Stack gap="5">
-    <div>
+  <Panel title="Components" :level="2">
+    <template #actions>
       <Button
         variant="primary"
         icon="add"
@@ -434,7 +435,7 @@ function componentActions(component: SystemComponent): MenuEntry[] {
         @click="showCreateComponentModal = true"
         >New component</Button
       >
-    </div>
+    </template>
     <Text v-if="!components?.length"
       >No components yet. Components are the parts of the system, such as
       services, clusters or databases.</Text
@@ -511,5 +512,5 @@ function componentActions(component: SystemComponent): MenuEntry[] {
         @saved="handleComponentSaved"
       />
     </Dialog>
-  </Stack>
+  </Panel>
 </template>

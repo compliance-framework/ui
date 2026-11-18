@@ -189,7 +189,7 @@ function cellClasses(column: DataTableColumn): Record<string, boolean> {
   max-width: 100%;
   overflow-x: auto;
   border: var(--ds-border-width) solid var(--ds-color-border-subtle);
-  background: var(--ds-color-surface-base);
+  background: var(--ds-color-surface-raised);
 }
 
 .data-table__table {

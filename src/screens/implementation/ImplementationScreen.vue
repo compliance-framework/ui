@@ -1322,11 +1322,13 @@ provideControlTree({
       icon="controls"
       skeleton="panel"
     >
-      <Stack gap="3" as="ul">
-        <li v-for="node in nodes" :key="node.key">
-          <ControlTreeNode :node="node" />
-        </li>
-      </Stack>
+      <Panel title="Controls" :level="2">
+        <Stack gap="3" as="ul">
+          <li v-for="node in nodes" :key="node.key">
+            <ControlTreeNode :node="node" />
+          </li>
+        </Stack>
+      </Panel>
     </DataState>
   </ListTemplate>
 

@@ -27,6 +27,7 @@ import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
 import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 import Text from '@/ds/components/Text/Text.vue';
 import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 import { usePermissions } from '@/composables/usePermissions';
@@ -286,7 +287,9 @@ const instanceCrumb = computed(() => ({
         >
           <p>{{ execution.failureReason }}</p>
         </InlineMessage>
-        <DescriptionList v-if="tiles.length" :items="tiles" />
+        <Panel v-if="tiles.length" title="Progress" :level="2">
+          <DescriptionList :items="tiles" />
+        </Panel>
         <Stack v-if="!stepExecutions || stepExecutions.length === 0" gap="3">
           <Text
             >This run has no steps yet. The API creates them when the run

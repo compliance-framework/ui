@@ -15,6 +15,7 @@ import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 import { useToast } from '@/ds/toasts';
@@ -172,28 +173,30 @@ function onCatalogUpdated(updated: Catalog) {
       >
     </template>
 
-    <Stack v-if="catalog" gap="4">
-      <Text v-if="!groups?.length && !controls?.length" variant="caption"
-        >This catalog has no groups or controls yet. Add a group to organise
-        controls, or add a control directly.</Text
-      >
-      <CatalogGroupNode
-        v-for="group in groups"
-        :key="group.id"
-        :group="group"
-        :catalog="catalog"
-        @deleted="onGroupDeleted"
-        @updated="reloadLists"
-      />
-      <CatalogControlNode
-        v-for="control in controls"
-        :key="control.id"
-        :control="control"
-        :catalog="catalog"
-        @deleted="onControlDeleted"
-        @updated="reloadLists"
-      />
-    </Stack>
+    <Panel v-if="catalog" title="Groups and controls" :level="2">
+      <Stack gap="4">
+        <Text v-if="!groups?.length && !controls?.length" variant="caption"
+          >This catalog has no groups or controls yet. Add a group to organise
+          controls, or add a control directly.</Text
+        >
+        <CatalogGroupNode
+          v-for="group in groups"
+          :key="group.id"
+          :group="group"
+          :catalog="catalog"
+          @deleted="onGroupDeleted"
+          @updated="reloadLists"
+        />
+        <CatalogControlNode
+          v-for="control in controls"
+          :key="control.id"
+          :control="control"
+          :catalog="catalog"
+          @deleted="onControlDeleted"
+          @updated="reloadLists"
+        />
+      </Stack>
+    </Panel>
   </RecordTemplate>
 
   <template v-if="catalog">
