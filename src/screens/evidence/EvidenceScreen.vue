@@ -499,6 +499,7 @@ const trendRequest = computed(() => {
               v-for="label in r.labels"
               :key="`${label.name}=${label.value}`"
               :label="`${label.name}=${label.value}`"
+              code
             />
           </Cluster>
           <Text v-else as="span" variant="caption">None</Text>

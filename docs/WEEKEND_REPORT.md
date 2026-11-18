@@ -1413,3 +1413,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   circle, which would be colour alone (red/green is the commonest colour-blind confusion, and a
   hover tooltip doesn't reach touch or keyboard users); the symbol keeps it readable without
   colour. Other tables keep the full badge.
+- **Tags lose their border.** The bordered boxes in the evidence table's Subjects and Labels
+  columns were noisy. `Tag` (72 files) is now a borderless grey chip, like inline code in an
+  editor, on the neutral tint (`status-neutral-bg`; the old sunken grey nearly vanished on white
+  without a border). `Tag` gains `code` for the monospace font, used for evidence labels
+  (`key=value` is search syntax); subjects are names and keep the UI font. Added/removed tags keep
+  their tints.
