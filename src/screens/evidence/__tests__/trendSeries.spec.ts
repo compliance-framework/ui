@@ -28,11 +28,26 @@ describe('trendSeries', () => {
   });
 
   it('charts heartbeats as one series', () => {
-    const [series] = heartbeatSeries([
-      { interval: '2026-11-13T10:00:00Z', total: 4 },
-      { interval: '2026-11-13T09:00:00Z', total: 2 },
-    ]);
+    const [series] = heartbeatSeries(
+      [
+        { interval: '2026-11-13T10:00:00Z', total: 4 },
+        { interval: '2026-11-13T09:30:00Z', total: 2 },
+      ],
+      Date.parse('2026-11-13T10:05:00Z'),
+    );
     expect(series!.points.map((p) => p.y)).toEqual([2, 4]);
+  });
+
+  it('keeps only the last hour of heartbeats', () => {
+    const [series] = heartbeatSeries(
+      [
+        { interval: '2026-09-09T09:24:00Z', total: 1 },
+        { interval: '2026-11-13T09:00:00Z', total: 3 },
+        { interval: '2026-11-13T09:10:00Z', total: 5 },
+      ],
+      Date.parse('2026-11-13T10:05:00Z'),
+    );
+    expect(series!.points.map((p) => p.x)).toEqual(['2026-11-13T09:10:00Z']);
   });
 
   it('rounds the y axis up to a readable maximum', () => {

@@ -1005,7 +1005,8 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path === '/api/agent/heartbeat/over-time') {
       return json(route, {
         data: [0, 1, 2, 3, 4, 5].map((i) => ({
-          interval: new Date(Date.UTC(2026, 10, 13, 9, i * 10)).toISOString(),
+          // The chart shows the last hour, so the buckets are relative to now.
+          interval: new Date(Date.now() - (5 - i) * 10 * 60_000).toISOString(),
           total: 2 + (i % 2),
         })),
       });

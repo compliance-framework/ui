@@ -45,6 +45,8 @@ const MARKER = 4;
 /** Generous advance of one character at the caption size, for tick thinning. */
 const CHAR_WIDTH = 7.5;
 const TICK_GAP = 16;
+/** Above this many points per line, markers merge into a band, so only the line is drawn. */
+const MAX_MARKERS = 120;
 
 const summaryId = useId();
 const chartId = useId();
@@ -77,12 +79,17 @@ const plot = computed(() => ({
   bottom: HEIGHT - MARGIN.bottom,
 }));
 
+// Positions are looked up per point on every resize, so the index is a map, not indexOf.
+const xIndex = computed(
+  () => new Map(xValues.value.map((x, index) => [x, index])),
+);
+
 function xPos(x: string): number {
   const count = xValues.value.length;
   const { left, right } = plot.value;
   return count < 2
     ? (left + right) / 2
-    : left + (xValues.value.indexOf(x) / (count - 1)) * (right - left);
+    : left + ((xIndex.value.get(x) ?? 0) / (count - 1)) * (right - left);
 }
 
 function yPos(y: number): number {
@@ -127,7 +134,7 @@ const lines = computed(() =>
     path: s.points
       .map((p, i) => `${i === 0 ? 'M' : 'L'}${xPos(p.x)},${yPos(p.y)}`)
       .join(' '),
-    points: s.points.map((p) => ({
+    points: (s.points.length > MAX_MARKERS ? [] : s.points).map((p) => ({
       key: p.x,
       cx: xPos(p.x),
       cy: yPos(p.y),
@@ -168,16 +175,17 @@ const tableColumns = computed<DataTableColumn[]>(() => [
     align: 'end' as const,
   })),
 ]);
-const tableRows = computed(() =>
-  xValues.value.map((x) => {
+const tableRows = computed(() => {
+  const byX = props.series.map((s) => new Map(s.points.map((p) => [p.x, p.y])));
+  return xValues.value.map((x) => {
     const row: Record<string, string> = { x: props.formatX(x) };
-    props.series.forEach((s, index) => {
-      const point = s.points.find((p) => p.x === x);
-      row[`s${index}`] = point ? props.formatY(point.y) : 'No data';
+    byX.forEach((values, index) => {
+      const y = values.get(x);
+      row[`s${index}`] = y === undefined ? 'No data' : props.formatY(y);
     });
     return { id: x, ...row };
-  }),
-);
+  });
+});
 </script>
 
 <template>

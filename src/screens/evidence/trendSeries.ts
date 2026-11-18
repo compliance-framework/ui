@@ -33,14 +33,28 @@ export function statusSeries(intervals: ComplianceInterval[]): TrendSeries[] {
   }));
 }
 
-export function heartbeatSeries(intervals: HeartbeatInterval[]): TrendSeries[] {
+/** Agent health covers the last hour, as the status trend beside it does. */
+const HEALTH_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * The API returns every 2-minute heartbeat bucket ever recorded (tens of thousands after a few
+ * weeks) and takes no time range, so the window is applied here.
+ */
+export function heartbeatSeries(
+  intervals: HeartbeatInterval[],
+  now = Date.now(),
+): TrendSeries[] {
+  const since = now - HEALTH_WINDOW_MS;
   return [
     {
       name: 'Agents responding',
-      points: [...intervals].sort(byTime).map((interval) => ({
-        x: interval.interval,
-        y: interval.total,
-      })),
+      points: intervals
+        .filter((interval) => Date.parse(interval.interval) >= since)
+        .sort(byTime)
+        .map((interval) => ({
+          x: interval.interval,
+          y: interval.total,
+        })),
     },
   ];
 }

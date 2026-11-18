@@ -1377,3 +1377,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   diagram", not "ADD DIAGRAM". Labels were already written in sentence case; the one in Title Case
   ("Use Template") is now "Use template". Field labels, tabs, table headings, status badges and
   nav items keep their capitals for now.
+- **Evidence pages resize instantly again.** This System > Evidence took about 3 s per resize:
+  the page had 85,009 elements, 84,588 of them in the Agent health chart, which plotted all
+  42,171 heartbeat buckets the API returns (every 2 minutes since local-dev started; 2.2 MB, no
+  time range). `LineChart` found each point's position with `indexOf` (quadratic) and drew a
+  marker per point, all redone on every resize. Now: Agent health shows the last hour, as the
+  status trend beside it does (`heartbeatSeries` filters; e2e mocks are relative to now);
+  `LineChart` looks positions up in a map, builds its table rows from maps, and draws only the
+  line above 120 points per series (a safety net for any chart). The page has 739 elements and
+  12 resizes take 0.4 s instead of 36 s. **API to-do:** `/api/agent/heartbeat/over-time` needs a
+  time range; the UI still downloads 2.2 MB per visit and it grows by ~720 buckets a day.
