@@ -1,75 +1,92 @@
-/* Colour roles. Light = Catppuccin Latte, dark = Mocha (ui-remake), adjusted per D-01…D-20.
-   Every fg/bg pair is contrast-tested by scripts/checks/contrast.ts. */
+/* Colour roles. Light: a light grey page with white panels, slate text and a bright blue accent,
+   close to the classic app; dark: the same structure on slate. The navigation is the CCF brand
+   colour, the logo's navy (#0c243e), in both themes, through the .ds-scope-nav scope below.
+   Every fg/bg pair is contrast-tested by scripts/check-ds-contrast.mjs (npm run lint:css). */
 :root {
   color-scheme: light;
-  /* surfaces (ui-remake: background / card / surface) */
-  --ds-color-surface-base: #eff1f5;
-  --ds-color-surface-raised: #dce0e8;
-  --ds-color-surface-sunken: #e6e9ef;
-  --ds-color-surface-selected: #ede7de;
-  --ds-color-scrim: rgb(17 17 27 / 0.5);
+  /* surfaces: the page is grey, panels, dialogs and menus are white */
+  --ds-color-surface-base: #f1f4f8;
+  --ds-color-surface-raised: #ffffff;
+  --ds-color-surface-sunken: #f6f8fb;
+  --ds-color-surface-selected: #e3edfd;
+  --ds-color-scrim: rgb(12 36 62 / 0.5);
   /* text */
-  --ds-color-text-primary: #4c4f69;
-  --ds-color-text-secondary: #5c5f77; /* was #6c6f85 (4.37) – D-01 */
-  --ds-color-text-disabled: #8c8fa1; /* disabled only – D-02 */
-  --ds-color-text-inverse: #eff1f5;
-  --ds-color-text-accent: #8f5208; /* was amber #df8e1d (2.31) – D-04 */
+  --ds-color-text-primary: #1e293b;
+  --ds-color-text-secondary: #526075;
+  --ds-color-text-disabled: #8b95a5; /* disabled only – D-02 */
+  --ds-color-text-inverse: #ffffff;
+  --ds-color-text-accent: #1d5fd6;
   /* borders */
-  --ds-color-border-subtle: #ccd0da; /* decorative dividers only */
-  --ds-color-border-strong: #6c6f85; /* control boundaries – D-05 */
+  --ds-color-border-subtle: #dfe4ec; /* decorative dividers only */
+  --ds-color-border-strong: #7a8597; /* control boundaries – D-05 */
   /* actions */
-  --ds-color-action-primary-bg: #df8e1d;
-  --ds-color-action-primary-bg-hover: #e9a443;
-  --ds-color-action-primary-fg: #1e1e2e; /* was #4c4f69 (3.05) – D-03 */
-  --ds-color-action-danger-bg: #f0dde2;
+  --ds-color-action-primary-bg: #1d5fd6;
+  --ds-color-action-primary-bg-hover: #174eb3;
+  --ds-color-action-primary-fg: #ffffff;
+  --ds-color-action-danger-bg: #fde8eb;
   /* status (severity) – fg is used for text and icons, bg for tints */
-  --ds-color-status-success-fg: #2a7019; /* was #40a02b (2.96) – D-06 */
-  --ds-color-status-success-bg: #dee9e1;
-  --ds-color-status-warning-fg: #a8420a; /* peach, not amber – D-07 */
-  --ds-color-status-warning-bg: #f3e0d4;
-  --ds-color-status-error-fg: #b00d30; /* was #d20f39 (4.10 on card) – D-06 */
-  --ds-color-status-error-bg: #ecdade;
-  --ds-color-status-info-fg: #1a56d6; /* was #1e66f5 (3.71 on card) – D-06 */
-  --ds-color-status-info-bg: #dae3f5;
-  --ds-color-status-neutral-bg: #e6e9ef;
+  --ds-color-status-success-fg: #17703a;
+  --ds-color-status-success-bg: #e2f5e8;
+  --ds-color-status-warning-fg: #a2460c;
+  --ds-color-status-warning-bg: #fdefdc;
+  --ds-color-status-error-fg: #b4182f;
+  --ds-color-status-error-bg: #fde8eb;
+  --ds-color-status-info-fg: #1d5fd6;
+  --ds-color-status-info-bg: #e3edfd;
+  --ds-color-status-neutral-bg: #eef1f5;
   /* risk level (Negligible → Critical); paired with a level icon + label */
-  --ds-color-risk-low-fg: #0b625e;
-  --ds-color-risk-low-bg: #d6e8e8;
+  --ds-color-risk-low-fg: #0b6660;
+  --ds-color-risk-low-bg: #dcf3f0;
   --ds-color-risk-high-fg: #a32f43;
-  --ds-color-risk-high-bg: #eedde1;
+  --ds-color-risk-high-bg: #fbe6ea;
+  /* the navigation (brand): the logo's navy */
+  --ds-color-nav-bg: #0c243e;
+  --ds-color-nav-sunken: #102d4c;
+  --ds-color-nav-hover: #16375a;
+  --ds-color-nav-selected: #1d456f;
+  --ds-color-nav-text: #ffffff;
+  --ds-color-nav-text-secondary: #b8c6d8;
+  --ds-color-nav-accent: #8ab8ff;
+  --ds-color-nav-border-subtle: #1f3d5e;
+  --ds-color-nav-border-strong: #7f97b3;
 }
 
 :root.dark {
   color-scheme: dark;
-  --ds-color-surface-base: #1e1e2e;
-  --ds-color-surface-raised: #11111b;
-  --ds-color-surface-sunken: #181825;
-  --ds-color-surface-selected: #34323b;
+  --ds-color-surface-base: #0f1623;
+  --ds-color-surface-raised: #1a2332;
+  --ds-color-surface-sunken: #151d2a;
+  --ds-color-surface-selected: #1f3352;
   --ds-color-scrim: rgb(0 0 0 / 0.6);
-  --ds-color-text-primary: #cdd6f4;
-  --ds-color-text-secondary: #a6adc8; /* was #6c7086 (3.36) – D-01 */
-  --ds-color-text-disabled: #6c7086;
-  --ds-color-text-inverse: #11111b;
-  --ds-color-text-accent: #f9e2af;
-  --ds-color-border-subtle: #313244;
-  --ds-color-border-strong: #6c7086;
-  --ds-color-action-primary-bg: #f9e2af;
-  --ds-color-action-primary-bg-hover: #f5d48c;
-  --ds-color-action-primary-fg: #11111b;
-  --ds-color-action-danger-bg: #34293a;
-  --ds-color-status-success-fg: #a6e3a1;
-  --ds-color-status-success-bg: #2c323a;
-  --ds-color-status-warning-fg: #fab387;
-  --ds-color-status-warning-bg: #3a2f31;
-  --ds-color-status-error-fg: #f38ba8;
-  --ds-color-status-error-bg: #34293a;
-  --ds-color-status-info-fg: #89b4fa;
-  --ds-color-status-info-bg: #292d43;
-  --ds-color-status-neutral-bg: #313244;
-  --ds-color-risk-low-fg: #94e2d5;
-  --ds-color-risk-low-bg: #263538;
-  --ds-color-risk-high-fg: #eba0ac;
-  --ds-color-risk-high-bg: #362a33;
+  --ds-color-text-primary: #e5eaf2;
+  --ds-color-text-secondary: #a7b2c3;
+  --ds-color-text-disabled: #6b778a;
+  --ds-color-text-inverse: #0f1623;
+  --ds-color-text-accent: #7fb0ff;
+  --ds-color-border-subtle: #2a3546;
+  --ds-color-border-strong: #6f7d92;
+  --ds-color-action-primary-bg: #7fb0ff;
+  --ds-color-action-primary-bg-hover: #a3c7ff;
+  --ds-color-action-primary-fg: #0c1a2e;
+  --ds-color-action-danger-bg: #3a2330;
+  --ds-color-status-success-fg: #8fdca4;
+  --ds-color-status-success-bg: #1c3029;
+  --ds-color-status-warning-fg: #f5b17e;
+  --ds-color-status-warning-bg: #36291f;
+  --ds-color-status-error-fg: #f59aaa;
+  --ds-color-status-error-bg: #3a2330;
+  --ds-color-status-info-fg: #8fbaff;
+  --ds-color-status-info-bg: #1f2d47;
+  --ds-color-status-neutral-bg: #253041;
+  --ds-color-risk-low-fg: #8ddcd2;
+  --ds-color-risk-low-bg: #18322f;
+  --ds-color-risk-high-fg: #eea3b0;
+  --ds-color-risk-high-bg: #38242c;
+  --ds-color-nav-bg: #0a1c31;
+  --ds-color-nav-sunken: #0e2540;
+  --ds-color-nav-hover: #133050;
+  --ds-color-nav-selected: #1a3e66;
+  --ds-color-nav-border-subtle: #1a3350;
 }
 
 /*
@@ -88,14 +105,38 @@
     --ds-color-text-accent
   ); /* active nav and tab bar (D-04) */
   --ds-color-action-primary-border: var(
-    --ds-color-text-accent
+    --ds-color-action-primary-bg
   ); /* primary button boundary (D-03) */
-  --ds-color-action-secondary-bg: var(--ds-color-surface-sunken);
-  --ds-color-action-secondary-bg-hover: var(--ds-color-surface-base);
+  --ds-color-action-secondary-bg: var(--ds-color-surface-raised);
+  --ds-color-action-secondary-bg-hover: var(--ds-color-surface-sunken);
   --ds-color-action-danger-fg: var(--ds-color-status-error-fg);
   --ds-color-status-neutral-fg: var(--ds-color-text-primary);
   /* chart series: each ≥3:1 against the panel surface, and paired with a marker shape (F-17) */
   --ds-color-chart-1: var(--ds-color-text-accent);
-  --ds-color-chart-2: var(--ds-color-status-info-fg);
+  --ds-color-chart-2: var(--ds-color-status-warning-fg);
   --ds-color-chart-3: var(--ds-color-risk-low-fg);
+}
+
+/*
+ * The navigation's colour scope: inside it the general roles take the nav's values, so the nav,
+ * its system switcher and account button need no colours of their own. Menus and popovers
+ * opened from it render outside it, on the usual surfaces.
+ */
+.ds-scope-nav {
+  --ds-color-surface-base: var(--ds-color-nav-bg);
+  --ds-color-surface-raised: var(--ds-color-nav-bg);
+  --ds-color-surface-overlay: var(--ds-color-nav-bg);
+  --ds-color-surface-sunken: var(--ds-color-nav-sunken);
+  --ds-color-surface-hover: var(--ds-color-nav-hover);
+  --ds-color-surface-selected: var(--ds-color-nav-selected);
+  --ds-color-text-primary: var(--ds-color-nav-text);
+  --ds-color-text-secondary: var(--ds-color-nav-text-secondary);
+  --ds-color-text-accent: var(--ds-color-nav-accent);
+  --ds-color-border-subtle: var(--ds-color-nav-border-subtle);
+  --ds-color-border-strong: var(--ds-color-nav-border-strong);
+  --ds-color-border-focus: var(--ds-color-nav-accent);
+  --ds-color-indicator: var(--ds-color-nav-accent);
+
+  background: var(--ds-color-nav-bg);
+  color: var(--ds-color-nav-text);
 }

@@ -109,7 +109,7 @@ function switchSystem(id: string): void {
     <div class="shell" :class="`shell--${mode}`">
       <a href="#main" class="shell__skip">Skip to main content</a>
 
-      <header v-if="mode === 'drawer'" class="shell__top">
+      <header v-if="mode === 'drawer'" class="shell__top ds-scope-nav">
         <IconButton
           icon="menu"
           label="Open navigation"
@@ -138,7 +138,7 @@ function switchSystem(id: string): void {
         <nav
           v-if="mode !== 'drawer'"
           id="primary-nav"
-          class="shell__nav"
+          class="shell__nav ds-scope-nav"
           aria-label="Primary"
         >
           <RouterLink
@@ -179,6 +179,7 @@ function switchSystem(id: string): void {
         <Drawer
           v-else
           v-model:open="drawerOpen"
+          class="ds-scope-nav"
           title="Navigation"
           side="left"
           title-hidden

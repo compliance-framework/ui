@@ -1340,3 +1340,14 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   top bar stays for the menu button, mark and system switcher; the account menu moved into the
   drawer's footer. The account trigger is its own component (`AppShell/AccountMenu.vue`), and
   `Menu` gained `side="top"`. Its accessible name is unchanged ("Account menu, <name>").
+- **White panels, a navy nav and a blue accent.** The palette was Catppuccin (grey panels on a
+  grey page, an amber accent). Now the page is light grey, panels, dialogs and menus are white,
+  text is slate, and the accent (primary buttons, focus, the current item and tab) is a bright
+  blue. The navigation's background is the logo's navy (#0c243e), the CCF brand colour: a
+  `.ds-scope-nav` class in `color.css` re-points the general colour roles at nav-specific ones,
+  so the nav, its system switcher, account button and the drawer recolour without component
+  changes, while menus opened from the nav stay white. Dark mode keeps the same structure
+  (panels lighter than the page) on slate. The mockup's contrast check never came across with
+  the tokens; it is now `scripts/check-ds-contrast.mjs`, run by `npm run lint:css`, and tests
+  200 colour pairs in light, dark and the nav scope (it fails on a deliberately bad value). Chart
+  series 2 moved from info blue to warning orange so it stays distinct from the blue accent.

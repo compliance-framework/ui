@@ -21,7 +21,7 @@
     "format:check": "prettier --check src/",
     "sync:agentconfig-conformance": "scripts/sync-agentconfig-conformance.sh",
     "prepare": "husky",
-    "lint:css": "stylelint \"src/ds/**/*.{vue,css}\" \"src/screens/**/*.vue\" && node scripts/check-ds-tokens.mjs",
+    "lint:css": "stylelint \"src/ds/**/*.{vue,css}\" \"src/screens/**/*.vue\" && node scripts/check-ds-tokens.mjs && node scripts/check-ds-contrast.mjs",
     "test:e2e": "playwright test"
   },
   "lint-staged": {

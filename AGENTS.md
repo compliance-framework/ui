@@ -60,7 +60,8 @@ npm run format:fix                           # prettier --write src/
 - `src/utils/`, `src/parsers/`: pure helpers with co-located specs.
 - **Design system (this branch):** every page is on the design system; `docs/REDESIGN.md` has
   its rules, URL scheme and decisions. In `src/ds` and `src/screens`: scoped CSS using only
-  `--ds-` tokens (`npm run lint:css` enforces them); screens contain no CSS or class
+  `--ds-` tokens (`npm run lint:css` enforces them, and checks the contrast of every colour pair in
+  `src/ds/tokens/color.css`); screens contain no CSS or class
   attributes; read data through `useApiQuery` and render states with `DataState`. Raise toasts
   with `useToast()` from `@/ds/toasts` (the `ToastRegion` in `App.vue` shows them; errors stay
   until dismissed) and script confirmations with `useConfirm().require(...)` from

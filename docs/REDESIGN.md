@@ -169,7 +169,7 @@ Made during the work (open to review):
   classic logo mark replaces the placeholder, and all text is set in Inter, as before (self-hosted
   variable font). JetBrains Mono stays for code, identifiers and queries; Space Grotesk is gone. There is no
   top bar on wide screens: the logo heads the navigation and the account menu sits at its foot
-  (in the drawer's footer on narrow screens, whose slim top bar keeps the menu button).
+  (in the drawer's footer on narrow screens, whose slim top bar keeps the menu button). Colours: a light grey page with white panels, the logo's navy as the navigation's background (the CCF brand colour, via the `.ds-scope-nav` colour scope) and a bright blue accent for primary actions, focus and the current item; `npm run lint:css` checks every colour pair's contrast.
 - **ESLint's `vue/multi-word-component-names` is off for `src/ds/**`**; components are namespaced
   by folder. Copied files use the repo's Prettier settings.
 
