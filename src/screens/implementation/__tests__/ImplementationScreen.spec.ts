@@ -722,7 +722,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     );
   });
 
-  it('expands, highlights and announces a requirement created by an import', async () => {
+  it('highlights and announces a requirement created by an import', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
     await openDrawerForControl(wrapper, 'ac-1');
@@ -755,9 +755,6 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
       });
     await waitForMountedControls();
 
-    expect(uiStore.controlImplementationExpandedKeys).toMatchObject({
-      'control:ac-2': true,
-    });
     expect(wrapper.text()).toContain('Just changed');
 
     const detail = toastAdd.mock.calls.at(-1)?.[0]?.detail as string;

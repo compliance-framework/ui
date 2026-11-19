@@ -15,7 +15,10 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import LinkedColumnsHeader from '@/ds/components/LinkedColumns/LinkedColumnsHeader.vue';
-import ControlTreeNode from './ControlTreeNode.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import PanelSection from '@/ds/components/layout/PanelSection.vue';
+import ControlLinkRow from './ControlLinkRow.vue';
+import { controlSections } from './controlSections';
 import ProfilesField from './ProfilesField.vue';
 import { LINK_COLUMNS, provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
@@ -96,11 +99,6 @@ const aiConfigStore = useAiConfigStore();
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
   set: (val) => uiStore.setControlImplementationDrawerOpen(val),
-});
-
-const expandedKeys = computed({
-  get: () => uiStore.controlImplementationExpandedKeys,
-  set: (val) => uiStore.setControlImplementationExpandedKeys(val),
 });
 
 const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
@@ -1016,29 +1014,6 @@ function isHighlightedControl(controlId?: string): boolean {
   return !!controlId && highlightedControlIds.value.has(normalizeId(controlId));
 }
 
-// Tree keys are hierarchical paths (profile:<id>:group:<id>:control:<id>), so revealing a
-// control means expanding every ancestor on the way down to it.
-function expandPathToControl(controlId: string) {
-  const target = normalizeId(controlId);
-  const nextExpanded = { ...expandedKeys.value };
-
-  const walk = (node: TreeNode, ancestors: string[]): boolean => {
-    const path = [...ancestors, node.key];
-    if (node.type === 'control' && normalizeId(node.data.id) === target) {
-      for (const key of path) {
-        nextExpanded[key] = true;
-      }
-      return true;
-    }
-    return (node.children ?? []).some((child) => walk(child, path));
-  };
-
-  const found = nodes.value.some((node) => walk(node, []));
-  if (found) {
-    expandedKeys.value = nextExpanded;
-  }
-}
-
 async function handleImported(payload: { meta?: SubscribeResponseMeta }) {
   // `created: false` rows were reused, not created — announcing them would claim work the
   // subscribe didn't do.
@@ -1063,9 +1038,6 @@ async function handleImported(payload: { meta?: SubscribeResponseMeta }) {
       .map((s) => controlIdByRequirementUuid.get(s.implementedRequirementUuid))
       .filter((id): id is string => !!id),
   ];
-  for (const controlId of revealed) {
-    expandPathToControl(controlId);
-  }
   highlightedControlIds.value = new Set(revealed.map((id) => normalizeId(id)));
 
   // A merged payload (importing from several offerings at once) can repeat rows — a Set
@@ -1270,6 +1242,36 @@ const refreshFilters = () => void fetchSspFilters().catch(() => undefined);
 
 const treeQuery = dsRef('');
 const treeDraft = dsRef('');
+
+// "Include controls from": the attached profiles whose controls are listed. The unticked ones are
+// kept, so a newly attached profile is included.
+const excludedProfiles = dsRef<string[]>([]);
+const profileOptions = dsComputed(() =>
+  profileBindings.value.map((p) => ({ value: p.uuid, label: p.title })),
+);
+const includedProfiles = dsComputed({
+  get: () =>
+    profileOptions.value
+      .map((o) => o.value)
+      .filter((id) => !excludedProfiles.value.includes(id)),
+  set: (ids: string[]) =>
+    (excludedProfiles.value = profileOptions.value
+      .map((o) => o.value)
+      .filter((id) => !ids.includes(id))),
+});
+const sections = dsComputed(() =>
+  controlSections(
+    nodes.value.filter((node) => includedProfiles.value.includes(node.data.id)),
+    treeQuery.value,
+  ),
+);
+const noSectionsText = dsComputed(() => {
+  if (!includedProfiles.value.length)
+    return 'Include the controls from at least one profile.';
+  return treeQuery.value
+    ? `No control matches "${treeQuery.value}".`
+    : 'These profiles bring in no controls.';
+});
 const pageStatus = dsComputed(() => {
   if (loading.value) return 'loading' as const;
   if (!activeProfile.value || !profilesResolved.value) return 'empty' as const;
@@ -1283,7 +1285,6 @@ const drawerTitle = dsComputed(() =>
 
 provideControlTree({
   sspId: () => systemStore.system.securityPlan?.uuid ?? '',
-  query: () => treeQuery.value,
   suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
   implementation: (id) => controlImplementations.value[id],
   component: (uuid) => componentsByUuid.value.get(uuid),
@@ -1293,9 +1294,6 @@ provideControlTree({
   riskSeverity: controlHighestSeverity,
   suggestionCount: controlSuggestionCount,
   highlighted: isHighlightedControl,
-  isOpen: (key) => Boolean(expandedKeys.value[key]),
-  setOpen: (key, open) =>
-    (expandedKeys.value = { ...expandedKeys.value, [key]: open }),
   openDrawer: openControlDrawer,
   risksLink: (controlId) => ({ name: 'risks:index', query: { controlId } }),
   onExported: () => void handleExported(),
@@ -1334,7 +1332,14 @@ provideControlTree({
         @search="treeQuery = treeDraft.trim()"
         @remove="treeQuery = treeDraft = ''"
         @clear="treeQuery = treeDraft = ''"
-      />
+      >
+        <CheckboxGroup
+          v-if="profileOptions.length > 1"
+          v-model="includedProfiles"
+          legend="Include controls from"
+          :options="profileOptions"
+        />
+      </FilterBar>
     </template>
 
     <Panel
@@ -1368,17 +1373,23 @@ provideControlTree({
         >
       </template>
       <Panel title="Controls" :level="2">
-        <Stack gap="3">
-          <LinkedColumnsHeader
-            v-if="nodes.some((node) => node.type === 'control')"
-            :columns="LINK_COLUMNS"
-          />
-          <Stack gap="3" as="ul">
-            <li v-for="node in nodes" :key="node.key">
-              <ControlTreeNode :node="node" />
-            </li>
+        <Text v-if="!sections.length" variant="secondary">{{
+          noSectionsText
+        }}</Text>
+        <PanelSection
+          v-for="section in sections"
+          :key="section.key"
+          :title="`${section.title} (${section.controls.length})`"
+        >
+          <Stack gap="3">
+            <LinkedColumnsHeader :columns="LINK_COLUMNS" />
+            <Stack gap="6" as="ul">
+              <li v-for="control in section.controls" :key="control.id">
+                <ControlLinkRow :control="control" />
+              </li>
+            </Stack>
           </Stack>
-        </Stack>
+        </PanelSection>
       </Panel>
     </DataState>
   </ListTemplate>

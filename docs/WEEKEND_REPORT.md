@@ -1454,3 +1454,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   row. New in the design system: `LinkedColumns` (with `LinkedColumnsHeader`) and `ClampedText`.
   The page makes two more requests, once each: the plan's components and its filters. The
   filters reload when a statement editor closes, since linking a filter happens there.
+- **Implementation: profiles are a filter, not disclosures.** Beside the controls search,
+  "Include controls from" lists the attached profiles with a checkbox each, all ticked at first
+  (shown when there is more than one). The controls are no longer nested in profile and group
+  disclosures: each catalog group is a titled section in the Controls panel, with its control
+  count, and groups the profiles share are merged, so a control in two profiles shows once.
+  Nested groups are sections of their own ("Parent › Child"), and a control's enhancements now
+  follow it (the old tree didn't show them). A profile attached later is ticked; the choice isn't
+  kept when you leave the page. An imported requirement is still highlighted, but there are no
+  disclosures left to open for it.

@@ -170,6 +170,9 @@ Made during the work (open to review):
   and keyboard users can read it too); the implementation box has its remarks and each
   component's statement and status; the evidence box has the counts and the evidence filters
   linked to the control. The statements editor stays, closed, under each row.
+  The profiles are not disclosures: "Include controls from" ticks them beside the search (all
+  ticked at first), and the controls are listed by catalog group, each group a titled section;
+  a control in several profiles shows once.
 - **The evidence form** uses native date inputs (local calendar dates, sent as local midnight as
   before), validates on submit with errors beside fields and a summary, keeps entries when a
   save fails, and keeps Re-submit's stream UUID and labels. Subjects are added and removed as a

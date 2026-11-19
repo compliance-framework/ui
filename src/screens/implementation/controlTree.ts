@@ -10,12 +10,11 @@ export const LINK_COLUMNS = [
 ];
 
 /**
- * What the Implementation screen tells each control row in its tree, provided once rather than
- * passed down every level of the recursive tree.
+ * What the Implementation screen tells each control row, provided once rather than passed to
+ * every row.
  */
 export interface ControlTreeContext {
   sspId: () => string;
-  query: () => string;
   suggestionsEnabled: () => boolean;
   implementation: (controlId: string) => ImplementedRequirement | undefined;
   /** One of the plan's components, by UUID. */
@@ -27,8 +26,6 @@ export interface ControlTreeContext {
   riskSeverity: (controlId: string) => 'high' | 'medium' | 'low' | undefined;
   suggestionCount: (controlId: string) => number;
   highlighted: (controlId: string) => boolean;
-  isOpen: (key: string) => boolean;
-  setOpen: (key: string, open: boolean) => void;
   openDrawer: (controlId: string) => void;
   risksLink: (controlId: string) => unknown;
   onExported: (...args: unknown[]) => void;
