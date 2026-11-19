@@ -111,7 +111,12 @@ const isOpen = (id: string, containsActive: boolean) =>
       </Disclosure>
 
       <p
-        v-if="!group.collapsible && group.label && mode !== 'rail'"
+        v-if="
+          !group.collapsible &&
+          group.label &&
+          group.id !== 'system' &&
+          mode !== 'rail'
+        "
         class="primary-nav__heading"
         aria-hidden="true"
       >

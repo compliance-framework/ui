@@ -66,7 +66,7 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
     >
       <span v-if="variant === 'compact'" aria-hidden="true">S</span>
       <template v-else>
-        <span class="switcher__eyebrow">System</span>
+        <span class="switcher__eyebrow">Selected system</span>
         <span class="switcher__name">{{
           current?.name ?? 'Choose a system'
         }}</span>

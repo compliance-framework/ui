@@ -123,6 +123,8 @@ Agreed with the product owner (2026-11-13):
 - **Navigation stays true to the current app** (structure and labels): This System, then Global
   with Evidence, Analysis, Integrations, Control Definitions and Admin. This System is always
   shown, as in the classic app; with no system chosen it says so, and its pages ask for one.
+  Its group has no "This System" heading: the system selector (labelled "Selected system") and
+  the indented, boxed links under it already show the grouping.
   **All systems** is listed under Global (an addition: the classic app reached the list only
   from its system menu).
 - **The system lives in the URL**, identified by SSP UUID; opening a link makes it the current

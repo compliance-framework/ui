@@ -1438,3 +1438,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   attached, the Controls empty state points to the Profiles tab with an "Attach profiles" button.
   The screen's button, dialog and toast titles are now in sentence case ("Apply all
   suggestions"); other screens still have Title Case toast titles.
+- **Side navigation: no "This System" heading.** The system's links sit indented in a box under
+  the system selector, which already groups them, so the heading went. The selector's small
+  label now reads "Selected system" instead of "System". Screen readers still hear the list as
+  "System: <name>".
