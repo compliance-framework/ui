@@ -174,6 +174,11 @@ Made during the work (open to review):
   ticked at first), and the controls are listed by catalog group, each group a titled section;
   a control in several profiles shows once. Only top-level, current controls are listed: the
   API's resolved profiles include every enhancement and withdrawn control.
+- **List pages summarise; a record's full content has its own view** (2026-11-19, from the
+  Implementation page). A row shows counts and names, not text; its title (a real link), or a
+  click anywhere else on it, opens the record in a wide Drawer whose state is in the address
+  (`?control=ac-2`), so Back closes it. There, a control's statement is set beside its
+  implementation part by part.
 - **The evidence form** uses native date inputs (local calendar dates, sent as local midnight as
   before), validates on submit with errors beside fields and a summary, keeps entries when a
   save fails, and keeps Re-submit's stream UUID and labels. Subjects are added and removed as a

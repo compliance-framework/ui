@@ -18,11 +18,12 @@ import LinkedColumnsHeader from '@/ds/components/LinkedColumns/LinkedColumnsHead
 import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import ControlLinkRow from './ControlLinkRow.vue';
+import ControlView from './ControlView.vue';
 import { controlSections } from './controlSections';
 import ProfilesField from './ProfilesField.vue';
 import { LINK_COLUMNS, provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useSystemStore } from '@/stores/system.ts';
 import {
@@ -1277,6 +1278,21 @@ const pageStatus = dsComputed(() => {
   if (!activeProfile.value || !profilesResolved.value) return 'empty' as const;
   return 'ready' as const;
 });
+// The control open in its view, from the address (?control=ac-2): Back closes it, and a link
+// opens it.
+const router = useRouter();
+const viewedControl = dsComputed(() => {
+  const q = route.query.control;
+  return typeof q === 'string' ? controlsById.value[normalizeId(q)] : undefined;
+});
+const controlViewOpen = dsComputed({
+  get: () => Boolean(viewedControl.value),
+  set: (open: boolean) => {
+    if (!open)
+      void router.replace({ query: { ...route.query, control: undefined } });
+  },
+});
+
 const drawerTitle = dsComputed(() =>
   selectedControl.value
     ? `${selectedControl.value.id} · ${selectedControl.value.title}`
@@ -1295,6 +1311,9 @@ provideControlTree({
   suggestionCount: controlSuggestionCount,
   highlighted: isHighlightedControl,
   openDrawer: openControlDrawer,
+  controlLink: (controlId) => ({
+    query: { ...route.query, control: controlId },
+  }),
   risksLink: (controlId) => ({ name: 'risks:index', query: { controlId } }),
   onExported: () => void handleExported(),
   onImported: (payload) =>
@@ -1393,6 +1412,12 @@ provideControlTree({
       </Panel>
     </DataState>
   </ListTemplate>
+
+  <ControlView
+    v-if="viewedControl"
+    v-model:open="controlViewOpen"
+    :control="viewedControl"
+  />
 
   <Drawer
     v-model:open="controlDrawerOpen"

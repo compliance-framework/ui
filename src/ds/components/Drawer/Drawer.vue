@@ -6,6 +6,8 @@ import ModalPanel from '../Dialog/ModalPanel.vue';
  * A modal full-height side sheet with the same contract as Dialog (F-11, F-18, F-20).
  * `side="left"` is the navigation drawer below 1024px: use `titleHidden` with the title
  * "Navigation". With a hidden title, initial focus goes to the first field or link in the body.
+ * `size="wide"` covers nearly all of the page, leaving a strip of it in view, for focusing on one
+ * record in depth (e.g. a control and everything that implements it).
  */
 defineOptions({ inheritAttrs: false });
 withDefaults(
@@ -15,8 +17,15 @@ withDefaults(
     side?: 'left' | 'right';
     titleHidden?: boolean;
     dirty?: boolean;
+    size?: 'default' | 'wide';
   }>(),
-  { description: undefined, side: 'right', titleHidden: false, dirty: false },
+  {
+    description: undefined,
+    side: 'right',
+    titleHidden: false,
+    dirty: false,
+    size: 'default',
+  },
 );
 const open = defineModel<boolean>('open', { default: false });
 const panel = ref<InstanceType<typeof ModalPanel>>();
@@ -31,6 +40,7 @@ defineExpose({ requestClose: () => panel.value?.requestClose() });
     :title="title"
     :description="description"
     :placement="side"
+    :wide="size === 'wide'"
     :title-hidden="titleHidden"
     :dirty="dirty"
   >

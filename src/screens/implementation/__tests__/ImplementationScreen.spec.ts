@@ -89,6 +89,13 @@ vi.mock('vue-router', async () => {
     useRoute: () => route.value,
   };
 });
+// Opens a control's view (?control=), where its editing buttons are.
+const viewControl = async (controlId: string) => {
+  (route.value as { query: Record<string, string> }).query = {
+    control: controlId,
+  };
+  await waitForMountedControls();
+};
 const showTab = async (tab?: 'profiles') => {
   (route.value as { query: Record<string, string> }).query = tab ? { tab } : {};
   await waitForMountedControls();
@@ -165,17 +172,17 @@ async function waitForMountedControls() {
   }
 }
 
-// The eye button on a control row opens its implementation drawer.
+// "Components and sharing" in a control's view opens its implementation drawer.
 async function openDrawerForControl(
   wrapper: ReturnType<typeof mount>,
   controlId: string,
 ) {
-  const row = wrapper.findAll('li').find((li) => li.text().includes(controlId));
-  const eye = (row ?? wrapper)
+  await viewControl(controlId);
+  const eye = wrapper
     .findAll('button')
     .find(
       (button) =>
-        button.text().includes('Details') &&
+        button.text().includes('Components and sharing') &&
         button.attributes('disabled') === undefined,
     );
   if (!eye) throw new Error(`No enabled eye button for ${controlId}`);
@@ -320,12 +327,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
   it('disables the implementation eye button when a control has no implementation', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-2');
 
     const noImplementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') !== undefined,
       );
 
@@ -337,12 +345,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
   it('opens the drawer with the selected requirement when an implementation exists', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
 
@@ -361,12 +370,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
   it('does not render the AI dashboard suggestions panel when the feature flag is disabled', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
     await implementationButton?.trigger('click');
@@ -417,12 +427,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
 
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
     await implementationButton?.trigger('click');
@@ -559,13 +570,14 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     });
     ssp1ControlResults.resolve({ data: { data: [] } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const callsBeforeDrawerOpen = axiosGet.mock.calls.length;
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
     await implementationButton?.trigger('click');
@@ -591,12 +603,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
 
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
     await implementationButton?.trigger('click');
@@ -618,12 +631,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
 
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-1');
 
     const implementationButton = wrapper
       .findAll('button')
       .find(
         (button) =>
-          button.text().includes('Details') &&
+          button.text().includes('Components and sharing') &&
           button.attributes('disabled') === undefined,
       );
     await implementationButton?.trigger('click');
@@ -634,7 +648,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     );
   });
 
-  it('keeps Details reachable for a control with suggestions but no implementation', async () => {
+  it('keeps the drawer reachable for a control with suggestions but no implementation', async () => {
     // ac-2 has no implemented requirement (only ac-1 does), so its eye button is
     // disabled. A pending suggestion for ac-2 must still be reachable via a badge.
     aiConfigState.dashboardSuggestionsEnabled = true;
@@ -650,17 +664,17 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
 
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await viewControl('ac-2');
 
-    // ac-2 has no implementation, but its pending suggestion keeps Details reachable.
-    // The innermost list item holding ac-2 is its row (its group's item holds every control).
+    // ac-2 has no implementation, but its row shows its pending suggestion, and the button
+    // in its view stays enabled.
     const row = wrapper
-      .findAll('li')
-      .filter((li) => li.text().includes('ac-2'))
-      .at(-1);
+      .findAll('section[aria-label="Control"]')
+      .find((box) => box.text().includes('ac-2'));
     expect(row?.text()).toContain('1 suggestion');
-    const badge = row
-      ?.findAll('button')
-      .find((button) => button.text().includes('Details'));
+    const badge = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Components and sharing'));
     expect(badge?.attributes('disabled')).toBeUndefined();
 
     // Before opening, the drawer's suggestions panel is not scoped to ac-2.

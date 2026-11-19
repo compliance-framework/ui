@@ -21,7 +21,17 @@ vi.mock(
 const control = {
   id: 'ac-2',
   title: 'Account Management',
-  parts: [{ id: 'ac-2_smt', name: 'statement', prose: 'Manage accounts.' }],
+  parts: [
+    {
+      id: 'ac-2_smt',
+      name: 'statement',
+      parts: ['a', 'b', 'j'].map((l) => ({
+        id: `ac-2_smt.${l}`,
+        name: 'item',
+        prose: `Part ${l}.`,
+      })),
+    },
+  ],
 } as Control;
 
 const implementation = {
@@ -62,6 +72,7 @@ function mountRow(impl?: ImplementedRequirement) {
     suggestionCount: () => 0,
     highlighted: () => false,
     openDrawer: vi.fn(),
+    controlLink: (id: string) => ({ query: { control: id } }),
     risksLink: () => ({}),
     onExported: vi.fn(),
     onImported: vi.fn(),
@@ -84,23 +95,22 @@ function mountRow(impl?: ImplementedRequirement) {
 }
 
 describe('ControlLinkRow', () => {
-  it('lists the components under each statement, whole-control ones first, in part order', () => {
+  it('summarises the implementation: parts covered, statuses and components', () => {
     const box = mountRow(implementation).get(
       'section[aria-label="Implementation"]',
     );
-    const text = box.text();
-    const order = [
-      'Split between two identity services.',
-      'Whole control',
-      'This system',
-      'ac-2_smt.a',
-      'Okta',
-      'Partial',
-      'ac-2_smt.j',
-      'No component implements it yet.',
-    ].map((part) => text.indexOf(part));
-    expect(order.every((at) => at >= 0)).toBe(true);
-    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(box.text()).toContain('Statements for 1 of 3 parts');
+    expect(box.text()).toContain('1 partial, 1 without a status');
+    expect(box.text()).toContain('This system, Okta');
+    // The text itself is in the control's view.
+    expect(box.text()).not.toContain('Account types are Okta groups.');
+  });
+
+  it('links its title to the control view', () => {
+    const link = mountRow(implementation).get(
+      'section[aria-label="Control"] a',
+    );
+    expect(link.text()).toBe('Account Management');
   });
 
   it('says when the control is not implemented', () => {

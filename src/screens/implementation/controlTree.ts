@@ -1,4 +1,5 @@
 import { inject, provide, type InjectionKey } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
 import type { ImplementedRequirement, SystemComponent } from '@/oscal';
 import type { Dashboard } from '@/stores/filters';
 
@@ -27,6 +28,8 @@ export interface ControlTreeContext {
   suggestionCount: (controlId: string) => number;
   highlighted: (controlId: string) => boolean;
   openDrawer: (controlId: string) => void;
+  /** Opens the control's view. */
+  controlLink: (controlId: string) => RouteLocationRaw;
   risksLink: (controlId: string) => unknown;
   onExported: (...args: unknown[]) => void;
   onImported: (...args: unknown[]) => void;

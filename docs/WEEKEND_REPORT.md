@@ -1483,3 +1483,21 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   component, every implementation status), ac-17, au-6, ia-2, ia-2.1 and cm-6, plus eight evidence
   filters named "Layout test — …". Nothing existing was changed. The generator script and files
   are in the session scratchpad, not the repo.
+- **Implementation: summary rows and a control view (step 1).** A principle for this page: the
+  list summarises, and a control's full content is in its own view. Each row now shows the
+  control's ID and title (a link), its risks and suggestions; how much of it is implemented
+  ("Statements for 6 of 12 parts"), its components by status ("5 implemented, 2 partial") and
+  which components; and its evidence counts and how many filters. The title, or a click anywhere
+  else on the row, opens the control's view: a sheet over nearly all of the page, in the address
+  as `?control=ac-2` (Back closes it; a link opens it). The view sets the control's statement
+  beside its implementation part by part: each lettered part (`ac-2_smt.a`) with its full text on
+  the left, and the statement for that part on the right, every component with its full text and
+  status, or "Nothing written for this part yet". Components that implement the whole control come
+  first; statements matching no part come last. Catalog parameters are written out as NIST prints
+  them ("[Assignment: organization-defined time period]"). Evidence filters link to a control, not
+  its parts, so the evidence is a section of its own below. The editors (the statements editor and
+  the drawer, now "Components and sharing") are in the view's Edit section until step 2 moves
+  editing into the parts. New in the design system: Drawer `size="wide"`; LinkedColumns takes two
+  or three columns and `to` (a click on the row opens it); a dialog or drawer body is now a size
+  container, so content inside responds to the sheet's width. `ClampedText` is no longer used on
+  this page.

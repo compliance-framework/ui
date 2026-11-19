@@ -8,7 +8,11 @@ defineProps<{ columns: { key: string; label: string }[] }>();
 </script>
 
 <template>
-  <div class="linked-columns-header" aria-hidden="true">
+  <div
+    class="linked-columns-header"
+    :class="`linked-columns-header--${columns.length}`"
+    aria-hidden="true"
+  >
     <template v-for="(column, index) in columns" :key="column.key">
       <span v-if="index > 0" />
       <span class="linked-columns-header__label">{{ column.label }}</span>
@@ -36,10 +40,17 @@ defineProps<{ columns: { key: string; label: string }[] }>();
 @container (min-width: 840px) {
   .linked-columns-header {
     display: grid;
+    column-gap: var(--ds-space-1);
+  }
+
+  .linked-columns-header--2 {
+    grid-template-columns: minmax(0, 1fr) var(--ds-size-icon-md) minmax(0, 1fr);
+  }
+
+  .linked-columns-header--3 {
     grid-template-columns:
       minmax(0, 1fr) var(--ds-size-icon-md) minmax(0, 1fr)
       var(--ds-size-icon-md) minmax(0, 1fr);
-    column-gap: var(--ds-space-1);
   }
 }
 </style>

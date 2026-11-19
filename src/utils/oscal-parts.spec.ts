@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partMarkdown } from './oscal-parts';
+import { insertParams, partMarkdown } from './oscal-parts';
 
 describe('partMarkdown', () => {
   it('renders labelled sub-parts indented under their parent', () => {
@@ -23,5 +23,38 @@ describe('partMarkdown', () => {
         ],
       }),
     ).toBe('The organization:\n  a. Defines accounts;\n  Reviews them.\n');
+  });
+});
+
+describe('insertParams', () => {
+  const params = [
+    { id: 'p1', label: 'prerequisites and criteria' },
+    { id: 'p2', values: ['24 hours'] },
+    { id: 'p3', label: 'time period' },
+    {
+      id: 'p4',
+      select: {
+        howMany: 'one-or-more' as const,
+        choice: [
+          'lock for {{ insert: param, p3 }} ',
+          'notify the administrator',
+        ],
+      },
+    },
+  ];
+
+  it('writes out assignments, values and selections as NIST prints them', () => {
+    expect(
+      insertParams(
+        'Require {{ insert: param, p1 }}; within {{insert: param, p2}}; {{ insert: param, p4 }}.',
+        params,
+      ),
+    ).toBe(
+      'Require [Assignment: organization-defined prerequisites and criteria]; within 24 hours; [Selection (one or more): lock for [Assignment: organization-defined time period]; notify the administrator].',
+    );
+  });
+
+  it('keeps an unknown parameter as its ID', () => {
+    expect(insertParams('Use {{ insert: param, x9 }}.')).toBe('Use [x9].');
   });
 });

@@ -24,10 +24,18 @@ const props = withDefaults(
     description?: string;
     placement: 'center' | 'left' | 'right';
     size?: 's' | 'm' | 'l';
+    /** A side sheet over nearly all of the page (Drawer `size="wide"`). */
+    wide?: boolean;
     titleHidden?: boolean;
     dirty?: boolean;
   }>(),
-  { description: undefined, size: 'm', titleHidden: false, dirty: false },
+  {
+    description: undefined,
+    size: 'm',
+    wide: false,
+    titleHidden: false,
+    dirty: false,
+  },
 );
 const open = defineModel<boolean>('open', { default: false });
 
@@ -58,7 +66,7 @@ defineExpose({ requestClose });
         :class="
           placement === 'center'
             ? ['modal--center', `modal--${size}`]
-            : ['modal--side', `modal--${placement}`]
+            : ['modal--side', `modal--${placement}`, { 'modal--wide': wide }]
         "
         @open-auto-focus="guard.onOpenAutoFocus"
         @escape-key-down="guard.onEscapeKeyDown"
@@ -187,6 +195,11 @@ defineExpose({ requestClose });
   --slide-from: 100%;
 }
 
+/* All but the page's gutter (the side sheet's max-width), so a strip of the page stays in view. */
+.modal--wide {
+  width: 100%;
+}
+
 .modal--left {
   left: 0;
   width: var(--ds-width-nav);
@@ -251,6 +264,9 @@ defineExpose({ requestClose });
   min-height: 0;
   overflow-y: auto;
   padding: var(--ds-space-5);
+  /* Content that responds to the space it has (container queries) sizes to the sheet, not the
+     page behind it. */
+  container-type: inline-size;
 }
 
 .modal__header--bare + .modal__body {
