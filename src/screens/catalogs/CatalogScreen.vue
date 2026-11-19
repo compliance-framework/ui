@@ -2,9 +2,11 @@
 /**
  * A catalog (/catalogs/:id): its controls as a tree of groups (CatalogGroupNode and
  * CatalogControlNode). The add and edit forms are classic modals (legacy islands). The script is
- * the classic page's.
+ * the classic page's. A link to one control (`?control=ac-2&groups=ac`, e.g. from a system's
+ * Implementation page) opens its groups and the control, and scrolls to it once it has loaded.
  */
-import { onActivated, ref } from 'vue';
+import { nextTick, onActivated, ref } from 'vue';
+import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import { type Catalog, type Group, type Control } from '@/oscal';
 import { useRoute, useRouter } from 'vue-router';
 import CatalogGroupNode from './CatalogGroupNode.vue';
@@ -71,6 +73,28 @@ async function loadData() {
   }
 }
 
+const openGroups = useCollapsibleGroupsStore();
+async function revealControl(): Promise<void> {
+  const controlId = route.query.control;
+  if (typeof controlId !== 'string') return;
+  const base = `catalog:${catalogId.value}`;
+  for (const groupId of String(route.query.groups ?? '')
+    .split(',')
+    .filter(Boolean))
+    openGroups.setOpen(`${base}:group:${groupId}`, true);
+  openGroups.setOpen(`${base}:control:${controlId}`, true);
+  // Each group loads its controls once opened, so wait for the control to appear.
+  for (let tries = 0; tries < 40; tries++) {
+    await nextTick();
+    const element = document.getElementById(`control-${controlId}`);
+    if (element) {
+      element.scrollIntoView({ block: 'start' });
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+}
+
 onActivated(async () => {
   if (route.params.id !== catalogId.value) {
     catalogId.value = route.params.id as string;
@@ -81,6 +105,7 @@ onActivated(async () => {
     controls.value = [] as Control[];
   }
   await loadData();
+  void revealControl();
 });
 
 const showGroupForm = ref<boolean>(false);

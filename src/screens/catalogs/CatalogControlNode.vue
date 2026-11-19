@@ -158,7 +158,7 @@ const actions = computed<MenuEntry[]>(() => [
 </script>
 
 <template>
-  <Disclosure v-model:open="open" :label="label">
+  <Disclosure :id="`control-${control.id}`" v-model:open="open" :label="label">
     <Stack gap="3">
       <Cluster justify="between" gap="2">
         <Cluster v-if="counts.total" gap="1">

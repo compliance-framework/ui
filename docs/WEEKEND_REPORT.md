@@ -1501,3 +1501,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   or three columns and `to` (a click on the row opens it); a dialog or drawer body is now a size
   container, so content inside responds to the sheet's width. `ClampedText` is no longer used on
   this page.
+- **Implementation control view: catalog links and editing in place.** Each part's control box
+  has an icon link that opens the control in its catalog in a new tab: the catalog page now
+  takes `?control=ac-2&groups=ac`, opens those groups and the control, and scrolls to it once
+  loaded. The catalog is found from the profile that brings the control in (its import's
+  back-matter link); with several catalogs in one profile, the first is used. Each
+  implementation box has an edit icon that turns it into a form in place, no further drawer:
+  each component's status and text, remove a component, and add one of the plan's components.
+  Saving creates the control's implementation and the part's statement first if they don't exist
+  yet, then updates, adds and removes components (keeping a component's other fields, e.g. what
+  it shares). One part is edited at a time, and closing the view with a form open asks first.
+  Limits, from the API: a component can't be added to the whole control (only to a part), and
+  statement remarks aren't editable here yet (the statement update would need checking for
+  whether it replaces the components). The search label is now "ID and title filter".

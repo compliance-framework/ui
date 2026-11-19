@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Control } from '@/oscal';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
 import Button from '@/ds/components/Button/Button.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
 import LinkedColumns from '@/ds/components/LinkedColumns/LinkedColumns.vue';
 import LinkedColumnsHeader from '@/ds/components/LinkedColumns/LinkedColumnsHeader.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
@@ -15,6 +16,7 @@ import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { evidenceLink } from '../filters/evidenceLink';
 import ComponentStatements from './ComponentStatements.vue';
+import PartEditor from './PartEditor.vue';
 import { partMap } from './controlParts';
 import { useControlTree } from './controlTree';
 
@@ -22,7 +24,10 @@ import { useControlTree } from './controlTree';
  * One control in depth, over nearly all of the page: its statement part by part, each part beside
  * the implementation statement for it (every component's full text and status), then the
  * evidence that checks the control, then the editors. Evidence filters link to a control, not to
- * its parts, so evidence is the control's, below the parts.
+ * its parts, so evidence is the control's, below the parts. Each part's control box links to the
+ * control in its catalog (in a new tab), and each implementation box has an edit button that
+ * turns it into a form in place (PartEditor), one part at a time; closing with a form open asks
+ * first.
  */
 const props = defineProps<{ control: Control }>();
 const open = defineModel<boolean>('open', { default: false });
@@ -37,12 +42,22 @@ const id = computed(() => props.control.id);
 const implementation = computed(() => tree.implementation(id.value));
 const map = computed(() => partMap(props.control, implementation.value));
 const filters = computed(() => tree.filters(id.value));
+const catalogLink = computed(() => tree.catalogLink(id.value));
+
+/** The band being edited: 'whole', a part's ID, or another statement's UUID. */
+const editing = ref<string | null>(null);
+const editDenied = (key: string) =>
+  tree.editDenied() ??
+  (editing.value && editing.value !== key
+    ? 'Save or cancel the part you are editing first.'
+    : undefined);
 </script>
 
 <template>
   <Drawer
     v-model:open="open"
     size="wide"
+    :dirty="editing !== null"
     :title="`${control.id} · ${control.title}`"
   >
     <Stack gap="6">
@@ -60,29 +75,72 @@ const filters = computed(() => tree.filters(id.value));
                   <Text variant="secondary">The whole control</Text>
                 </template>
                 <template #implementation>
-                  <ComponentStatements :by-components="map.whole" />
+                  <PartEditor
+                    v-if="editing === 'whole'"
+                    :control-id="id"
+                    :by-components="map.whole"
+                    @done="editing = null"
+                  />
+                  <template v-else>
+                    <Cluster justify="end">
+                      <IconButton
+                        icon="edit"
+                        label="Edit what implements the whole control"
+                        :disabled-reason="editDenied('whole')"
+                        @click="editing = 'whole'"
+                      />
+                    </Cluster>
+                    <ComponentStatements :by-components="map.whole" />
+                  </template>
                 </template>
               </LinkedColumns>
             </li>
             <li v-for="band in map.bands" :key="band.id">
               <LinkedColumns :columns="PART_COLUMNS">
                 <template #part>
-                  <Cluster gap="2"><Tag :label="band.id" code /></Cluster>
+                  <Cluster gap="2" justify="between">
+                    <Tag :label="band.id" code />
+                    <IconButton
+                      v-if="catalogLink"
+                      icon="external"
+                      :label="`Open ${control.id} in its catalog, in a new tab`"
+                      :to="catalogLink"
+                      target="_blank"
+                    />
+                  </Cluster>
                   <Text preserve-whitespace>{{ band.text }}</Text>
                 </template>
                 <template #implementation>
                   <Text v-if="band.statement?.remarks" preserve-whitespace>{{
                     band.statement.remarks
                   }}</Text>
-                  <ComponentStatements
-                    v-if="band.statement?.byComponents?.length"
-                    :by-components="band.statement.byComponents"
+                  <PartEditor
+                    v-if="editing === band.id"
+                    :control-id="id"
+                    :part-id="band.id"
+                    :statement="band.statement"
+                    :by-components="band.statement?.byComponents ?? []"
+                    @done="editing = null"
                   />
-                  <Text v-else variant="secondary">{{
-                    band.statement
-                      ? 'No component implements this part yet.'
-                      : 'Nothing written for this part yet.'
-                  }}</Text>
+                  <template v-else>
+                    <Cluster justify="end">
+                      <IconButton
+                        icon="edit"
+                        :label="`Edit the implementation of ${band.id}`"
+                        :disabled-reason="editDenied(band.id)"
+                        @click="editing = band.id"
+                      />
+                    </Cluster>
+                    <ComponentStatements
+                      v-if="band.statement?.byComponents?.length"
+                      :by-components="band.statement.byComponents"
+                    />
+                    <Text v-else variant="secondary">{{
+                      band.statement
+                        ? 'No component implements this part yet.'
+                        : 'Nothing written for this part yet.'
+                    }}</Text>
+                  </template>
                 </template>
               </LinkedColumns>
             </li>
@@ -100,10 +158,28 @@ const filters = computed(() => tree.filters(id.value));
                   <Text v-if="statement.remarks" preserve-whitespace>{{
                     statement.remarks
                   }}</Text>
-                  <ComponentStatements
-                    v-if="statement.byComponents?.length"
-                    :by-components="statement.byComponents"
+                  <PartEditor
+                    v-if="editing === statement.uuid"
+                    :control-id="id"
+                    :part-id="statement.statementId"
+                    :statement="statement"
+                    :by-components="statement.byComponents ?? []"
+                    @done="editing = null"
                   />
+                  <template v-else>
+                    <Cluster justify="end">
+                      <IconButton
+                        icon="edit"
+                        :label="`Edit the implementation of ${statement.statementId}`"
+                        :disabled-reason="editDenied(statement.uuid)"
+                        @click="editing = statement.uuid"
+                      />
+                    </Cluster>
+                    <ComponentStatements
+                      v-if="statement.byComponents?.length"
+                      :by-components="statement.byComponents"
+                    />
+                  </template>
                 </template>
               </LinkedColumns>
             </li>

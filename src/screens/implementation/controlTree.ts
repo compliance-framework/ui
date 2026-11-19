@@ -20,6 +20,14 @@ export interface ControlTreeContext {
   implementation: (controlId: string) => ImplementedRequirement | undefined;
   /** One of the plan's components, by UUID. */
   component: (uuid: string) => SystemComponent | undefined;
+  /** All of the plan's components. */
+  components: () => SystemComponent[];
+  /** Why the user can't change the implementation, if they can't. */
+  editDenied: () => string | undefined;
+  /** Reloads the implementation after a change. */
+  reload: () => Promise<void>;
+  /** The control in the catalog its profile takes it from, if known. */
+  catalogLink: (controlId: string) => RouteLocationRaw | undefined;
   /** The evidence filters that check a control. */
   filters: (controlId: string) => Dashboard[];
   byComponentCount: (controlId: string) => number;

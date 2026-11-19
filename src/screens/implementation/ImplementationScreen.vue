@@ -1241,6 +1241,72 @@ const filtersByControl = dsComputed(() => {
 });
 const refreshFilters = () => void fetchSspFilters().catch(() => undefined);
 
+// Links to a control in its catalog. A profile's import points at a back-matter resource whose
+// link names the catalog (`#<catalog UUID>`), or at the catalog itself.
+const profileCatalogs = dsRef(new Map<string, string[]>());
+interface BackMatter {
+  resources?: { uuid: string; rlinks?: { href: string }[] }[];
+}
+async function loadProfileCatalogs(): Promise<void> {
+  const entries = await Promise.all(
+    profileBindings.value.map(async (profile) => {
+      try {
+        const [imports, backMatter] = await Promise.all([
+          axios.get<DataResponse<{ href: string }[]>>(
+            `/api/oscal/profiles/${profile.uuid}/imports`,
+          ),
+          axios.get<DataResponse<BackMatter>>(
+            `/api/oscal/profiles/${profile.uuid}/back-matter`,
+          ),
+        ]);
+        const resources = backMatter.data.data?.resources ?? [];
+        const catalogs = (imports.data.data ?? []).map(({ href }) => {
+          const ref = href.replace(/^#/, '');
+          const link = resources
+            .find((r) => r.uuid === ref)
+            ?.rlinks?.find((l) => l.href.startsWith('#'));
+          return link ? link.href.slice(1) : ref;
+        });
+        return [profile.uuid, [...new Set(catalogs)]] as [string, string[]];
+      } catch {
+        return [profile.uuid, []] as [string, string[]];
+      }
+    }),
+  );
+  profileCatalogs.value = new Map(entries);
+}
+watch(profileBindings, () => void loadProfileCatalogs(), { immediate: true });
+
+/** Where each control is: the first profile that brings it in, and its groups there. */
+const controlLocations = dsComputed(() => {
+  const map = new Map<string, { profileId: string; groupIds: string[] }>();
+  const walk = (list: TreeNode[], profileId: string, groupIds: string[]) => {
+    for (const node of list) {
+      if (node.type !== 'control') {
+        walk(node.children ?? [], profileId, [...groupIds, node.data.id]);
+        continue;
+      }
+      const key = normalizeId(node.data.id);
+      if (!map.has(key)) map.set(key, { profileId, groupIds });
+      walk(node.children ?? [], profileId, groupIds);
+    }
+  };
+  for (const profile of nodes.value)
+    walk(profile.children ?? [], profile.data.id, []);
+  return map;
+});
+function catalogLink(controlId: string) {
+  const location = controlLocations.value.get(normalizeId(controlId));
+  const catalog =
+    location && profileCatalogs.value.get(location.profileId)?.[0];
+  if (!location || !catalog) return undefined;
+  return {
+    name: 'catalog-view',
+    params: { id: catalog },
+    query: { control: controlId, groups: location.groupIds.join(',') },
+  };
+}
+
 const treeQuery = dsRef('');
 const treeDraft = dsRef('');
 
@@ -1304,6 +1370,10 @@ provideControlTree({
   suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
   implementation: (id) => controlImplementations.value[id],
   component: (uuid) => componentsByUuid.value.get(uuid),
+  components: () => sspComponents.value ?? [],
+  editDenied: () => statementEditDenied.value,
+  reload: loadControlImplementations,
+  catalogLink,
   filters: (id) => filtersByControl.value.get(normalizeId(id)) ?? [],
   byComponentCount: controlByComponentCount,
   riskCount: controlRiskCount,
@@ -1345,7 +1415,7 @@ provideControlTree({
       <FilterBar
         v-model:query="treeDraft"
         label="Filter controls"
-        search-label="Search controls"
+        search-label="ID and title filter"
         search-placeholder="ID or title, e.g. ac-2"
         :chips="treeQuery ? [{ label: `Search: ${treeQuery}` }] : []"
         @search="treeQuery = treeDraft.trim()"

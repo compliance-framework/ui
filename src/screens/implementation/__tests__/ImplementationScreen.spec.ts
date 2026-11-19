@@ -232,6 +232,7 @@ const stubs = {
     },
   }),
   Drawer: { template: '<div><slot /></div>' },
+  Tooltip: { template: '<slot />' },
   IndexControlImplementation: { template: '<div />' },
   RiskIndicatorBadge: { template: '<span />' },
   ControlEvidenceCounter: { template: '<span />' },
