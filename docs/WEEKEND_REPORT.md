@@ -1521,3 +1521,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   beside the search, "Create a component (opens in a new tab)" goes to Configure System →
   Components with the new-component form open (the page takes `?create=1`), then the search
   finds it without reloading the view.
+  In the form, each component's remove button is now an unlink icon ("Unlink Okta workforce
+  identity"): it takes the component off the part, not out of the plan. New in the design
+  system: the `unlink` icon.

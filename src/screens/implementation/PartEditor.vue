@@ -23,7 +23,7 @@ import { useControlTree } from './controlTree';
 
 /**
  * Edits, in place, what implements one part of a control (or the whole control): each component's
- * status and text, removing components, and linking the plan's components, found by typing. New
+ * status and text, unlinking components, and linking the plan's components, found by typing. New
  * components are made in Configure System → Components, linked from here in a new tab; the list
  * refreshes each time the search opens, so one made there can be linked straight away. Saving
  * creates the control's implementation and the part's statement if they don't exist yet. The API
@@ -196,8 +196,8 @@ async function save(): Promise<void> {
             }}</Text>
             <Text v-else as="strong">Link a component</Text>
             <IconButton
-              icon="delete"
-              :label="`Remove ${row.original ? titleOf(row.componentUuid) : 'this link'}`"
+              icon="unlink"
+              :label="`Unlink ${row.original ? titleOf(row.componentUuid) : 'this component'}`"
               @click="remove(row)"
             />
           </Cluster>
