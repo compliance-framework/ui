@@ -1553,3 +1553,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   catalog (opens in a new tab)". An implementation box shows the statement's remarks, if any,
   then "By component" only when there are components (or while editing them). The edit button
   sits beside the box's text instead of on a row of its own, so an empty part is one line.
+- **Implementation list: a row per control, in family disclosures.** The three linked boxes per
+  control (control → implementation → evidence) didn't work as a list, so each control is now one
+  row: its ID and title (a link that opens its view), the start of its statement, and at the end
+  its open risks, suggestions, how much is implemented ("7 of 21 parts · 5 implemented, 2
+  partial…", or "Not implemented yet"), its evidence filters and evidence results. Controls are
+  grouped by family (catalog group), each a disclosure; which families are open is remembered per
+  system, a search opens them all, and a family opens itself to show a control that just changed.
+  Rows in a closed family aren't rendered, so they don't fetch their evidence. `ControlLinkRow`
+  is gone; the control's view keeps LinkedColumns for part beside implementation. Design system:
+  ItemList's trailing content can now shrink and wrap on a narrow screen.

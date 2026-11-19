@@ -3,13 +3,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { ImplementedRequirement, SystemComponent } from '@/oscal';
 import type { Dashboard } from '@/stores/filters';
 
-/** A control row's boxes, in order: the control, how it is implemented, the evidence that checks it. */
-export const LINK_COLUMNS = [
-  { key: 'control', label: 'Control' },
-  { key: 'implementation', label: 'Implementation' },
-  { key: 'evidence', label: 'Evidence' },
-];
-
 /**
  * What the Implementation screen tells each control row, provided once rather than passed to
  * every row.

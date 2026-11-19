@@ -14,14 +14,16 @@ import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
-import LinkedColumnsHeader from '@/ds/components/LinkedColumns/LinkedColumnsHeader.vue';
+import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
+import ItemList from '@/ds/components/ItemList/ItemList.vue';
 import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
-import PanelSection from '@/ds/components/layout/PanelSection.vue';
-import ControlLinkRow from './ControlLinkRow.vue';
+import ControlRowStatus from './ControlRowStatus.vue';
 import ControlView from './ControlView.vue';
-import { controlSections } from './controlSections';
+import { controlSections, type ControlSection } from './controlSections';
+import { statementExcerpt } from './controlParts';
+import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import ProfilesField from './ProfilesField.vue';
-import { LINK_COLUMNS, provideControlTree } from './controlTree';
+import { provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -1334,6 +1336,29 @@ const sections = dsComputed(() =>
     treeQuery.value,
   ),
 );
+// Each family is a disclosure; which are open is remembered per system. A search opens them all,
+// so every match shows, and a family opens itself to show a control that just changed.
+const collapsibleGroups = useCollapsibleGroupsStore();
+const familyKey = (key: string) =>
+  `implementation:${systemStore.system.securityPlan?.uuid ?? ''}:${key}`;
+const familyOpen = (section: ControlSection) =>
+  Boolean(treeQuery.value.trim()) ||
+  section.controls.some((control) => isHighlightedControl(control.id)) ||
+  collapsibleGroups.isOpen(familyKey(section.key));
+const setFamilyOpen = (key: string, open: boolean) =>
+  collapsibleGroups.setOpen(familyKey(key), open);
+const controlLink = (controlId: string) => ({
+  query: { ...route.query, control: controlId },
+});
+const familyItems = (section: ControlSection) =>
+  section.controls.map((control) => ({
+    id: control.id,
+    title: `${control.id} · ${control.title}`,
+    to: controlLink(control.id),
+    meta: statementExcerpt(control),
+  }));
+const controlById = (section: ControlSection, id: string) =>
+  section.controls.find((control) => control.id === id)!;
 const noSectionsText = dsComputed(() => {
   if (!includedProfiles.value.length)
     return 'Include the controls from at least one profile.';
@@ -1389,9 +1414,7 @@ provideControlTree({
   suggestionCount: controlSuggestionCount,
   highlighted: isHighlightedControl,
   openDrawer: openControlDrawer,
-  controlLink: (controlId) => ({
-    query: { ...route.query, control: controlId },
-  }),
+  controlLink,
   risksLink: (controlId) => ({ name: 'risks:index', query: { controlId } }),
   onExported: () => void handleExported(),
   onImported: (payload) =>
@@ -1473,20 +1496,25 @@ provideControlTree({
         <Text v-if="!sections.length" variant="secondary">{{
           noSectionsText
         }}</Text>
-        <PanelSection
-          v-for="section in sections"
-          :key="section.key"
-          :title="`${section.title} (${section.controls.length})`"
-        >
-          <Stack gap="3">
-            <LinkedColumnsHeader :columns="LINK_COLUMNS" />
-            <Stack gap="6" as="ul">
-              <li v-for="control in section.controls" :key="control.id">
-                <ControlLinkRow :control="control" />
-              </li>
-            </Stack>
-          </Stack>
-        </PanelSection>
+        <Stack gap="2">
+          <Disclosure
+            v-for="section in sections"
+            :key="section.key"
+            :label="`${section.title} (${section.controls.length})`"
+            :open="familyOpen(section)"
+            @update:open="(value) => setFamilyOpen(section.key, value)"
+          >
+            <ItemList
+              v-if="familyOpen(section)"
+              :items="familyItems(section)"
+              empty-text="No controls."
+            >
+              <template #trailing="{ item }">
+                <ControlRowStatus :control="controlById(section, item.id)" />
+              </template>
+            </ItemList>
+          </Disclosure>
+        </Stack>
       </Panel>
     </DataState>
   </ListTemplate>

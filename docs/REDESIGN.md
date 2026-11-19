@@ -163,22 +163,20 @@ Made during the work (open to review):
   `src/utils/evidence-csv.ts`; Global and This System > Evidence are one screen (`EvidenceScreen`) in two contexts; trends use the accessible `LineChart`
   (with "Show as table") below the list; the subject picker narrows system components to the
   current system; record tabs are routes; tasks are listed in place rather than in a dialog.
-- **Implementation shows each control as control → implementation → evidence** (2026-11-19,
-  an experiment): three linked boxes (`LinkedColumns`) side by side, stacking with their own
-  labels when the content area is narrower than 840px. The control box has the ID, title and the
-  statement cut to three lines (`ClampedText`, "Show more" rather than a hover tooltip, so touch
-  and keyboard users can read it too); the implementation box has its remarks, then its
-  statements by statement ID (`ac-2_smt.a`), each with its components' text and status; the evidence box has the counts and the evidence filters
-  linked to the control. The statements editor stays, closed, under each row.
-  The profiles are not disclosures: "Include controls from" ticks them beside the search (all
-  ticked at first), and the controls are listed by catalog group, each group a titled section;
-  a control in several profiles shows once. Only top-level, current controls are listed: the
-  API's resolved profiles include every enhancement and withdrawn control.
+- **Implementation lists a row per control, by family** (2026-11-19). Three linked boxes per
+  control (control → implementation → evidence) were tried first and dropped: in a list they
+  were heavy and hard to scan. Each control is one row (ItemList): ID and title, the start of its
+  statement, and at the end its risks, how much is implemented, its evidence filters and results.
+  Controls are grouped by catalog group (family), each a Disclosure, remembered open per system;
+  a search opens them all. The profiles are not disclosures: "Include controls from" ticks them
+  beside the search (all ticked at first); a control in several profiles shows once. Only
+  top-level, current controls are listed: the API's resolved profiles include every enhancement
+  and withdrawn control.
 - **List pages summarise; a record's full content has its own view** (2026-11-19, from the
   Implementation page). A row shows counts and names, not text; its title (a real link), or a
   click anywhere else on it, opens the record in a wide Drawer whose state is in the address
   (`?control=ac-2`), so Back closes it. There, a control's statement is set beside its
-  implementation part by part.
+  implementation part by part (`LinkedColumns`), at every depth, with nested parts indented.
 - **The evidence form** uses native date inputs (local calendar dates, sent as local midnight as
   before), validates on submit with errors beside fields and a summary, keeps entries when a
   save fails, and keeps Re-submit's stream UUID and labels. Subjects are added and removed as a

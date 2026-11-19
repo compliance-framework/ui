@@ -130,7 +130,9 @@ withDefaults(
 
 .item-list__trailing {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: var(--ds-space-2);
 }

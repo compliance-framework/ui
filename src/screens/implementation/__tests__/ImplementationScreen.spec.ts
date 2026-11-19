@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent, h, reactive, ref } from 'vue';
 import IndexView from '../ImplementationScreen.vue';
 
@@ -94,6 +94,12 @@ const viewControl = async (controlId: string) => {
   (route.value as { query: Record<string, string> }).query = {
     control: controlId,
   };
+  await waitForMountedControls();
+};
+// Opens every closed control family, so its rows show.
+const openFamilies = async (wrapper: VueWrapper) => {
+  for (const button of wrapper.findAll('button[aria-expanded="false"]'))
+    await button.trigger('click');
   await waitForMountedControls();
 };
 const showTab = async (tab?: 'profiles') => {
@@ -666,12 +672,13 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
     await viewControl('ac-2');
+    await openFamilies(wrapper);
 
     // ac-2 has no implementation, but its row shows its pending suggestion, and the button
     // in its view stays enabled.
     const row = wrapper
-      .findAll('section[aria-label="Control"]')
-      .find((box) => box.text().includes('ac-2'));
+      .findAll('li')
+      .find((li) => li.text().includes('ac-2 ·'));
     expect(row?.text()).toContain('1 suggestion');
     const badge = wrapper
       .findAll('button')
@@ -811,6 +818,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
   it('keeps the current controls on screen when a profile reload fails', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
+    await openFamilies(wrapper);
     expect(wrapper.text()).toContain('Access Control');
 
     listProfiles.mockRejectedValueOnce(new Error('reload failed'));
@@ -818,6 +826,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     wrapper.findComponent(ProfilePickerStub).vm.$emit('updated', ['profile-2']);
     await waitForMountedControls();
     await showTab();
+    await openFamilies(wrapper);
 
     expect(wrapper.text()).toContain('Access Control');
     expect(wrapper.text()).not.toContain('No profile attached yet');

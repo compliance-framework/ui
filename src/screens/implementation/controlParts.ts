@@ -129,3 +129,17 @@ export function implementationSummary(map: PartMap): ImplementationSummary {
     componentUuids: [...new Set(all.map((bc) => bc.componentUuid))],
   };
 }
+
+/**
+ * The start of a control's statement, for a list row: its lead-in, or its first part, with
+ * parameters written out, cut at about `max` characters on a word.
+ */
+export function statementExcerpt(control: Control, max = 160): string {
+  const map = partMap(control, undefined);
+  const text = (map.lead || map.bands[0]?.text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(' ') > 0 ? cut.lastIndexOf(' ') : max)}…`;
+}

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Control, ImplementedRequirement } from '@/oscal';
-import { implementationSummary, partMap } from './controlParts';
+import {
+  implementationSummary,
+  partMap,
+  statementExcerpt,
+} from './controlParts';
 
 const control = {
   id: 'ac-2',
@@ -116,5 +120,23 @@ describe('implementationSummary', () => {
       noStatus: 1,
       componentUuids: ['c1', 'c2'],
     });
+  });
+});
+
+describe('statementExcerpt', () => {
+  it('starts with the lead-in, or else the first part, with parameters written out', () => {
+    expect(statementExcerpt(control)).toBe('The organization:');
+    const noLead = {
+      ...control,
+      parts: [{ ...control.parts![0]!, prose: undefined }],
+    } as Control;
+    expect(statementExcerpt(noLead)).toBe(
+      'a. Review every [Assignment: organization-defined time period];',
+    );
+  });
+
+  it('cuts a long statement on a word', () => {
+    const excerpt = statementExcerpt(control, 12);
+    expect(excerpt).toBe('The…');
   });
 });
