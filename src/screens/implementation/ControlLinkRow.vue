@@ -21,8 +21,8 @@ import { LINK_COLUMNS, useControlTree } from './controlTree';
 
 /**
  * One control in the Implementation tree, as three linked boxes: the control (ID, title and its
- * statement, cut to a few lines), its implementation (remarks, then each component's statement and
- * status), and its evidence (the counts, then the evidence filters that check it). The statements
+ * statement, cut to a few lines), its implementation (remarks, then each statement with each
+ * component's text and status), and its evidence (the counts, then the evidence filters that check it). The statements
  * editor (IndexControlImplementation) sits closed beneath them.
  */
 const props = defineProps<{ control: Control }>();
@@ -35,13 +35,36 @@ const statement = computed(() => {
 });
 const implementation = computed(() => tree.implementation(id.value));
 
-/** Every component's statement for the control, whether made for the control or one of its parts. */
-const byComponents = computed<ByComponent[]>(() => [
-  ...(implementation.value?.byComponents ?? []),
-  ...(implementation.value?.statements ?? []).flatMap(
-    (s) => s.byComponents ?? [],
-  ),
-]);
+/**
+ * The implementation's statements, each with its components: one per part of the control's text
+ * it covers (`ac-2_smt.a`), in the catalog's order, after any components that implement the whole
+ * control. A control without lettered parts has one statement (`ia-2_smt`).
+ */
+const statementGroups = computed(() => {
+  const impl = implementation.value;
+  if (!impl) return [];
+  const whole = impl.byComponents?.length
+    ? [
+        {
+          key: 'whole',
+          statementId: undefined,
+          remarks: undefined,
+          byComponents: impl.byComponents,
+        },
+      ]
+    : [];
+  const statements = [...(impl.statements ?? [])]
+    .sort((a, b) =>
+      a.statementId.localeCompare(b.statementId, undefined, { numeric: true }),
+    )
+    .map((s) => ({
+      key: s.uuid,
+      statementId: s.statementId,
+      remarks: s.remarks,
+      byComponents: s.byComponents ?? [],
+    }));
+  return [...whole, ...statements];
+});
 const componentTitle = (bc: ByComponent) =>
   tree.component(bc.componentUuid)?.title ?? 'Component not in this plan';
 function statusOf(bc: ByComponent): StatusKey | undefined {
@@ -90,26 +113,48 @@ const filters = computed(() => tree.filters(id.value));
 
       <template #implementation>
         <template v-if="implementation">
-          <Cluster gap="2">
-            <Tag :label="implementation.uuid.slice(0, 8)" code />
-          </Cluster>
           <ClampedText
             v-if="implementation.remarks"
             :text="implementation.remarks"
           />
+          <Stack v-if="statementGroups.length" as="ul" gap="5">
+            <li v-for="group in statementGroups" :key="group.key">
+              <Stack gap="3">
+                <Cluster gap="2">
+                  <Tag
+                    v-if="group.statementId"
+                    :label="group.statementId"
+                    code
+                  />
+                  <Text v-else as="span" variant="label">Whole control</Text>
+                </Cluster>
+                <ClampedText v-if="group.remarks" :text="group.remarks" />
+                <Stack v-if="group.byComponents.length" as="ul" gap="4">
+                  <li v-for="bc in group.byComponents" :key="bc.uuid">
+                    <Stack gap="1">
+                      <Cluster gap="2" justify="between">
+                        <Text as="strong">{{ componentTitle(bc) }}</Text>
+                        <StatusBadge
+                          v-if="statusOf(bc)"
+                          :status="statusOf(bc)!"
+                        />
+                      </Cluster>
+                      <ClampedText
+                        v-if="bc.description"
+                        :text="bc.description"
+                      />
+                    </Stack>
+                  </li>
+                </Stack>
+                <Text v-else variant="secondary"
+                  >No component implements it yet.</Text
+                >
+              </Stack>
+            </li>
+          </Stack>
+          <Text v-else variant="secondary">No statement written yet.</Text>
         </template>
-        <Stack v-if="byComponents.length" as="ul" gap="4">
-          <li v-for="bc in byComponents" :key="bc.uuid">
-            <Stack gap="1">
-              <Cluster gap="2" justify="between">
-                <Text as="strong">{{ componentTitle(bc) }}</Text>
-                <StatusBadge v-if="statusOf(bc)" :status="statusOf(bc)!" />
-              </Cluster>
-              <ClampedText v-if="bc.description" :text="bc.description" />
-            </Stack>
-          </li>
-        </Stack>
-        <Text v-else variant="secondary">No component implements it yet.</Text>
+        <Text v-else variant="secondary">Not implemented yet.</Text>
         <Cluster gap="2">
           <Button
             size="sm"

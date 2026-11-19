@@ -36,16 +36,21 @@ describe('controlSections', () => {
     ]);
   });
 
-  it('makes each nested group a section and follows a control with its enhancements', () => {
+  it('makes each nested group a section, leaving out enhancements and withdrawn controls', () => {
+    const withdrawn = control('ac-13');
+    (withdrawn.data as Control).props = [
+      { name: 'status', value: 'withdrawn' },
+    ];
     const p = profile([
       group('Access', [
         control('ac-2', 'Accounts', [control('ac-2.1')]),
+        withdrawn,
         group('Remote', [control('ac-17')]),
       ]),
       control('x-1'),
     ]);
     expect(ids(controlSections([p], ''))).toEqual([
-      ['Access', ['ac-2', 'ac-2.1']],
+      ['Access', ['ac-2']],
       ['Access › Remote', ['ac-17']],
       ['Ungrouped', ['x-1']],
     ]);

@@ -9,11 +9,20 @@ export interface ControlSection {
   controls: Control[];
 }
 
+const withdrawn = (control: Control) =>
+  (control.props ?? []).some(
+    (p) => p.name === 'status' && p.value === 'withdrawn',
+  );
+
 /**
  * The controls of the chosen profiles, by catalog group, without the profiles: groups the profiles
  * share become one section, and a control in several profiles shows once. Each group, nested or
- * not, is a section of its own; a control's enhancements follow it. Only controls whose ID or title
- * contains the search are kept, and sections left empty are dropped.
+ * not, is a section of its own. Only controls whose ID or title contains the search are kept, and
+ * sections left empty are dropped.
+ *
+ * Enhancements and withdrawn controls are left out: the API's resolved profile includes every
+ * enhancement of a chosen control and the withdrawn controls, whether the profile chose them or
+ * not, so listing them would show controls the system doesn't implement.
  */
 export function controlSections(
   profiles: TreeNode[],
@@ -40,10 +49,10 @@ export function controlSections(
   };
   const walk = (nodes: TreeNode[], path: string[]) => {
     for (const node of nodes) {
-      if (node.type === 'control') {
+      if (node.type !== 'control')
+        walk(node.children ?? [], [...path, node.data.title]);
+      else if (!withdrawn(node.data as Control))
         add(node.data as Control, path);
-        walk(node.children ?? [], path);
-      } else walk(node.children ?? [], [...path, node.data.title]);
     }
   };
   for (const profile of profiles) walk(profile.children ?? [], []);

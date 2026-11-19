@@ -1459,7 +1459,27 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   (shown when there is more than one). The controls are no longer nested in profile and group
   disclosures: each catalog group is a titled section in the Controls panel, with its control
   count, and groups the profiles share are merged, so a control in two profiles shows once.
-  Nested groups are sections of their own ("Parent › Child"), and a control's enhancements now
-  follow it (the old tree didn't show them). A profile attached later is ticked; the choice isn't
+  Nested groups are sections of their own ("Parent › Child"). A profile attached later is ticked; the choice isn't
   kept when you leave the page. An imported requirement is still highlighted, but there are no
   disclosures left to open for it.
+- **Implementation: components grouped by statement.** The Implementation box no longer shows a
+  fragment of the implementation's UUID. Under the remarks, it lists the implementation's
+  statements by their statement ID (`ac-2_smt.a`, `ac-2_smt.b`, …, in the catalog's order; a
+  control without lettered parts has one, e.g. `INT-CI_smt`), each with its remarks and its
+  components; components that implement the whole control come first, under "Whole control".
+  A statement with no component says so, and a control with no implementation says "Not
+  implemented yet."
+- **Implementation lists top-level controls only, and no withdrawn ones.** The resolved profile
+  from the API includes every enhancement of each chosen control (FedRAMP Low resolves to 135
+  controls plus 529 enhancements, though it chooses only a few) and the withdrawn controls, so
+  listing enhancements showed hundreds of controls the system doesn't implement. **API to-do:**
+  profile resolution should keep only the enhancements a profile includes (`with-ids`, or
+  `with-child-controls`). Until then, an enhancement the profile does choose (e.g. `ia-2.1`) isn't
+  listed; its implementation is still reachable through the API and the old views.
+- **Test data: "Layout Test System"** (local API only; added 2026-11-19 for the Implementation
+  page). Imported the NIST SP 800-53 rev 5 catalog and the FedRAMP Rev 5 Low profile from
+  `demo/oscal-content`, a small overlapping profile ("Layout test — access extras"), and a new
+  SSP with six components and implementations for ac-1, ac-2 (seven statements, a whole-control
+  component, every implementation status), ac-17, au-6, ia-2, ia-2.1 and cm-6, plus eight evidence
+  filters named "Layout test — …". Nothing existing was changed. The generator script and files
+  are in the session scratchpad, not the repo.

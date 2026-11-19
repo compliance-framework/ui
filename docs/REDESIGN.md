@@ -167,12 +167,13 @@ Made during the work (open to review):
   an experiment): three linked boxes (`LinkedColumns`) side by side, stacking with their own
   labels when the content area is narrower than 840px. The control box has the ID, title and the
   statement cut to three lines (`ClampedText`, "Show more" rather than a hover tooltip, so touch
-  and keyboard users can read it too); the implementation box has its remarks and each
-  component's statement and status; the evidence box has the counts and the evidence filters
+  and keyboard users can read it too); the implementation box has its remarks, then its
+  statements by statement ID (`ac-2_smt.a`), each with its components' text and status; the evidence box has the counts and the evidence filters
   linked to the control. The statements editor stays, closed, under each row.
   The profiles are not disclosures: "Include controls from" ticks them beside the search (all
   ticked at first), and the controls are listed by catalog group, each group a titled section;
-  a control in several profiles shows once.
+  a control in several profiles shows once. Only top-level, current controls are listed: the
+  API's resolved profiles include every enhancement and withdrawn control.
 - **The evidence form** uses native date inputs (local calendar dates, sent as local midnight as
   before), validates on submit with errors beside fields and a summary, keeps entries when a
   save fails, and keeps Re-submit's stream UUID and labels. Subjects are added and removed as a
