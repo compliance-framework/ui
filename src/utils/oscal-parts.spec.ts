@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { insertParams, partMarkdown } from './oscal-parts';
+import { insertParams, partMarkdown, partOutline } from './oscal-parts';
 
 describe('partMarkdown', () => {
   it('renders labelled sub-parts indented under their parent', () => {
@@ -56,5 +56,71 @@ describe('insertParams', () => {
 
   it('keeps an unknown parameter as its ID', () => {
     expect(insertParams('Use {{ insert: param, x9 }}.')).toBe('Use [x9].');
+  });
+});
+
+describe('partOutline', () => {
+  const label = (value: string) => [{ name: 'label', value }];
+  it('keeps every item, its label, text and ID, at every depth', () => {
+    const outline = partOutline({
+      id: 'ac-1_smt',
+      name: 'statement',
+      parts: [
+        {
+          id: 'ac-1_smt.a',
+          name: 'item',
+          props: label('a.'),
+          prose: 'Develop:',
+          parts: [
+            {
+              id: 'ac-1_smt.a.1',
+              name: 'item',
+              props: label('1.'),
+              prose: 'A policy that:',
+              parts: [
+                {
+                  id: 'ac-1_smt.a.1.a',
+                  name: 'item',
+                  props: label('(a)'),
+                  prose: 'Addresses purpose;',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'ac-1_smt.b',
+          name: 'item',
+          props: label('b.'),
+          prose: 'Designate.',
+        },
+      ],
+    });
+    expect(outline.map((i) => [i.id, i.label, i.text])).toEqual([
+      ['ac-1_smt.a', 'a.', 'Develop:'],
+      ['ac-1_smt.b', 'b.', 'Designate.'],
+    ]);
+    expect(outline[0]!.items[0]!.items[0]).toMatchObject({
+      id: 'ac-1_smt.a.1.a',
+      label: '(a)',
+      text: 'Addresses purpose;',
+    });
+  });
+
+  it('skips a part with neither label nor prose in favour of its parts', () => {
+    const outline = partOutline({
+      id: 'x_smt',
+      name: 'statement',
+      parts: [
+        {
+          id: 'x_smt.w',
+          name: 'wrapper',
+          parts: [
+            { id: 'x_smt.a', name: 'item', props: label('a.'), prose: 'One.' },
+          ],
+        },
+      ],
+    });
+    expect(outline.map((i) => i.id)).toEqual(['x_smt.a']);
   });
 });

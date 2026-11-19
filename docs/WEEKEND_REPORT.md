@@ -1524,3 +1524,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   In the form, each component's remove button is now an unlink icon ("Unlink Okta workforce
   identity"): it takes the component off the part, not out of the plan. New in the design
   system: the `unlink` icon.
+- **Catalog: a control's statement, item by item.** The statement was one run of text (the
+  sub-parts joined into markdown that rendered as a paragraph). It is now an outline: each
+  top-level item (a., b., c.) on its own, divided by a rule, with its sub-items (1., (a)) indented
+  under it, so the catalog shows the same items the implementation view maps components to. Each
+  label shows the item's ID on hover and focus (`ac-1_smt.a`). Guidance and objectives are as
+  before. The API keeps parts as a nested tree at any depth (a JSON column on the control); the
+  deepest statement in NIST 800-53 is the "-1" controls' (ac-1_smt.a.1.a, four levels). New in the
+  design system: `Outline` (labelled items, nested, with an optional hint per label).

@@ -47,3 +47,25 @@ export function insertParams(text: string, params: Parameter[] = []): string {
     });
   return write(text, 0);
 }
+
+/** One labelled item of a part (see `partOutline`), with the part's ID. */
+export interface PartOutlineItem {
+  id: string;
+  label: string;
+  text: string;
+  items: PartOutlineItem[];
+}
+
+/**
+ * A part's sub-parts as an outline, at every depth: each with its label ("a."), prose and ID, so
+ * a statement shows the items an implementation's statements are written against. Sub-parts with
+ * neither label nor prose are skipped in favour of their own sub-parts.
+ */
+export function partOutline(part: Part): PartOutlineItem[] {
+  return (part.parts ?? []).flatMap((child) => {
+    const items = partOutline(child);
+    const label = partLabel(child);
+    if (!label && !child.prose) return items;
+    return [{ id: child.id ?? '', label, text: child.prose ?? '', items }];
+  });
+}

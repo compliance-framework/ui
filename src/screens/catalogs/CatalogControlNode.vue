@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A control in the catalog tree: a disclosure whose open state is remembered, holding its evidence
- * results, statement, objective and guidance, its attributes and its sub-controls, and a menu to
+ * results, statement (item by item, each item's ID on hover), objective and guidance, its attributes and its sub-controls, and a menu to
  * see its evidence, edit it or its parts, add a sub-control, or delete it. The forms are classic
  * modals.
  */
@@ -16,12 +16,17 @@ import { ACTIONS, RESOURCES } from '@/constants/permissions';
 import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import { getErrorDetail } from '@/utils/httpErrors';
-import { partMarkdown } from '@/utils/oscal-parts';
+import {
+  partMarkdown,
+  partOutline,
+  type PartOutlineItem,
+} from '@/utils/oscal-parts';
 import { useApiQuery } from '@/ds/query';
 import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
 import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
+import Outline, { type OutlineItem } from '@/ds/components/Outline/Outline.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
 import Text from '@/ds/components/Text/Text.vue';
@@ -58,11 +63,20 @@ const counts = computed(() =>
 const label = computed(() => `${props.control.id} · ${props.control.title}`);
 const partOf = (name: string) =>
   props.control.parts?.find((part) => part.name === name);
+/** The outline item for a statement item, with its ID on hover. */
+const withHint = (item: PartOutlineItem): OutlineItem => ({
+  ...item,
+  hint: item.id || undefined,
+  items: item.items.map(withHint),
+});
 const parts = computed(() =>
   (props.control.parts ?? []).map((part) => ({
     id: part.id,
     name: part.name.replace(/-/g, ' '),
     markdown: partMarkdown(part),
+    // A statement shows its items one by one, as implementations are written against them.
+    outline:
+      part.name === 'statement' ? partOutline(part).map(withHint) : undefined,
   })),
 );
 const attributes = computed(() => [
@@ -186,7 +200,13 @@ const actions = computed<MenuEntry[]>(() => [
       </Cluster>
       <Stack v-for="part in parts" :key="part.id" gap="1">
         <Text variant="label">{{ part.name }}</Text>
-        <Text as="div" variant="prose"
+        <template v-if="part.outline?.length">
+          <Text v-if="partOf('statement')?.prose" variant="prose">{{
+            partOf('statement')?.prose
+          }}</Text>
+          <Outline :items="part.outline" />
+        </template>
+        <Text v-else as="div" variant="prose"
           ><VueMarkdown :source="part.markdown"
         /></Text>
       </Stack>
