@@ -14,7 +14,14 @@ const apiCalls: Array<{
   execute: ReturnType<typeof vi.fn>;
 }> = [];
 
+// The ID check: 404 means the ID is free; `takenIds` are already in the catalog.
+const takenIds = new Set<string>();
+const get = vi.fn(async (url: string) => ({
+  status: takenIds.has(decodeURIComponent(url.split('/').pop()!)) ? 200 : 404,
+}));
+
 vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({ get }),
   decamelizeKeys: (data: unknown) => JSON.stringify(data),
   useDataApi: (url = '') => {
     const execute = vi.fn(async () => ({
@@ -168,6 +175,28 @@ describe('catalog forms', () => {
         title: 'Policy Procedures',
       }),
     });
+  });
+
+  it('refuses an ID already in the catalog, even as its own sub-control', async () => {
+    takenIds.add('ac-1');
+    const wrapper = mountForm(ControlCreateForm, {
+      catalog,
+      parentControl: control,
+    });
+    await field(wrapper, 'ID').setValue(' ac-1 ');
+    await field(wrapper, 'Title').setValue('Policy');
+    await submit(wrapper);
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(get).toHaveBeenCalledWith(
+      '/api/oscal/catalogs/catalog-1/controls/ac-1',
+      expect.anything(),
+    );
+    expect(wrapper.text()).toContain('ac-1 is already in this catalog.');
+    expect(
+      executeFor('/api/oscal/catalogs/catalog-1/controls/ac-1/controls'),
+    ).not.toHaveBeenCalled();
+    takenIds.clear();
   });
 
   it('renders server errors in the control create form', async () => {

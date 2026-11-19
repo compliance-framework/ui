@@ -7,7 +7,11 @@ import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import type { Catalog, Control, Group } from '@/oscal';
 import { reactive } from 'vue';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useAuthenticatedInstance,
+  useDataApi,
+  decamelizeKeys,
+} from '@/composables/axios';
 import { useFormSubmit } from '@/composables/useFormSubmit';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -89,12 +93,32 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
   { immediate: false },
 );
 
+const api = useAuthenticatedInstance();
+
+/**
+ * Whether the catalog already has a control with this ID, anywhere in it. The API doesn't refuse
+ * one: adding a sub-control with an existing ID moves that control under the new parent instead
+ * (or under itself, which hides it), so the form checks first.
+ */
+async function idTaken(id: string): Promise<boolean> {
+  const response = await api.get(
+    `/api/oscal/catalogs/${props.catalog.uuid}/controls/${encodeURIComponent(id)}`,
+    { validateStatus: (status) => status === 200 || status === 404 },
+  );
+  return response.status === 200;
+}
+
 async function createControl(): Promise<void> {
   if (!validate()) return;
 
   let response;
   isSubmitting.value = true;
   try {
+    control.id = control.id!.trim();
+    if (await idTaken(control.id)) {
+      errors.id = `${control.id} is already in this catalog. Control IDs are unique across the whole catalog, so choose another.`;
+      return;
+    }
     if (props.parentControl) {
       if (!props.parentControl.id) {
         throw new Error('Parent Control ID is required');

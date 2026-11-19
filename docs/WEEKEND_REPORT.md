@@ -1532,3 +1532,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   before. The API keeps parts as a nested tree at any depth (a JSON column on the control); the
   deepest statement in NIST 800-53 is the "-1" controls' (ac-1_smt.a.1.a, four levels). New in the
   design system: `Outline` (labelled items, nested, with an optional hint per label).
+- **Catalog: a control ID already in the catalog is refused.** Adding a sub-control to ac-1 with
+  the ID ac-1 made ac-1 its own parent, and it vanished from the catalog (both front ends). The
+  API doesn't refuse an existing ID: its sub-control create appends through gorm, which repoints
+  the existing row's parent instead (title and parts survive). The create form now checks the ID
+  first and says "ac-1 is already in this catalog…". The catalog tree also skips a control listed
+  as its own sub-control, which would otherwise nest forever. API to-do: refuse an existing ID
+  (409) on all three control-create endpoints.

@@ -56,6 +56,10 @@ const children = useApiQuery<Control[]>(
 const evidence = useApiQuery<ComplianceIntervalStatus[]>(
   `/api/evidence/compliance-by-control/${props.control.id}`,
 );
+// A control the API lists as its own sub-control would nest forever; skip it.
+const subControls = computed(() =>
+  (children.data.value ?? []).filter((c) => c.id !== props.control.id),
+);
 const counts = computed(() =>
   computeEvidenceStatusCounts(evidence.data.value ?? []),
 );
@@ -212,7 +216,7 @@ const actions = computed<MenuEntry[]>(() => [
       </Stack>
       <DescriptionList :items="attributes" layout="inline" />
       <CatalogControlNode
-        v-for="child in children.data.value ?? []"
+        v-for="child in subControls"
         :key="child.id"
         :catalog="catalog"
         :control="child"
