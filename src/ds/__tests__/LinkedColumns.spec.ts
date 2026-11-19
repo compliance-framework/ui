@@ -43,4 +43,14 @@ describe('LinkedColumns', () => {
       wrapper.findAll('.linked-columns-header__label').map((l) => l.text()),
     ).toEqual(['Control', 'Implementation', 'Evidence']);
   });
+
+  it('indents only the first box of a nested row, up to three levels', () => {
+    const wrapper = mount(LinkedColumns, {
+      props: { columns: columns.slice(0, 2), depth: 5 },
+    });
+    expect(wrapper.classes()).toContain('linked-columns--depth-3');
+    expect(
+      mount(LinkedColumns, { props: { columns } }).classes().join(),
+    ).not.toContain('depth');
+  });
 });

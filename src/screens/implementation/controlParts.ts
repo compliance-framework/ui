@@ -4,15 +4,21 @@ import type {
   ImplementedRequirement,
   Statement,
 } from '@/oscal';
-import { insertParams, partMarkdown } from '@/utils/oscal-parts';
+import {
+  insertParams,
+  partOutline,
+  type PartOutlineItem,
+} from '@/utils/oscal-parts';
 import { statuses, type StatusKey } from '@/ds/components/StatusBadge/statuses';
 
 /** One part of a control's statement ("a. Define and document…") and what implements it. */
 export interface PartBand {
   /** The part's ID, which the statement implementing it uses as its statement ID. */
   id: string;
-  /** The part's text with its label, sub-items and parameters, as the catalog prints it. */
+  /** The part's own label and text ("1. Authorized users…"), with parameters, without its sub-parts. */
   text: string;
+  /** How deep the part is: 0 for a., 1 for a.1, 2 for a.1.(a). */
+  depth: number;
   statement?: Statement;
 }
 
@@ -22,7 +28,7 @@ export interface PartMap {
   lead: string;
   /** Components that implement the whole control rather than one part. */
   whole: ByComponent[];
-  /** One per lettered part; a control without parts has one, its whole statement. */
+  /** One per part, at every depth, in reading order; a control without parts has one, its whole statement. */
   bands: PartBand[];
   /** Statements whose ID matches no part of the control. */
   others: Statement[];
@@ -37,18 +43,24 @@ export function partMap(
   implementation: ImplementedRequirement | undefined,
 ): PartMap {
   const statementPart = control.parts?.find((p) => p.name === 'statement');
-  const subParts = statementPart?.parts ?? [];
   const statements = implementation?.statements ?? [];
   const text = (s: string) => insertParams(s, control.params);
-  const parts = subParts.length
-    ? subParts.map((p) => ({
-        id: p.id ?? '',
-        text: text(partMarkdown(p).trim()),
-      }))
+  const outline = statementPart ? partOutline(statementPart) : [];
+  const flatten = (
+    items: PartOutlineItem[],
+    depth: number,
+  ): Omit<PartBand, 'statement'>[] =>
+    items.flatMap((item) => [
+      { id: item.id, text: text(`${item.label} ${item.text}`.trim()), depth },
+      ...flatten(item.items, depth + 1),
+    ]);
+  const parts = outline.length
+    ? flatten(outline, 0)
     : [
         {
           id: statementPart?.id ?? `${control.id}_smt`,
           text: text(statementPart?.prose ?? ''),
+          depth: 0,
         },
       ];
   const bands = parts.map((part) => ({
@@ -56,7 +68,7 @@ export function partMap(
     statement: statements.find((s) => same(s.statementId, part.id)),
   }));
   return {
-    lead: subParts.length ? text(statementPart?.prose ?? '') : '',
+    lead: outline.length ? text(statementPart?.prose ?? '') : '',
     whole: implementation?.byComponents ?? [],
     bands,
     others: statements.filter(

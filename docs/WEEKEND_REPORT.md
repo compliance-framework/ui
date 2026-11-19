@@ -1539,3 +1539,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   first and says "ac-1 is already in this catalog…". The catalog tree also skips a control listed
   as its own sub-control, which would otherwise nest forever. API to-do: refuse an existing ID
   (409) on all three control-create endpoints.
+- **Implementation control view: parts at every depth.** The API takes an implementation
+  statement for any part of a control's statement (its statement ID is just the part's ID), and
+  the classic editor offers every part, depth first. The view now does too: one row per part at
+  any depth (ac-1 has ten: a, 1, (a), (b), 2, b, c, 1, 2), each with its own edit button, nested
+  parts indented under their parent. A statement for a deeper part (`ac-1_smt.a.1.a`) used to
+  land in "No part of this control has this ID"; it now sits in its row. Each row's control text
+  is the part's own, without its sub-parts. The list row's "Statements for X of Y parts" counts
+  every depth. New in the design system: LinkedColumns `depth` (1 to 3): side by side, the first
+  box indents and the other columns stay aligned; stacked, the whole row indents by a smaller step.

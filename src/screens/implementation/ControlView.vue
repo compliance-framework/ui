@@ -21,7 +21,8 @@ import { partMap } from './controlParts';
 import { useControlTree } from './controlTree';
 
 /**
- * One control in depth, over nearly all of the page: its statement part by part, each part beside
+ * One control in depth, over nearly all of the page: its statement part by part, at every depth
+ * (nested parts indented under their parent), each part beside
  * the implementation statement for it (every component's full text and status), then the
  * evidence that checks the control, then the editors. Evidence filters link to a control, not to
  * its parts, so evidence is the control's, below the parts. Each part's control box links to the
@@ -96,7 +97,7 @@ const editDenied = (key: string) =>
               </LinkedColumns>
             </li>
             <li v-for="band in map.bands" :key="band.id">
-              <LinkedColumns :columns="PART_COLUMNS">
+              <LinkedColumns :columns="PART_COLUMNS" :depth="band.depth">
                 <template #part>
                   <Cluster gap="2" justify="between">
                     <Tag :label="band.id" code />

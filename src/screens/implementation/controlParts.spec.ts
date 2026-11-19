@@ -21,8 +21,16 @@ const control = {
         {
           id: 'ac-2_smt.b',
           name: 'item',
-          prose: 'Assign managers;',
+          prose: 'Specify:',
           props: [{ name: 'label', value: 'b.' }],
+          parts: [
+            {
+              id: 'ac-2_smt.b.1',
+              name: 'item',
+              prose: 'Authorized users;',
+              props: [{ name: 'label', value: '1.' }],
+            },
+          ],
         },
       ],
     },
@@ -44,18 +52,23 @@ describe('partMap', () => {
       byComponents: [bc('w', 'c1', 'implemented')],
       statements: [
         { uuid: 's1', statementId: 'AC-2_smt.b', byComponents: [] },
+        { uuid: 's3', statementId: 'ac-2_smt.b.1', byComponents: [] },
         { uuid: 's2', statementId: 'foobar' },
       ],
     } as ImplementedRequirement);
     expect(map.lead).toBe('The organization:');
     expect(map.whole.map((b) => b.uuid)).toEqual(['w']);
-    expect(map.bands.map((b) => [b.id, b.text, b.statement?.uuid])).toEqual([
+    expect(
+      map.bands.map((b) => [b.id, b.text, b.depth, b.statement?.uuid]),
+    ).toEqual([
       [
         'ac-2_smt.a',
         'a. Review every [Assignment: organization-defined time period];',
+        0,
         undefined,
       ],
-      ['ac-2_smt.b', 'b. Assign managers;', 's1'],
+      ['ac-2_smt.b', 'b. Specify:', 0, 's1'],
+      ['ac-2_smt.b.1', '1. Authorized users;', 1, 's3'],
     ]);
     expect(map.others.map((s) => s.uuid)).toEqual(['s2']);
   });
@@ -67,7 +80,12 @@ describe('partMap', () => {
       parts: [{ id: 'ia-2_smt', name: 'statement', prose: 'Identify users.' }],
     } as Control;
     expect(partMap(plain, undefined).bands).toEqual([
-      { id: 'ia-2_smt', text: 'Identify users.', statement: undefined },
+      {
+        id: 'ia-2_smt',
+        text: 'Identify users.',
+        depth: 0,
+        statement: undefined,
+      },
     ]);
   });
 });
@@ -90,7 +108,7 @@ describe('implementationSummary', () => {
     );
     expect(summary).toEqual({
       partsCovered: 1,
-      partsTotal: 2,
+      partsTotal: 3,
       statusCounts: [
         { status: 'implemented', count: 1 },
         { status: 'partial', count: 1 },

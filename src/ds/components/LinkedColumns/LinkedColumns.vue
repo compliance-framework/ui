@@ -12,10 +12,15 @@ import Icon from '../Icon/Icon.vue';
  *
  * With `to`, a click anywhere on the row that isn't on a link or button opens it: a larger target
  * for the pointer. Keyboard and screen reader users need a real link to the same place in a box.
+ *
+ * `depth` (1 to 3) indents a row that sits under another, e.g. a part of a control's statement
+ * under its parent part: side by side, only the first box indents, so the other columns stay
+ * aligned; stacked, the whole row does, by a smaller step.
  */
 const props = defineProps<{
   columns: { key: string; label: string }[];
   to?: RouteLocationRaw;
+  depth?: number;
 }>();
 const router = useRouter();
 
@@ -36,6 +41,7 @@ function open(event: MouseEvent): void {
     :class="[
       `linked-columns--${columns.length}`,
       { 'linked-columns--link': to },
+      depth ? `linked-columns--depth-${Math.min(depth, 3)}` : undefined,
     ]"
     @click="open"
   >
@@ -69,6 +75,18 @@ function open(event: MouseEvent): void {
   border: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
+.linked-columns--depth-1 {
+  margin-inline-start: var(--ds-space-4);
+}
+
+.linked-columns--depth-2 {
+  margin-inline-start: var(--ds-space-8);
+}
+
+.linked-columns--depth-3 {
+  margin-inline-start: var(--ds-space-12);
+}
+
 .linked-columns--link {
   cursor: pointer;
 }
@@ -95,6 +113,23 @@ function open(event: MouseEvent): void {
 }
 
 @container (min-width: 840px) {
+  /* Side by side, only the first box indents, so the other columns stay aligned. */
+  .linked-columns[class*='linked-columns--depth-'] {
+    margin-inline-start: 0;
+  }
+
+  .linked-columns--depth-1 > .linked-columns__box:first-child {
+    margin-inline-start: var(--ds-space-6);
+  }
+
+  .linked-columns--depth-2 > .linked-columns__box:first-child {
+    margin-inline-start: var(--ds-space-12);
+  }
+
+  .linked-columns--depth-3 > .linked-columns__box:first-child {
+    margin-inline-start: calc(var(--ds-space-12) + var(--ds-space-6));
+  }
+
   .linked-columns--2 {
     grid-template-columns: minmax(0, 1fr) var(--ds-size-icon-md) minmax(0, 1fr);
   }
