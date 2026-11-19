@@ -44,9 +44,14 @@ const emit = defineEmits<{
   imported: [
     payload: { links: SSPLeverageLink[]; meta?: SubscribeResponseMeta },
   ];
+  /** The statement editor closed; what it saves (e.g. evidence filter links) may have changed. */
+  closed: [];
 }>();
 const selectedPart = ref<Part>();
 const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
+watch(statementDrawerOpen, (open) => {
+  if (!open) emit('closed');
+});
 const drawerLoading = useToggle();
 const { system } = useSystemStore();
 const showCreateStatementModal = ref(false);

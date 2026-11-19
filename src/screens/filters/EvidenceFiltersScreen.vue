@@ -32,6 +32,7 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import { matches, useListView } from '../listView';
 import FilterTrend from './FilterTrend.vue';
+import { evidenceLink } from './evidenceLink';
 
 /**
  * Evidence filters (List template): saved evidence searches, each scoped to a system or global and
@@ -193,14 +194,6 @@ const columns: DataTableColumn[] = [
   { key: 'controls', label: 'Controls' },
   { key: 'components', label: 'Components' },
 ];
-
-/** A filter's evidence: its system's Evidence page, or the global one. */
-function evidenceLink(filter: Dashboard) {
-  const query = { filter: serializeFilter(filter.filter) };
-  return filter.sspId
-    ? { name: 'system-evidence', params: { systemId: filter.sspId }, query }
-    : { name: 'evidence:index', query };
-}
 
 // Actions --------------------------------------------------------------------------------------
 

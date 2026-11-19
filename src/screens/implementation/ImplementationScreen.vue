@@ -14,9 +14,10 @@ import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
+import LinkedColumnsHeader from '@/ds/components/LinkedColumns/LinkedColumnsHeader.vue';
 import ControlTreeNode from './ControlTreeNode.vue';
 import ProfilesField from './ProfilesField.vue';
-import { provideControlTree } from './controlTree';
+import { LINK_COLUMNS, provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -49,7 +50,9 @@ import type {
   ImplementedRequirement,
   Risk,
   Statement,
+  SystemComponent,
 } from '@/oscal';
+import type { Dashboard } from '@/stores/filters';
 import type {
   SharedResponsibilityProvided,
   SubscribeResponseMeta,
@@ -1239,6 +1242,32 @@ const tabs = [
   { label: 'Profiles', to: { query: { tab: 'profiles' } } },
 ];
 
+// Each control row's Implementation and Evidence boxes: the plan's components, and the evidence
+// filters by the controls they check. One request each serves every row.
+const { data: sspComponents } = useDataApi<SystemComponent[]>(
+  `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/system-implementation/components`,
+);
+const { data: sspFilters, execute: fetchSspFilters } = useDataApi<Dashboard[]>(
+  '/api/filters',
+  {
+    // A camelCase API: it returns global filters and this plan's.
+    params: { sspId: systemStore.system.securityPlan?.uuid },
+  },
+);
+const componentsByUuid = dsComputed(
+  () => new Map((sspComponents.value ?? []).map((c) => [c.uuid, c])),
+);
+const filtersByControl = dsComputed(() => {
+  const map = new Map<string, Dashboard[]>();
+  for (const filter of sspFilters.value ?? [])
+    for (const control of filter.controls ?? []) {
+      const key = normalizeId(control.id);
+      map.set(key, [...(map.get(key) ?? []), filter]);
+    }
+  return map;
+});
+const refreshFilters = () => void fetchSspFilters().catch(() => undefined);
+
 const treeQuery = dsRef('');
 const treeDraft = dsRef('');
 const pageStatus = dsComputed(() => {
@@ -1257,6 +1286,8 @@ provideControlTree({
   query: () => treeQuery.value,
   suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
   implementation: (id) => controlImplementations.value[id],
+  component: (uuid) => componentsByUuid.value.get(uuid),
+  filters: (id) => filtersByControl.value.get(normalizeId(id)) ?? [],
   byComponentCount: controlByComponentCount,
   riskCount: controlRiskCount,
   riskSeverity: controlHighestSeverity,
@@ -1270,6 +1301,7 @@ provideControlTree({
   onExported: () => void handleExported(),
   onImported: (payload) =>
     void handleImported(payload as Parameters<typeof handleImported>[0]),
+  onStatementsClosed: refreshFilters,
 });
 </script>
 
@@ -1336,10 +1368,16 @@ provideControlTree({
         >
       </template>
       <Panel title="Controls" :level="2">
-        <Stack gap="3" as="ul">
-          <li v-for="node in nodes" :key="node.key">
-            <ControlTreeNode :node="node" />
-          </li>
+        <Stack gap="3">
+          <LinkedColumnsHeader
+            v-if="nodes.some((node) => node.type === 'control')"
+            :columns="LINK_COLUMNS"
+          />
+          <Stack gap="3" as="ul">
+            <li v-for="node in nodes" :key="node.key">
+              <ControlTreeNode :node="node" />
+            </li>
+          </Stack>
         </Stack>
       </Panel>
     </DataState>

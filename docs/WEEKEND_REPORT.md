@@ -1442,3 +1442,15 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the system selector, which already groups them, so the heading went. The selector's small
   label now reads "Selected system" instead of "System". Screen readers still hear the list as
   "System: <name>".
+- **Implementation: control → implementation → evidence (first version, an experiment).** Inside
+  the profile and group disclosures, each control is now three linked boxes, with arrows between:
+  **Control** (ID, title, and the statement cut to three lines with "Show more"; risks and
+  suggestions), **Implementation** (the start of its ID, its remarks, then each component's title,
+  implementation status and statement for this control; Details opens the drawer as before) and
+  **Evidence** (the control's evidence counts, then each evidence filter that checks it, linking
+  to its evidence). The column labels sit once above each group's controls. When the content area
+  is narrower than 840px (phones, or a narrow window), the boxes stack, each shows its label, and
+  the arrows point down. The statements editor is unchanged, in a closed disclosure under each
+  row. New in the design system: `LinkedColumns` (with `LinkedColumnsHeader`) and `ClampedText`.
+  The page makes two more requests, once each: the plan's components and its filters. The
+  filters reload when a statement editor closes, since linking a filter happens there.
