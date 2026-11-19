@@ -25,8 +25,9 @@ import { useControlTree } from './controlTree';
  * (nested parts indented under their parent), each part beside
  * the implementation statement for it (every component's full text and status), then the
  * evidence that checks the control, then the editors. Evidence filters link to a control, not to
- * its parts, so evidence is the control's, below the parts. Each part's control box links to the
- * control in its catalog (in a new tab), and each implementation box has an edit button that
+ * its parts, so evidence is the control's, below the parts. One link at the top opens the control
+ * in its catalog (in a new tab). Each implementation box shows the statement's remarks, then
+ * "By component" and the components when there are any, and has an edit button that
  * turns it into a form in place (PartEditor), one part at a time; closing with a form open asks
  * first.
  */
@@ -64,6 +65,12 @@ const editDenied = (key: string) =>
     <Stack gap="6">
       <PanelSection title="Statement and implementation">
         <Stack gap="4">
+          <Text v-if="catalogLink"
+            ><TextLink :to="catalogLink" target="_blank"
+              >See {{ control.id }} in its catalog (opens in a new
+              tab)</TextLink
+            ></Text
+          >
           <Text v-if="implementation?.remarks" variant="prose">{{
             implementation.remarks
           }}</Text>
@@ -76,76 +83,88 @@ const editDenied = (key: string) =>
                   <Text variant="secondary">The whole control</Text>
                 </template>
                 <template #implementation>
-                  <Cluster gap="2" justify="between">
-                    <Text as="span" variant="label">By component</Text>
+                  <Cluster
+                    v-if="editing !== 'whole'"
+                    :wrap="false"
+                    align="start"
+                    gap="2"
+                  >
+                    <Stack gap="3">
+                      <Text as="span" variant="label">By component</Text>
+                      <ComponentStatements :by-components="map.whole" />
+                    </Stack>
                     <IconButton
-                      v-if="editing !== 'whole'"
                       icon="edit"
                       label="Edit what implements the whole control"
                       :disabled-reason="editDenied('whole')"
                       @click="editing = 'whole'"
                     />
                   </Cluster>
-                  <PartEditor
-                    v-if="editing === 'whole'"
-                    :control-id="id"
-                    :by-components="map.whole"
-                    @done="editing = null"
-                  />
-                  <ComponentStatements v-else :by-components="map.whole" />
+                  <template v-else>
+                    <Text as="span" variant="label">By component</Text>
+                    <PartEditor
+                      :control-id="id"
+                      :by-components="map.whole"
+                      @done="editing = null"
+                    />
+                  </template>
                 </template>
               </LinkedColumns>
             </li>
             <li v-for="band in map.bands" :key="band.id">
               <LinkedColumns :columns="PART_COLUMNS" :depth="band.depth">
                 <template #part>
-                  <Cluster gap="2" justify="between">
-                    <Tag :label="band.id" code />
-                    <IconButton
-                      v-if="catalogLink"
-                      icon="external"
-                      :label="`Open ${control.id} in its catalog, in a new tab`"
-                      :to="catalogLink"
-                      target="_blank"
-                    />
-                  </Cluster>
+                  <Cluster gap="2"><Tag :label="band.id" code /></Cluster>
                   <Text preserve-whitespace>{{ band.text }}</Text>
                 </template>
                 <template #implementation>
-                  <Cluster gap="2" justify="between">
-                    <Text as="span" variant="label">By component</Text>
+                  <Cluster
+                    v-if="editing !== band.id"
+                    :wrap="false"
+                    align="start"
+                    gap="2"
+                  >
+                    <Stack gap="3">
+                      <Text
+                        v-if="band.statement?.remarks"
+                        variant="secondary"
+                        preserve-whitespace
+                        >{{ band.statement.remarks }}</Text
+                      >
+                      <template v-if="band.statement?.byComponents?.length">
+                        <Text as="span" variant="label">By component</Text>
+                        <ComponentStatements
+                          :by-components="band.statement.byComponents"
+                        />
+                      </template>
+                      <Text v-else variant="secondary">{{
+                        band.statement
+                          ? 'No component implements this part yet.'
+                          : 'Nothing written for this part yet.'
+                      }}</Text>
+                    </Stack>
                     <IconButton
-                      v-if="editing !== band.id"
                       icon="edit"
                       :label="`Edit the implementation of ${band.id}`"
                       :disabled-reason="editDenied(band.id)"
                       @click="editing = band.id"
                     />
                   </Cluster>
-                  <Text
-                    v-if="band.statement?.remarks"
-                    variant="secondary"
-                    preserve-whitespace
-                    >{{ band.statement?.remarks }}</Text
-                  >
-                  <PartEditor
-                    v-if="editing === band.id"
-                    :control-id="id"
-                    :part-id="band.id"
-                    :statement="band.statement"
-                    :by-components="band.statement?.byComponents ?? []"
-                    @done="editing = null"
-                  />
                   <template v-else>
-                    <ComponentStatements
-                      v-if="band.statement?.byComponents?.length"
-                      :by-components="band.statement.byComponents"
+                    <Text
+                      v-if="band.statement?.remarks"
+                      variant="secondary"
+                      preserve-whitespace
+                      >{{ band.statement.remarks }}</Text
+                    >
+                    <Text as="span" variant="label">By component</Text>
+                    <PartEditor
+                      :control-id="id"
+                      :part-id="band.id"
+                      :statement="band.statement"
+                      :by-components="band.statement?.byComponents ?? []"
+                      @done="editing = null"
                     />
-                    <Text v-else variant="secondary">{{
-                      band.statement
-                        ? 'No component implements this part yet.'
-                        : 'Nothing written for this part yet.'
-                    }}</Text>
                   </template>
                 </template>
               </LinkedColumns>
@@ -161,34 +180,50 @@ const editDenied = (key: string) =>
                   >
                 </template>
                 <template #implementation>
-                  <Cluster gap="2" justify="between">
-                    <Text as="span" variant="label">By component</Text>
+                  <Cluster
+                    v-if="editing !== statement.uuid"
+                    :wrap="false"
+                    align="start"
+                    gap="2"
+                  >
+                    <Stack gap="3">
+                      <Text
+                        v-if="statement.remarks"
+                        variant="secondary"
+                        preserve-whitespace
+                        >{{ statement.remarks }}</Text
+                      >
+                      <template v-if="statement.byComponents?.length">
+                        <Text as="span" variant="label">By component</Text>
+                        <ComponentStatements
+                          :by-components="statement.byComponents"
+                        />
+                      </template>
+                      <Text v-else variant="secondary"
+                        >No component implements this part yet.</Text
+                      >
+                    </Stack>
                     <IconButton
-                      v-if="editing !== statement.uuid"
                       icon="edit"
                       :label="`Edit the implementation of ${statement.statementId}`"
                       :disabled-reason="editDenied(statement.uuid)"
                       @click="editing = statement.uuid"
                     />
                   </Cluster>
-                  <Text
-                    v-if="statement.remarks"
-                    variant="secondary"
-                    preserve-whitespace
-                    >{{ statement.remarks }}</Text
-                  >
-                  <PartEditor
-                    v-if="editing === statement.uuid"
-                    :control-id="id"
-                    :part-id="statement.statementId"
-                    :statement="statement"
-                    :by-components="statement.byComponents ?? []"
-                    @done="editing = null"
-                  />
                   <template v-else>
-                    <ComponentStatements
-                      v-if="statement.byComponents?.length"
-                      :by-components="statement.byComponents"
+                    <Text
+                      v-if="statement.remarks"
+                      variant="secondary"
+                      preserve-whitespace
+                      >{{ statement.remarks }}</Text
+                    >
+                    <Text as="span" variant="label">By component</Text>
+                    <PartEditor
+                      :control-id="id"
+                      :part-id="statement.statementId"
+                      :statement="statement"
+                      :by-components="statement.byComponents ?? []"
+                      @done="editing = null"
                     />
                   </template>
                 </template>

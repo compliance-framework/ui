@@ -102,6 +102,17 @@ describe('ControlView', () => {
     ]);
   });
 
+  it('links to the catalog once, and says "By component" only over components', () => {
+    const wrapper = mountView();
+    expect(
+      wrapper.findAll('a').filter((a) => a.text().includes('in its catalog')),
+    ).toHaveLength(1);
+    const labels = wrapper
+      .findAll('section[aria-label="Implementation"]')
+      .map((box) => box.text().includes('By component'));
+    expect(labels).toEqual([true, false]);
+  });
+
   it("lists the control's evidence filters", () => {
     expect(mountView().text()).toContain('MFA enforced');
   });

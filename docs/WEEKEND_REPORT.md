@@ -1548,3 +1548,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   is the part's own, without its sub-parts. The list row's "Statements for X of Y parts" counts
   every depth. New in the design system: LinkedColumns `depth` (1 to 3): side by side, the first
   box indents and the other columns stay aligned; stacked, the whole row indents by a smaller step.
+- **Implementation control view: tidier boxes.** With a row per part, the catalog icon on every
+  control box was the same link many times over: it's now one link at the top, "See ac-1 in its
+  catalog (opens in a new tab)". An implementation box shows the statement's remarks, if any,
+  then "By component" only when there are components (or while editing them). The edit button
+  sits beside the box's text instead of on a row of its own, so an empty part is one line.
