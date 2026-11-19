@@ -33,6 +33,8 @@ function mountEditor(
       { uuid: 'iam', title: 'IAM' },
     ],
     reload,
+    refreshComponents: vi.fn(),
+    newComponentLink: () => ({ name: 'system-configure-components' }),
   } as unknown as ControlTreeContext;
   const Host = defineComponent({
     setup() {
@@ -46,7 +48,12 @@ function mountEditor(
     },
   });
   const wrapper = mount(Host, {
-    global: { stubs: { Tooltip: { template: '<slot />' } } },
+    global: {
+      stubs: {
+        Tooltip: { template: '<slot />' },
+        RouterLink: { template: '<a><slot /></a>' },
+      },
+    },
   });
   return { wrapper, reload };
 }
@@ -89,10 +96,12 @@ describe('PartEditor', () => {
       partId: 'ac-2_smt.b',
       byComponents: [],
     });
-    await button(wrapper, 'Add a component').trigger('click');
+    await button(wrapper, 'Link a component').trigger('click');
     await button(wrapper, 'Save').trigger('click');
     expect(wrapper.text()).toContain('Choose a component.');
     expect(wrapper.text()).toContain('Say how the component implements this.');
+    // New components are made where components live, in a new tab.
+    expect(wrapper.text()).toContain('Create a component (opens in a new tab)');
     expect(api.post).not.toHaveBeenCalled();
   });
 });

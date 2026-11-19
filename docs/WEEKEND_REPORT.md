@@ -1514,3 +1514,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Limits, from the API: a component can't be added to the whole control (only to a part), and
   statement remarks aren't editable here yet (the statement update would need checking for
   whether it replaces the components). The search label is now "ID and title filter".
+- **Implementation control view: link, don't add, components.** Each implementation box starts
+  with a "By component" label (and its edit icon), so it's clear each entry is a component.
+  Editing now offers "Link a component": a type-to-search list of the plan's components (not
+  those already on the part), refreshed each time it opens. Components are made where they live:
+  beside the search, "Create a component (opens in a new tab)" goes to Configure System →
+  Components with the new-component form open (the page takes `?create=1`), then the search
+  finds it without reloading the view.

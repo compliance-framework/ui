@@ -1217,7 +1217,9 @@ const tabs = [
 
 // Each control row's Implementation and Evidence boxes: the plan's components, and the evidence
 // filters by the controls they check. One request each serves every row.
-const { data: sspComponents } = useDataApi<SystemComponent[]>(
+const { data: sspComponents, execute: fetchSspComponents } = useDataApi<
+  SystemComponent[]
+>(
   `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/system-implementation/components`,
 );
 const { data: sspFilters, execute: fetchSspFilters } = useDataApi<Dashboard[]>(
@@ -1371,6 +1373,12 @@ provideControlTree({
   implementation: (id) => controlImplementations.value[id],
   component: (uuid) => componentsByUuid.value.get(uuid),
   components: () => sspComponents.value ?? [],
+  refreshComponents: () => void fetchSspComponents().catch(() => undefined),
+  newComponentLink: () => ({
+    name: 'system-configure-components',
+    params: { systemId: route.params.systemId },
+    query: { create: '1' },
+  }),
   editDenied: () => statementEditDenied.value,
   reload: loadControlImplementations,
   catalogLink,

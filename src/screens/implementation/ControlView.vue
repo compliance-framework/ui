@@ -75,23 +75,23 @@ const editDenied = (key: string) =>
                   <Text variant="secondary">The whole control</Text>
                 </template>
                 <template #implementation>
+                  <Cluster gap="2" justify="between">
+                    <Text as="span" variant="label">By component</Text>
+                    <IconButton
+                      v-if="editing !== 'whole'"
+                      icon="edit"
+                      label="Edit what implements the whole control"
+                      :disabled-reason="editDenied('whole')"
+                      @click="editing = 'whole'"
+                    />
+                  </Cluster>
                   <PartEditor
                     v-if="editing === 'whole'"
                     :control-id="id"
                     :by-components="map.whole"
                     @done="editing = null"
                   />
-                  <template v-else>
-                    <Cluster justify="end">
-                      <IconButton
-                        icon="edit"
-                        label="Edit what implements the whole control"
-                        :disabled-reason="editDenied('whole')"
-                        @click="editing = 'whole'"
-                      />
-                    </Cluster>
-                    <ComponentStatements :by-components="map.whole" />
-                  </template>
+                  <ComponentStatements v-else :by-components="map.whole" />
                 </template>
               </LinkedColumns>
             </li>
@@ -111,9 +111,22 @@ const editDenied = (key: string) =>
                   <Text preserve-whitespace>{{ band.text }}</Text>
                 </template>
                 <template #implementation>
-                  <Text v-if="band.statement?.remarks" preserve-whitespace>{{
-                    band.statement.remarks
-                  }}</Text>
+                  <Cluster gap="2" justify="between">
+                    <Text as="span" variant="label">By component</Text>
+                    <IconButton
+                      v-if="editing !== band.id"
+                      icon="edit"
+                      :label="`Edit the implementation of ${band.id}`"
+                      :disabled-reason="editDenied(band.id)"
+                      @click="editing = band.id"
+                    />
+                  </Cluster>
+                  <Text
+                    v-if="band.statement?.remarks"
+                    variant="secondary"
+                    preserve-whitespace
+                    >{{ band.statement?.remarks }}</Text
+                  >
                   <PartEditor
                     v-if="editing === band.id"
                     :control-id="id"
@@ -123,14 +136,6 @@ const editDenied = (key: string) =>
                     @done="editing = null"
                   />
                   <template v-else>
-                    <Cluster justify="end">
-                      <IconButton
-                        icon="edit"
-                        :label="`Edit the implementation of ${band.id}`"
-                        :disabled-reason="editDenied(band.id)"
-                        @click="editing = band.id"
-                      />
-                    </Cluster>
                     <ComponentStatements
                       v-if="band.statement?.byComponents?.length"
                       :by-components="band.statement.byComponents"
@@ -155,9 +160,22 @@ const editDenied = (key: string) =>
                   >
                 </template>
                 <template #implementation>
-                  <Text v-if="statement.remarks" preserve-whitespace>{{
-                    statement.remarks
-                  }}</Text>
+                  <Cluster gap="2" justify="between">
+                    <Text as="span" variant="label">By component</Text>
+                    <IconButton
+                      v-if="editing !== statement.uuid"
+                      icon="edit"
+                      :label="`Edit the implementation of ${statement.statementId}`"
+                      :disabled-reason="editDenied(statement.uuid)"
+                      @click="editing = statement.uuid"
+                    />
+                  </Cluster>
+                  <Text
+                    v-if="statement.remarks"
+                    variant="secondary"
+                    preserve-whitespace
+                    >{{ statement.remarks }}</Text
+                  >
                   <PartEditor
                     v-if="editing === statement.uuid"
                     :control-id="id"
@@ -167,14 +185,6 @@ const editDenied = (key: string) =>
                     @done="editing = null"
                   />
                   <template v-else>
-                    <Cluster justify="end">
-                      <IconButton
-                        icon="edit"
-                        :label="`Edit the implementation of ${statement.statementId}`"
-                        :disabled-reason="editDenied(statement.uuid)"
-                        @click="editing = statement.uuid"
-                      />
-                    </Cluster>
                     <ComponentStatements
                       v-if="statement.byComponents?.length"
                       :by-components="statement.byComponents"

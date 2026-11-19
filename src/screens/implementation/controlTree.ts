@@ -22,6 +22,10 @@ export interface ControlTreeContext {
   component: (uuid: string) => SystemComponent | undefined;
   /** All of the plan's components. */
   components: () => SystemComponent[];
+  /** Fetches the plan's components again, e.g. after one was made in another tab. */
+  refreshComponents: () => void;
+  /** Configure System → Components, with its new-component form open. */
+  newComponentLink: () => RouteLocationRaw;
   /** Why the user can't change the implementation, if they can't. */
   editDenied: () => string | undefined;
   /** Reloads the implementation after a change. */

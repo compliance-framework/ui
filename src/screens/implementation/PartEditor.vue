@@ -9,11 +9,13 @@ import {
   normalizeByComponentImplementationStatus,
 } from '@/views/control-implementations/partials/implementation-status';
 import Button from '@/ds/components/Button/Button.vue';
+import Combobox from '@/ds/components/Combobox/Combobox.vue';
 import FormField from '@/ds/components/FormField/FormField.vue';
 import IconButton from '@/ds/components/IconButton/IconButton.vue';
 import Select from '@/ds/components/Select/Select.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { useToast } from '@/ds/toasts';
@@ -21,9 +23,12 @@ import { useControlTree } from './controlTree';
 
 /**
  * Edits, in place, what implements one part of a control (or the whole control): each component's
- * status and text, removing components, and adding ones from the plan. Saving creates the control's
- * implementation and the part's statement if they don't exist yet. The API can't add a component
- * to the whole control, only to a part, so whole-control components can be changed or removed.
+ * status and text, removing components, and linking the plan's components, found by typing. New
+ * components are made in Configure System → Components, linked from here in a new tab; the list
+ * refreshes each time the search opens, so one made there can be linked straight away. Saving
+ * creates the control's implementation and the part's statement if they don't exist yet. The API
+ * can't add a component to the whole control, only to a part, so whole-control components can be
+ * changed or removed.
  */
 const props = defineProps<{
   controlId: string;
@@ -75,7 +80,7 @@ function choices(row: Row) {
     .map((c) => ({ value: c.uuid, label: c.title }));
 }
 
-function add(): void {
+function link(): void {
   rows.value.push({
     key: uuidv4(),
     componentUuid: '',
@@ -189,10 +194,10 @@ async function save(): Promise<void> {
             <Text v-if="row.original" as="strong">{{
               titleOf(row.componentUuid)
             }}</Text>
-            <Text v-else as="strong">New component</Text>
+            <Text v-else as="strong">Link a component</Text>
             <IconButton
               icon="delete"
-              :label="`Remove ${row.original ? titleOf(row.componentUuid) : 'the new component'}`"
+              :label="`Remove ${row.original ? titleOf(row.componentUuid) : 'this link'}`"
               @click="remove(row)"
             />
           </Cluster>
@@ -202,12 +207,20 @@ async function save(): Promise<void> {
             :error="errors[`${row.key}:component`]"
             required
           >
-            <Select
+            <Combobox
               v-model="row.componentUuid"
               :options="choices(row)"
-              placeholder="Choose a component"
+              placeholder="Type a component's name"
+              empty-text="No component in this plan matches."
+              @update:open="(open) => open && tree.refreshComponents()"
             />
           </FormField>
+          <Text v-if="!row.original" variant="caption"
+            >Not in the plan yet?
+            <TextLink :to="tree.newComponentLink()" target="_blank"
+              >Create a component (opens in a new tab)</TextLink
+            >, then search again.</Text
+          >
           <FormField label="Status">
             <Select
               v-model="row.state"
@@ -226,7 +239,7 @@ async function save(): Promise<void> {
     </Stack>
     <Text v-else variant="secondary">No component implements this yet.</Text>
     <Cluster v-if="canAdd">
-      <Button icon="add" size="sm" @click="add">Add a component</Button>
+      <Button icon="link" size="sm" @click="link">Link a component</Button>
     </Cluster>
     <Cluster gap="2">
       <Button variant="primary" :loading="saving" @click="save">Save</Button>

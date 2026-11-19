@@ -2,7 +2,8 @@
 /**
  * Configure System → Components: the system's components, each opening to its description,
  * purpose, protocols and risks, with Dashboards (evidence filters), Edit, Download and Delete.
- * The script is the classic ComponentsPanel's.
+ * The script is the classic ComponentsPanel's. `?create=1` opens the new-component form, for links
+ * from elsewhere (e.g. Implementation's "Create a component").
  */
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -147,7 +148,7 @@ function openDashboardDrawer(component: SystemComponent) {
 }
 
 // Modal states
-const showCreateComponentModal = ref(false);
+const showCreateComponentModal = ref(route.query.create === '1');
 const showEditComponentModal = ref(false);
 const componentPanelsCollapsed = ref<Record<string, boolean>>({});
 
