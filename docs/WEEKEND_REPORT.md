@@ -1618,3 +1618,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   statuses in the view are pills too (green, amber, blue), as on the list. New in the design
   system: `Clause` (hanging label, depth 0 to 3 with a smaller step on a phone, an `annotation`
   slot). `LinkedColumns` is gone: nothing used it any more.
+- **Control view: pills and edit buttons where they're seen.** Each component's status pill now
+  sits right after its name rather than at the far right, and each clause's edit button comes
+  before its note, on the left, instead of at the drawer's far edge. Design system: Cluster's
+  `grow="last"` lets the last child take the space in a non-wrapping row (for leading markers).

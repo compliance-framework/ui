@@ -4,7 +4,8 @@ import { spaceVar, type SpaceStep } from './space';
 /**
  * A wrapping row, e.g. a set of buttons or badges. Wraps instead of overflowing (1.4.10).
  * `:wrap="false"` keeps one row for a title with trailing markers: the first child takes the
- * space and wraps inside itself, and the rest keep their size at the end.
+ * space and wraps inside itself, and the rest keep their size at the end. `grow="last"` does the
+ * opposite, for leading markers (e.g. an edit button before a block of text).
  */
 withDefaults(
   defineProps<{
@@ -12,9 +13,17 @@ withDefaults(
     justify?: 'start' | 'between' | 'end';
     align?: 'start' | 'center' | 'baseline' | 'end';
     wrap?: boolean;
+    grow?: 'first' | 'last';
     as?: string;
   }>(),
-  { gap: '3', justify: 'start', align: 'center', wrap: true, as: 'div' },
+  {
+    gap: '3',
+    justify: 'start',
+    align: 'center',
+    wrap: true,
+    grow: 'first',
+    as: 'div',
+  },
 );
 </script>
 
@@ -25,7 +34,7 @@ withDefaults(
     :class="[
       `cluster--justify-${justify}`,
       `cluster--align-${align}`,
-      { 'cluster--nowrap': !wrap },
+      { 'cluster--nowrap': !wrap, 'cluster--grow-last': grow === 'last' },
     ]"
     :style="{ '--cluster-gap': spaceVar(gap) }"
   >
@@ -52,6 +61,15 @@ withDefaults(
 
 .cluster--nowrap > :deep(:not(:first-child)) {
   flex: none;
+}
+
+.cluster--nowrap.cluster--grow-last > :deep(:first-child) {
+  flex: none;
+}
+
+.cluster--nowrap.cluster--grow-last > :deep(:last-child) {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .cluster--justify-between {

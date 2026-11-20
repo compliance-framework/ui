@@ -9,7 +9,8 @@ import PartEditor from './PartEditor.vue';
 
 /**
  * What implements one clause of a control (or the whole control): the statement's remarks, then
- * each component's statement, with an edit button that turns it into a form in place. The
+ * each component's statement, with an edit button before them (on the left, where it is seen) that
+ * turns it into a form in place. The
  * control's view decides which clause is being edited, one at a time.
  */
 defineProps<{
@@ -30,13 +31,13 @@ const emit = defineEmits<{ edit: []; done: [] }>();
 </script>
 
 <template>
-  <Cluster
-    v-if="!editing"
-    :wrap="false"
-    align="start"
-    justify="between"
-    gap="2"
-  >
+  <Cluster v-if="!editing" :wrap="false" grow="last" align="start" gap="2">
+    <IconButton
+      icon="edit"
+      :label="editLabel"
+      :disabled-reason="editDenied"
+      @click="emit('edit')"
+    />
     <Stack gap="3">
       <Text v-if="remarks" variant="secondary" preserve-whitespace>{{
         remarks
@@ -47,12 +48,6 @@ const emit = defineEmits<{ edit: []; done: [] }>();
       </template>
       <Text v-else-if="emptyText" variant="secondary">{{ emptyText }}</Text>
     </Stack>
-    <IconButton
-      icon="edit"
-      :label="editLabel"
-      :disabled-reason="editDenied"
-      @click="emit('edit')"
-    />
   </Cluster>
   <Stack v-else gap="3">
     <Text v-if="remarks" variant="secondary" preserve-whitespace>{{

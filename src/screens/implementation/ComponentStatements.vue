@@ -8,8 +8,8 @@ import { implementationStatus, implementationTone } from './controlParts';
 import { useControlTree } from './controlTree';
 
 /**
- * Each component's statement for (part of) a control: the component, its status as a pill (green
- * implemented, amber partial, blue otherwise) and its text.
+ * Each component's statement for (part of) a control: the component, its status as a pill beside its
+ * name (green implemented, amber partial, blue otherwise) and its text.
  */
 defineProps<{ byComponents: ByComponent[] }>();
 const tree = useControlTree();
@@ -19,7 +19,7 @@ const tree = useControlTree();
   <Stack as="ul" gap="4">
     <li v-for="bc in byComponents" :key="bc.uuid">
       <Stack gap="1">
-        <Cluster gap="2" justify="between">
+        <Cluster gap="2">
           <Text as="strong">{{
             tree.component(bc.componentUuid)?.title ??
             'A component not in this plan'
