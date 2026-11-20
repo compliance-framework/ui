@@ -272,8 +272,7 @@
           <p class="font-semibold">The evaluation could not be replayed:</p>
           <ul class="mt-1 list-disc pl-5">
             <li v-for="(evalError, index) in playback.errors" :key="index">
-              <code>{{ evalError.code }}</code
-              >: {{ evalError.message }}
+              <code>{{ evalError.code }}</code>: {{ evalError.message }}
               <span v-if="evalError.file">
                 ({{ evalError.file
                 }}<span v-if="evalError.row">:{{ evalError.row }}</span
