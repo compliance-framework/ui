@@ -1622,3 +1622,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   sits right after its name rather than at the far right, and each clause's edit button comes
   before its note, on the left, instead of at the drawer's far edge. Design system: Cluster's
   `grow="last"` lets the last child take the space in a non-wrapping row (for leading markers).
+- **Control view: an Evidence pill per component.** A component's statement in the drawer gets a
+  grey "Evidence" pill (or "Evidence (2 filters)") after its status pill when an evidence filter is
+  linked to both the control and that component, the only per-component evidence link the API
+  allows. **API to-do:** evidence filters link to controls and components, not to a statement, so
+  the pill is the same on every part a component implements; links per statement are wanted. No
+  local filter is linked to a component yet, so no pill shows on local data until one is.
+  New in the design system: `Pill` (a label on a tone's solid colour); `StatusPill` now uses it.

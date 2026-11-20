@@ -6,7 +6,7 @@ describe('StatusPill', () => {
   it("names the status on its tone's colour", () => {
     const wrapper = mount(StatusPill, { props: { status: 'partial' } });
     expect(wrapper.text()).toBe('Partial');
-    expect(wrapper.classes()).toContain('status-pill--warning');
+    expect(wrapper.classes()).toContain('pill--warning');
   });
 
   it('takes a tone that overrides the vocabulary', () => {
@@ -14,6 +14,6 @@ describe('StatusPill', () => {
       props: { status: 'not-applicable', tone: 'info' },
     });
     expect(wrapper.text()).toBe('Not applicable');
-    expect(wrapper.classes()).toContain('status-pill--info');
+    expect(wrapper.classes()).toContain('pill--info');
   });
 });

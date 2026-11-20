@@ -44,7 +44,10 @@ const emit = defineEmits<{ edit: []; done: [] }>();
       }}</Text>
       <template v-if="byComponents.length">
         <Text as="span" variant="label">By component</Text>
-        <ComponentStatements :by-components="byComponents" />
+        <ComponentStatements
+          :control-id="controlId"
+          :by-components="byComponents"
+        />
       </template>
       <Text v-else-if="emptyText" variant="secondary">{{ emptyText }}</Text>
     </Stack>
