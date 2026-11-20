@@ -1601,3 +1601,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   a set value `--like this--` so it reads as filled in, not as NIST's words. The catalog page now
   writes parameters out too (it showed the raw `{{ insert: param, … }}` before), in its statement
   outline, lead text and other parts.
+- **Implementation list: status pills.** Each component's status on a control row is now a small
+  solid pill after its name: green for implemented, amber for partial, blue for every other status
+  (planned, alternative, not applicable, no status). New in the design system: `StatusPill` (a
+  status's name on its tone's solid colour, with an optional tone override).
+- **Classic UI: parameters written out (branch `fix/catalog-param-values`, off `main`, local).**
+  The classic catalog and implementation views showed raw `{{ insert: param, … }}`; they now write
+  out values (`--like this--`) or NIST's wording, as the redesign does, for side-by-side comparison.
+  Run locally on :3110 from a worktree with an untracked proxy config.

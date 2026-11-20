@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Control } from '@/oscal';
-import { statuses } from '@/ds/components/StatusBadge/statuses';
+import type {
+  StatusKey,
+  StatusTone,
+} from '@/ds/components/StatusBadge/statuses';
+import StatusPill from '@/ds/components/StatusPill/StatusPill.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import { implementationSummary, partMap } from './controlParts';
 import { useControlTree } from './controlTree';
 
 /**
  * The end of a control row's second line in the Implementation list: how many of its parts are
- * implemented and each component that implements it with its status ("Okta: implemented"), or
- * that nothing does yet.
+ * implemented and each component that implements it with its status as a pill ("Okta:
+ * [Implemented]"; green when implemented, amber when partial, blue otherwise), or that nothing
+ * does yet.
  */
 const props = defineProps<{ control: Control }>();
 const tree = useControlTree();
@@ -24,34 +30,44 @@ const partsText = computed(() => {
     ? `${partsCovered} of ${partsTotal} parts`
     : '';
 });
-/** "Okta: implemented", or "Okta: implemented, partial" when its parts differ. */
-const componentTexts = computed(() =>
+/** Each component's name and its statuses across the parts ("no status" when it has none). */
+const components = computed(() =>
   summary.value.components.map(({ uuid, statuses: found }) => ({
     uuid,
-    text: `${tree.component(uuid)?.title ?? 'Unknown component'}: ${
-      found.length
-        ? found.map((s) => statuses[s].label.toLowerCase()).join(', ')
-        : 'no status'
-    }`,
+    name: tree.component(uuid)?.title ?? 'Unknown component',
+    statuses: found.length ? found : (['no-status'] as StatusKey[]),
   })),
 );
+const tone = (status: StatusKey): StatusTone =>
+  status === 'implemented'
+    ? 'success'
+    : status === 'partial'
+      ? 'warning'
+      : 'info';
 </script>
 
 <template>
   <Text v-if="!implementation" as="span" variant="caption"
     >Not implemented yet</Text
   >
-  <Text v-else-if="!componentTexts.length" as="span" variant="caption"
+  <Text v-else-if="!components.length" as="span" variant="caption"
     >No component implements it yet</Text
   >
   <template v-else>
     <Text v-if="partsText" as="span" variant="caption">{{ partsText }}</Text>
-    <Text
-      v-for="component in componentTexts"
+    <Cluster
+      v-for="component in components"
       :key="component.uuid"
-      as="span"
-      variant="caption"
-      >{{ component.text }}</Text
+      gap="1"
+      align="center"
     >
+      <Text as="span" variant="caption">{{ component.name }}:</Text>
+      <StatusPill
+        v-for="status in component.statuses"
+        :key="status"
+        :status="status"
+        :tone="tone(status)"
+      />
+    </Cluster>
   </template>
 </template>

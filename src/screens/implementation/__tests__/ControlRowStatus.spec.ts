@@ -79,7 +79,7 @@ describe('ControlRowStatus and ControlRowImplementation', () => {
     ).text();
     expect(text).toContain('2 open risks (high)');
     expect(text).toContain('1 of 2 parts');
-    expect(text).toContain('Okta: implemented');
+    expect(text).toContain('Okta:Implemented');
     expect(text).toContain('1 evidence filter');
   });
 
