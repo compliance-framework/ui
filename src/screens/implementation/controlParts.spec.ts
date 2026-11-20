@@ -95,17 +95,17 @@ describe('partMap', () => {
 });
 
 describe('implementationSummary', () => {
-  it('counts the parts with components of their own, the statuses and the components', () => {
+  it('counts the parts with components of their own, and gives each component its statuses', () => {
     const summary = implementationSummary(
       partMap(control, {
         uuid: 'r',
         controlId: 'ac-2',
-        byComponents: [bc('w', 'c1', 'implemented')],
+        byComponents: [bc('w', 'c1', 'partial')],
         statements: [
           {
             uuid: 's1',
             statementId: 'ac-2_smt.a',
-            byComponents: [bc('a1', 'c1', 'partial'), bc('a2', 'c2')],
+            byComponents: [bc('a1', 'c1', 'implemented'), bc('a2', 'c2')],
           },
         ],
       } as ImplementedRequirement),
@@ -113,12 +113,10 @@ describe('implementationSummary', () => {
     expect(summary).toEqual({
       partsCovered: 1,
       partsTotal: 3,
-      statusCounts: [
-        { status: 'implemented', count: 1 },
-        { status: 'partial', count: 1 },
+      components: [
+        { uuid: 'c1', statuses: ['implemented', 'partial'] },
+        { uuid: 'c2', statuses: [] },
       ],
-      noStatus: 1,
-      componentUuids: ['c1', 'c2'],
     });
   });
 });

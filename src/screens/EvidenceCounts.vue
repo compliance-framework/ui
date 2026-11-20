@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * Evidence results as status badges: how many are satisfied, not satisfied and unknown, or a
- * caption when there are none (or nothing, with `quiet`). Shared by the Implementation tree and
- * its statement editor; the catalog tree draws the same badges.
+ * Evidence results as one capsule: how many are satisfied, unknown and not satisfied, or a
+ * caption when there are none (or nothing, with `quiet`). Shared by the Implementation list and
+ * component evidence; the catalog tree draws the same counts.
  */
-import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
+import StatusCapsule from '@/ds/components/StatusCapsule/StatusCapsule.vue';
 import Text from '@/ds/components/Text/Text.vue';
-import Cluster from '@/ds/components/layout/Cluster.vue';
 
 defineProps<{
   green: number;
@@ -18,10 +17,13 @@ defineProps<{
 </script>
 
 <template>
-  <Cluster v-if="green + red + gray" gap="1">
-    <StatusBadge v-if="green" status="satisfied" :count="green" compact />
-    <StatusBadge v-if="red" status="not-satisfied" :count="red" compact />
-    <StatusBadge v-if="gray" status="unknown" :count="gray" compact />
-  </Cluster>
+  <StatusCapsule
+    v-if="green + red + gray"
+    :segments="[
+      { status: 'satisfied', count: green },
+      { status: 'unknown', count: gray },
+      { status: 'not-satisfied', count: red },
+    ]"
+  />
   <Text v-else-if="!quiet" variant="caption">No evidence yet.</Text>
 </template>

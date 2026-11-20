@@ -96,12 +96,11 @@ export interface ImplementationSummary {
   /** Parts with a component of their own (whole-control components aside), and all the parts. */
   partsCovered: number;
   partsTotal: number;
-  /** Components per status, in the order work progresses. */
-  statusCounts: { status: StatusKey; count: number }[];
-  /** Components without a status. */
-  noStatus: number;
-  /** The UUIDs of the components that implement any of it, once each. */
-  componentUuids: string[];
+  /**
+   * Each component that implements any of it, once, in the order first met, with its statuses
+   * across the parts in the order work progresses (none when it has no status).
+   */
+  components: { uuid: string; statuses: StatusKey[] }[];
 }
 
 export function implementationSummary(map: PartMap): ImplementationSummary {
@@ -110,23 +109,21 @@ export function implementationSummary(map: PartMap): ImplementationSummary {
     ...map.bands.flatMap((b) => b.statement?.byComponents ?? []),
     ...map.others.flatMap((s) => s.byComponents ?? []),
   ];
-  const counts = new Map<StatusKey, number>();
-  let noStatus = 0;
+  const statuses = new Map<string, Set<StatusKey>>();
   for (const bc of all) {
+    const found = statuses.get(bc.componentUuid) ?? new Set<StatusKey>();
     const status = implementationStatus(bc);
-    if (status) counts.set(status, (counts.get(status) ?? 0) + 1);
-    else noStatus += 1;
+    if (status) found.add(status);
+    statuses.set(bc.componentUuid, found);
   }
   return {
     partsCovered: map.bands.filter((b) => b.statement?.byComponents?.length)
       .length,
     partsTotal: map.bands.length,
-    statusCounts: STATUS_ORDER.filter((s) => counts.has(s)).map((status) => ({
-      status,
-      count: counts.get(status)!,
+    components: [...statuses].map(([uuid, found]) => ({
+      uuid,
+      statuses: STATUS_ORDER.filter((s) => found.has(s)),
     })),
-    noStatus,
-    componentUuids: [...new Set(all.map((bc) => bc.componentUuid))],
   };
 }
 

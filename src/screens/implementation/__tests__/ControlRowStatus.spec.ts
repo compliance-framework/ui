@@ -29,6 +29,8 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
   const context = {
     sspId: () => 'ssp-1',
     implementation: () => implementation,
+    component: (uuid: string) =>
+      uuid === 'okta' ? { uuid, title: 'Okta' } : undefined,
     filters: () => [{ id: 'f1', name: 'MFA' }],
     riskCount: () => risks,
     riskSeverity: () => 'high',
@@ -71,7 +73,8 @@ describe('ControlRowStatus', () => {
       2,
     ).text();
     expect(text).toContain('2 open risks (high)');
-    expect(text).toContain('1 of 2 parts · 1 implemented');
+    expect(text).toContain('1 of 2 parts');
+    expect(text).toContain('Okta: implemented');
     expect(text).toContain('1 evidence filter');
   });
 

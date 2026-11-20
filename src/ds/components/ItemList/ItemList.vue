@@ -6,7 +6,9 @@ import type { RouteLocationRaw } from 'vue-router';
  * alerts and history all use it (P9). Each title is a real link, never a clickable row (F-09).
  * `time` shows a formatted time; `datetime` makes it machine-readable. `dense` is for narrow side
  * columns on overview pages: tighter rows, and the trailing badge sits beside the meta line under a
- * full-width title instead of wrapping onto a line of its own.
+ * full-width title instead of wrapping onto a line of its own. `rowLink` stretches each title's
+ * link over its whole row, so the row is one big click target; it stays one link (the title) for
+ * keyboards and screen readers, and links or focusable items in the trailing slot sit above it.
  */
 withDefaults(
   defineProps<{
@@ -20,8 +22,9 @@ withDefaults(
     }[];
     emptyText: string;
     dense?: boolean;
+    rowLink?: boolean;
   }>(),
-  { dense: false },
+  { dense: false, rowLink: false },
 );
 </script>
 
@@ -29,7 +32,7 @@ withDefaults(
   <ul
     v-if="items.length"
     class="item-list"
-    :class="{ 'item-list--dense': dense }"
+    :class="{ 'item-list--dense': dense, 'item-list--row-link': rowLink }"
   >
     <li v-for="item in items" :key="item.id" class="item-list__item">
       <div class="item-list__main">
@@ -126,6 +129,25 @@ withDefaults(
   color: var(--ds-color-text-secondary);
   font-size: var(--ds-font-size-caption);
   line-height: var(--ds-leading-snug);
+}
+
+.item-list--row-link .item-list__item {
+  position: relative;
+}
+
+.item-list--row-link .item-list__item:hover {
+  background: var(--ds-color-surface-hover);
+}
+
+.item-list--row-link .item-list__title--link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Positioned after the title in the DOM, so they paint above its stretched link. */
+.item-list--row-link .item-list__trailing :deep(:is(a, button, [tabindex])) {
+  position: relative;
 }
 
 .item-list__trailing {

@@ -1573,3 +1573,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   count suggestions), shared responsibility (what a component provides; importing an upstream
   implementation, and the "Just changed" highlight it set), per-statement risk links, and
   statement export/import. Each needs rebuilding into the control's view if wanted.
+- **Implementation list: clickable rows, components by name, evidence capsules.** Each control's
+  whole row now opens its view (ItemList's new `rowLink`: the title's link stretches over the
+  row, so it's still one link for keyboards and screen readers; links in the row, like risks,
+  sit above it). Instead of "5 implemented, 2 partial", the row names each component that
+  implements the control with its status ("Okta workforce identity: implemented"; "…:
+  implemented, partial" when its parts differ), after "7 of 21 parts". Evidence results are a
+  capsule like the classic UI's: green, grey and red segments with counts (zeros shown, so a
+  segment's place says which it is too), the counts in words on hover or focus and for screen
+  readers. New in the design system: `StatusCapsule`. It replaces the three compact badges
+  wherever evidence counts show (`EvidenceCounts`).

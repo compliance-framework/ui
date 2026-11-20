@@ -176,6 +176,9 @@ Made during the work (open to review):
   old Edit section (the classic statements editor and the "Components and sharing" drawer, with
   AI suggestions per control, shared responsibility and per-statement risks) was removed on
   2026-11-20, with its code. Those features return only when rebuilt into the view.
+  The whole row is the control's link (ItemList `rowLink`, a stretched title link). The row names
+  each implementing component with its status rather than counting statuses, and evidence
+  results are a `StatusCapsule` (green, grey, red segments with counts, as in the classic UI).
 - **List pages summarise; a record's full content has its own view** (2026-11-19, from the
   Implementation page). A row shows counts and names, not text; its title (a real link), or a
   click anywhere else on it, opens the record in a wide Drawer whose state is in the address

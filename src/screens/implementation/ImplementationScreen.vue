@@ -1159,6 +1159,7 @@ provideControlTree({
               v-if="familyOpen(section)"
               :items="familyItems(section)"
               empty-text="No controls."
+              row-link
             >
               <template #trailing="{ item }">
                 <ControlRowStatus :control="controlById(section, item.id)" />
