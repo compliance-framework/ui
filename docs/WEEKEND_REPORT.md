@@ -1583,3 +1583,9 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   segment's place says which it is too), the counts in words on hover or focus and for screen
   readers. New in the design system: `StatusCapsule`. It replaces the three compact badges
   wherever evidence counts show (`EvidenceCounts`).
+- **Implementation list: two lines per row, each with its own end.** Line one: the control ID in
+  the code font, its title, and at the end its risks, suggestions, evidence filters and evidence
+  capsule. Line two: the start of its statement, and at the end its parts count and each
+  component with its status. On a narrow screen the pieces stack. New in the design system:
+  ItemList items take a `code` (shown before the title in the code font), and a `meta-trailing`
+  slot gives the meta line its own end.

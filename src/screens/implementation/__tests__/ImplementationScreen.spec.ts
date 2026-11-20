@@ -255,7 +255,7 @@ describe('ImplementationScreen (the classic Implementation logic, redesigned)', 
     await openFamilies(wrapper);
     return wrapper
       .findAll('li')
-      .find((li) => li.text().includes(`${controlId} ·`))
+      .find((li) => li.find('code').text() === controlId)
       ?.text();
   };
 

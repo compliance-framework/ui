@@ -15,6 +15,7 @@ import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
 import ItemList from '@/ds/components/ItemList/ItemList.vue';
 import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import ControlRowImplementation from './ControlRowImplementation.vue';
 import ControlRowStatus from './ControlRowStatus.vue';
 import ControlView from './ControlView.vue';
 import { controlSections, type ControlSection } from './controlSections';
@@ -1016,7 +1017,8 @@ const controlLink = (controlId: string) => ({
 const familyItems = (section: ControlSection) =>
   section.controls.map((control) => ({
     id: control.id,
-    title: `${control.id} · ${control.title}`,
+    code: control.id,
+    title: control.title,
     to: controlLink(control.id),
     meta: statementExcerpt(control),
   }));
@@ -1161,6 +1163,11 @@ provideControlTree({
               empty-text="No controls."
               row-link
             >
+              <template #meta-trailing="{ item }">
+                <ControlRowImplementation
+                  :control="controlById(section, item.id)"
+                />
+              </template>
               <template #trailing="{ item }">
                 <ControlRowStatus :control="controlById(section, item.id)" />
               </template>

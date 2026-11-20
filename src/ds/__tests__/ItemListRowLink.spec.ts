@@ -22,4 +22,20 @@ describe('ItemList rowLink', () => {
     });
     expect(wrapper.classes()).not.toContain('item-list--row-link');
   });
+
+  it('leads a title with its code, and adds a second line end from meta-trailing', () => {
+    const wrapper = mount(ItemList, {
+      props: {
+        items: [{ id: 'a', code: 'ac-1', title: 'Policy', meta: 'Develop' }],
+        emptyText: 'None',
+      },
+      slots: { 'meta-trailing': '<span>Okta: implemented</span>' },
+      global: { stubs: { RouterLink } },
+    });
+    expect(wrapper.find('.item-list__title code').text()).toBe('ac-1');
+    expect(wrapper.classes()).toContain('item-list--two-line');
+    expect(wrapper.find('.item-list__meta-trailing').text()).toBe(
+      'Okta: implemented',
+    );
+  });
 });

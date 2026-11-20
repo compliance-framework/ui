@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 import type { Control, ImplementedRequirement } from '@/oscal';
+import ControlRowImplementation from '../ControlRowImplementation.vue';
 import ControlRowStatus from '../ControlRowStatus.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
@@ -41,7 +42,11 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
   const Host = defineComponent({
     setup() {
       provideControlTree(context);
-      return () => h(ControlRowStatus, { control });
+      return () =>
+        h('div', [
+          h(ControlRowStatus, { control }),
+          h(ControlRowImplementation, { control }),
+        ]);
     },
   });
   return mount(Host, {
@@ -49,7 +54,7 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
   });
 }
 
-describe('ControlRowStatus', () => {
+describe('ControlRowStatus and ControlRowImplementation', () => {
   it('summarises the implementation, filters and risks in one line', () => {
     const text = mountStatus(
       {
