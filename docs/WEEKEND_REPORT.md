@@ -1609,3 +1609,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   The classic catalog and implementation views showed raw `{{ insert: param, … }}`; they now write
   out values (`--like this--`) or NIST's wording, as the redesign does, for side-by-side comparison.
   Run locally on :3110 from a worktree with an untracked proxy config.
+- **Control view: a document, not boxes.** The statement is set out like a legal text: each
+  clause's label (a., 1., (a)) hangs to the left, nested clauses indent under their parent (the ID
+  on hover over the label), and what implements a clause sits a step further in behind a blue
+  rule, in the body font, so it reads as a note on the text rather than more of it. The edit
+  button and in-place form are unchanged. The implementation's own remarks moved from above the
+  statement into "The whole control" note, so they no longer look like control text. Component
+  statuses in the view are pills too (green, amber, blue), as on the list. New in the design
+  system: `Clause` (hanging label, depth 0 to 3 with a smaller step on a phone, an `annotation`
+  slot). `LinkedColumns` is gone: nothing used it any more.

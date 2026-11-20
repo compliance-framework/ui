@@ -74,6 +74,10 @@ describe('partMap', () => {
       ['ac-2_smt.b', 'b. Specify:', 0, 's1'],
       ['ac-2_smt.b.1', '1. Authorized users;', 1, 's3'],
     ]);
+    expect(map.bands[2]).toMatchObject({
+      label: '1.',
+      prose: 'Authorized users;',
+    });
     expect(map.others.map((s) => s.uuid)).toEqual(['s2']);
   });
 
@@ -87,6 +91,8 @@ describe('partMap', () => {
       {
         id: 'ia-2_smt',
         text: 'Identify users.',
+        label: '',
+        prose: 'Identify users.',
         depth: 0,
         statement: undefined,
       },

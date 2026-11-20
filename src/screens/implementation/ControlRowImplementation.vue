@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Control } from '@/oscal';
-import type {
-  StatusKey,
-  StatusTone,
-} from '@/ds/components/StatusBadge/statuses';
+import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 import StatusPill from '@/ds/components/StatusPill/StatusPill.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Text from '@/ds/components/Text/Text.vue';
-import { implementationSummary, partMap } from './controlParts';
+import {
+  implementationSummary,
+  implementationTone,
+  partMap,
+} from './controlParts';
 import { useControlTree } from './controlTree';
 
 /**
@@ -38,12 +39,6 @@ const components = computed(() =>
     statuses: found.length ? found : (['no-status'] as StatusKey[]),
   })),
 );
-const tone = (status: StatusKey): StatusTone =>
-  status === 'implemented'
-    ? 'success'
-    : status === 'partial'
-      ? 'warning'
-      : 'info';
 </script>
 
 <template>
@@ -66,7 +61,7 @@ const tone = (status: StatusKey): StatusTone =>
         v-for="status in component.statuses"
         :key="status"
         :status="status"
-        :tone="tone(status)"
+        :tone="implementationTone(status)"
       />
     </Cluster>
   </template>

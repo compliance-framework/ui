@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const roots = ['src/ds', 'src/screens'];
-const allowed = /^--(ds-|reka-|grid-|stack-|cluster-|tone-|fade-|slide-|progress-|matrix-)/;
+const allowed = /^--(ds-|reka-|grid-|stack-|cluster-|clause-|tone-|fade-|slide-|progress-|matrix-)/;
 const problems = [];
 
 function walk(dir) {

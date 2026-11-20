@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { ByComponent } from '@/oscal';
-import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
+import StatusPill from '@/ds/components/StatusPill/StatusPill.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import { implementationStatus } from './controlParts';
+import { implementationStatus, implementationTone } from './controlParts';
 import { useControlTree } from './controlTree';
 
-/** Each component's statement for (part of) a control: the component, its status and its text. */
+/**
+ * Each component's statement for (part of) a control: the component, its status as a pill (green
+ * implemented, amber partial, blue otherwise) and its text.
+ */
 defineProps<{ byComponents: ByComponent[] }>();
 const tree = useControlTree();
 </script>
@@ -21,9 +24,10 @@ const tree = useControlTree();
             tree.component(bc.componentUuid)?.title ??
             'A component not in this plan'
           }}</Text>
-          <StatusBadge
+          <StatusPill
             v-if="implementationStatus(bc)"
             :status="implementationStatus(bc)!"
+            :tone="implementationTone(implementationStatus(bc)!)"
           />
         </Cluster>
         <Text preserve-whitespace>{{ bc.description }}</Text>

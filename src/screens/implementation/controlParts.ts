@@ -9,7 +9,11 @@ import {
   partOutline,
   type PartOutlineItem,
 } from '@/utils/oscal-parts';
-import { statuses, type StatusKey } from '@/ds/components/StatusBadge/statuses';
+import {
+  statuses,
+  type StatusKey,
+  type StatusTone,
+} from '@/ds/components/StatusBadge/statuses';
 
 /** One part of a control's statement ("a. Define and document…") and what implements it. */
 export interface PartBand {
@@ -17,6 +21,9 @@ export interface PartBand {
   id: string;
   /** The part's own label and text ("1. Authorized users…"), with parameters, without its sub-parts. */
   text: string;
+  /** The part's label alone ("1."), and its text alone, with parameters. */
+  label: string;
+  prose: string;
   /** How deep the part is: 0 for a., 1 for a.1, 2 for a.1.(a). */
   depth: number;
   statement?: Statement;
@@ -51,7 +58,13 @@ export function partMap(
     depth: number,
   ): Omit<PartBand, 'statement'>[] =>
     items.flatMap((item) => [
-      { id: item.id, text: text(`${item.label} ${item.text}`.trim()), depth },
+      {
+        id: item.id,
+        text: text(`${item.label} ${item.text}`.trim()),
+        label: item.label,
+        prose: text(item.text),
+        depth,
+      },
       ...flatten(item.items, depth + 1),
     ]);
   const parts = outline.length
@@ -60,6 +73,8 @@ export function partMap(
         {
           id: statementPart?.id ?? `${control.id}_smt`,
           text: text(statementPart?.prose ?? ''),
+          label: '',
+          prose: text(statementPart?.prose ?? ''),
           depth: 0,
         },
       ];
@@ -139,4 +154,11 @@ export function statementExcerpt(control: Control, max = 160): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
   return `${cut.slice(0, cut.lastIndexOf(' ') > 0 ? cut.lastIndexOf(' ') : max)}…`;
+}
+
+/** An implementation status's pill colour: green when implemented, amber when partial, else blue. */
+export function implementationTone(status: StatusKey): StatusTone {
+  if (status === 'implemented') return 'success';
+  if (status === 'partial') return 'warning';
+  return 'info';
 }

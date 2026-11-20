@@ -182,6 +182,10 @@ Made during the work (open to review):
   Each row has two lines with their own ends: ID (a code chip, as in the evidence table) and title, then risks, filters and
   evidence; the statement's start, then the parts count and components with their status.
   Each status is a StatusPill: green for implemented, amber for partial, blue for the rest.
+- **A control's view reads as a document** (2026-11-20). Its statement is laid out clause by
+  clause like a legal text (Clause: hanging labels, nested clauses indented), and each clause's
+  implementation is an annotation a step further in behind an accent rule. This replaced the
+  linked boxes (LinkedColumns, now deleted), which grew unwieldy at a box per part.
 - **Parameters: set values marked, unset ones as NIST prints them** (2026-11-20). Values are set in
   the catalog, never per SSP. Wherever control text is shown (catalog page, Implementation), a
   parameter with a value reads `--value--`, one without reads "[Assignment: organization-defined
@@ -189,8 +193,8 @@ Made during the work (open to review):
 - **List pages summarise; a record's full content has its own view** (2026-11-19, from the
   Implementation page). A row shows counts and names, not text; its title (a real link), or a
   click anywhere else on it, opens the record in a wide Drawer whose state is in the address
-  (`?control=ac-2`), so Back closes it. There, a control's statement is set beside its
-  implementation part by part (`LinkedColumns`), at every depth, with nested parts indented.
+  (`?control=ac-2`), so Back closes it. There, a control's statement reads as a document, clause
+  by clause at every depth (`Clause`), each clause's implementation annotated under it.
 - **The evidence form** uses native date inputs (local calendar dates, sent as local midnight as
   before), validates on submit with errors beside fields and a summary, keeps entries when a
   save fails, and keeps Re-submit's stream UUID and labels. Subjects are added and removed as a

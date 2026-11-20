@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 import type { Control, ImplementedRequirement } from '@/oscal';
+import Clause from '@/ds/components/Clause/Clause.vue';
 import ControlView from '../ControlView.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
@@ -78,19 +79,19 @@ function mountView() {
 }
 
 describe('ControlView', () => {
-  it('sets each part of the statement beside what implements it', () => {
-    const bands = mountView()
-      .findAll('li')
-      .filter((li) =>
-        li.find('section[aria-label="Control statement"]').exists(),
-      );
-    expect(bands.map((band) => band.text())).toEqual([
+  it('sets each clause of the statement out with what implements it', () => {
+    const clauses = mountView().findAllComponents(Clause);
+    expect(clauses.map((clause) => clause.text())).toEqual([
       expect.stringMatching(
-        /ac-2_smt\.a.*Define account types;.*Okta.*Implemented.*Account types are Okta groups\./,
+        /Define account types;.*Okta.*Implemented.*Account types are Okta groups\./,
       ),
       expect.stringMatching(
-        /ac-2_smt\.b.*Assign managers;.*Nothing written for this part yet\./,
+        /Assign managers;.*Nothing written for this part yet\./,
       ),
+    ]);
+    expect(clauses.map((clause) => clause.props('hint'))).toEqual([
+      'ac-2_smt.a',
+      'ac-2_smt.b',
     ]);
   });
 
@@ -100,8 +101,8 @@ describe('ControlView', () => {
       wrapper.findAll('a').filter((a) => a.text().includes('in its catalog')),
     ).toHaveLength(1);
     const labels = wrapper
-      .findAll('section[aria-label="Implementation"]')
-      .map((box) => box.text().includes('By component'));
+      .findAll('.clause__annotation')
+      .map((note) => note.text().includes('By component'));
     expect(labels).toEqual([true, false]);
   });
 
