@@ -1589,3 +1589,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   component with its status. On a narrow screen the pieces stack. New in the design system:
   ItemList items take a `code` (shown before the title in the code font), and a `meta-trailing`
   slot gives the meta line its own end.
+- **Implementation list: the control ID as a code chip.** The ID before each title is now the grey
+  monospace chip the evidence table uses for labels (Tag's `code` look), kept out of the title
+  link's underline, rather than plain code-font text.

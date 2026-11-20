@@ -9,7 +9,7 @@ import type { RouteLocationRaw } from 'vue-router';
  * full-width title instead of wrapping onto a line of its own. `rowLink` stretches each title's
  * link over its whole row, so the row is one big click target; it stays one link (the title) for
  * keyboards and screen readers, and links or focusable items in the trailing slots sit above it.
- * An item's `code` (e.g. a control ID) leads its title in the code font. The `meta-trailing` slot
+ * An item's `code` (e.g. a control ID) leads its title as a code chip, like Tag's `code`. The `meta-trailing` slot
  * puts more at the end of the meta line, under the trailing slot: two lines, each with its own
  * end, which stack when the list is narrow.
  */
@@ -175,9 +175,17 @@ withDefaults(
   align-items: center;
   gap: var(--ds-space-2);
 }
+/* Like Tag's code chip (as in the evidence table); inline-block keeps the link's underline off it. */
 .item-list__code {
+  display: inline-block;
   margin-right: var(--ds-space-2);
+  padding: 0 var(--ds-space-2);
+  background: var(--ds-color-status-neutral-bg);
+  color: var(--ds-color-text-primary);
   font-family: var(--ds-font-code);
+  font-size: var(--ds-font-size-caption);
+  font-weight: var(--ds-font-weight-regular);
+  line-height: var(--ds-leading-body);
 }
 
 .item-list__meta-trailing {
