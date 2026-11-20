@@ -9,7 +9,7 @@ RUN npm run build
 FROM nginx:stable-alpine@sha256:901e593c95dc85f5a729f5765516321366ef4ac401821431d408897e95287d0a AS production
 # image-scan:os-patches begin
 # Managed by compliance-framework/workflows image-scan (docs/image-scan.md#os-package-patches); removed once the base image ships the fixes.
-RUN apk upgrade --no-cache libxslt zlib
+RUN apk upgrade --no-cache libcrypto3 libssl3 libxml2 libxslt nginx zlib
 # image-scan:os-patches end
 # Pick up Alpine package fixes the nginx base image hasn't been rebuilt with yet.
 RUN apk upgrade --no-cache
