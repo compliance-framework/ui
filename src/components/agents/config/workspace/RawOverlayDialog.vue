@@ -43,9 +43,8 @@
         data-test="yaml-forbidden"
       >
         <i class="pi pi-lock mr-1" />
-        <code>{{ forbidden.join('`, `') }}</code
-        >: {{ FORBIDDEN_TOOLTIP }}. Remove
-        {{ forbidden.length === 1 ? 'it' : 'them' }} to apply.
+        <code>{{ forbidden.join('`, `') }}</code>: {{ FORBIDDEN_TOOLTIP }}.
+        Remove {{ forbidden.length === 1 ? 'it' : 'them' }} to apply.
       </p>
       <p
         v-if="coerced.length"

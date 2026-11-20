@@ -26,8 +26,7 @@
             >
             <template v-if="conflict.latest?.createdAt">{{
               ' ' + formatRelative(conflict.latest.createdAt)
-            }}</template
-            >. Your pending changes are based on r{{
+            }}</template>. Your pending changes are based on r{{
               draft.baseRevision.value
             }}.
           </p>
