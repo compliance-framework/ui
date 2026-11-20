@@ -26,7 +26,7 @@ const INSERT = /\{\{\s*insert:\s*param,\s*([^\s}]+)\s*\}\}/g;
  * Text with its parameter placeholders (`{{ insert: param, ac-02_odp.01 }}`) written out as NIST
  * prints them: "[Assignment: organization-defined prerequisites and criteria]" for a parameter
  * with a label, "[Selection (one or more): a; b]" for a choice, or the parameter's value when it
- * has one. A placeholder for a parameter it doesn't know stays as its ID in brackets.
+ * has one, marked "--like this--". A placeholder for a parameter it doesn't know stays as its ID in brackets.
  */
 export function insertParams(text: string, params: Parameter[] = []): string {
   const byId = new Map(params.map((p) => [p.id, p]));
@@ -34,7 +34,8 @@ export function insertParams(text: string, params: Parameter[] = []): string {
     s.replace(INSERT, (_, id: string) => {
       const param = byId.get(id);
       if (!param || depth > 3) return `[${id}]`;
-      if (param.values?.length) return param.values.join(', ');
+      // A set value is marked, so it reads as filled in rather than as the control's own words.
+      if (param.values?.length) return `--${param.values.join(', ')}--`;
       if (param.select?.choice?.length) {
         const how =
           param.select.howMany === 'one-or-more' ? ' (one or more)' : '';

@@ -20,11 +20,16 @@ vi.mock('@/composables/axios', () => ({
               id: 'ac-2',
               title: 'Account management',
               class: 'SP800-53',
+              params: [
+                { id: 'ac-2_prm_1', label: 'frequency', values: ['quarterly'] },
+                { id: 'ac-2_prm_2', label: 'personnel or roles' },
+              ],
               parts: [
                 {
                   id: 'ac-2_smt',
                   name: 'statement',
-                  prose: 'Manage accounts.',
+                  prose:
+                    'Manage accounts {{ insert: param, ac-2_prm_1 }}, approved by {{ insert: param, ac-2_prm_2 }}.',
                 },
               ],
             },
@@ -105,7 +110,10 @@ describe('catalog tree', () => {
     expect(text).toContain('About access.');
     const controlDisclosure = wrapper.findAllComponents(Disclosure)[1]!;
     expect(controlDisclosure.props('label')).toBe('ac-2 · Account management');
-    expect(text).toContain('Manage accounts.');
+    // Parameters are written out: a set value marked, an unset one as NIST prints it.
+    expect(text).toContain(
+      'Manage accounts --quarterly--, approved by [Assignment: organization-defined personnel or roles].',
+    );
     const controlMenu = wrapper
       .findAllComponents(Menu)
       .find(

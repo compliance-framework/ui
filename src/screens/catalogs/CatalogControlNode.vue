@@ -17,6 +17,7 @@ import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import { getErrorDetail } from '@/utils/httpErrors';
 import {
+  insertParams,
   partMarkdown,
   partOutline,
   type PartOutlineItem,
@@ -67,9 +68,12 @@ const counts = computed(() =>
 const label = computed(() => `${props.control.id} · ${props.control.title}`);
 const partOf = (name: string) =>
   props.control.parts?.find((part) => part.name === name);
+/** Text with the control's parameters written out: its values, or NIST's "[Assignment: …]". */
+const withParams = (text: string) => insertParams(text, props.control.params);
 /** The outline item for a statement item, with its ID on hover. */
 const withHint = (item: PartOutlineItem): OutlineItem => ({
   ...item,
+  text: withParams(item.text),
   hint: item.id || undefined,
   items: item.items.map(withHint),
 });
@@ -77,7 +81,7 @@ const parts = computed(() =>
   (props.control.parts ?? []).map((part) => ({
     id: part.id,
     name: part.name.replace(/-/g, ' '),
-    markdown: partMarkdown(part),
+    markdown: withParams(partMarkdown(part)),
     // A statement shows its items one by one, as implementations are written against them.
     outline:
       part.name === 'statement' ? partOutline(part).map(withHint) : undefined,
@@ -206,7 +210,7 @@ const actions = computed<MenuEntry[]>(() => [
         <Text variant="label">{{ part.name }}</Text>
         <template v-if="part.outline?.length">
           <Text v-if="partOf('statement')?.prose" variant="prose">{{
-            partOf('statement')?.prose
+            withParams(partOf('statement')?.prose ?? '')
           }}</Text>
           <Outline :items="part.outline" />
         </template>

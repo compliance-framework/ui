@@ -1592,3 +1592,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Implementation list: the control ID as a code chip.** The ID before each title is now the grey
   monospace chip the evidence table uses for labels (Tag's `code` look), kept out of the title
   link's underline, rather than plain code-font text.
+- **Parameter values filled in, and shown marked.** The NIST 800-53 catalog in local data had no
+  parameter values, so control text read "[Assignment: organization-defined …]" throughout. Every
+  parameter (1,584 of 1,592) now has a realistic example value in the catalog's `values`, set by a
+  rule per label and, for frequencies and time periods, its guideline sentence ("policy reviewed"
+  → annually, "retain audit records" → 1 year, "account review" → quarterly); selections take
+  their first plain choice. Data only, on local Postgres; the originals are backed up. The UI marks
+  a set value `--like this--` so it reads as filled in, not as NIST's words. The catalog page now
+  writes parameters out too (it showed the raw `{{ insert: param, … }}` before), in its statement
+  outline, lead text and other parts.

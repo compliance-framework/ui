@@ -181,6 +181,10 @@ Made during the work (open to review):
   results are a `StatusCapsule` (green, grey, red segments with counts, as in the classic UI).
   Each row has two lines with their own ends: ID (a code chip, as in the evidence table) and title, then risks, filters and
   evidence; the statement's start, then the parts count and components with their status.
+- **Parameters: set values marked, unset ones as NIST prints them** (2026-11-20). Values are set in
+  the catalog, never per SSP. Wherever control text is shown (catalog page, Implementation), a
+  parameter with a value reads `--value--`, one without reads "[Assignment: organization-defined
+  …]" or "[Selection: …]".
 - **List pages summarise; a record's full content has its own view** (2026-11-19, from the
   Implementation page). A row shows counts and names, not text; its title (a real link), or a
   click anywhere else on it, opens the record in a wide Drawer whose state is in the address

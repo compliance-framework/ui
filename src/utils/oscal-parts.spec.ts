@@ -50,7 +50,7 @@ describe('insertParams', () => {
         params,
       ),
     ).toBe(
-      'Require [Assignment: organization-defined prerequisites and criteria]; within 24 hours; [Selection (one or more): lock for [Assignment: organization-defined time period]; notify the administrator].',
+      'Require [Assignment: organization-defined prerequisites and criteria]; within --24 hours--; [Selection (one or more): lock for [Assignment: organization-defined time period]; notify the administrator].',
     );
   });
 
