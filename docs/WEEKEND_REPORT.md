@@ -1559,7 +1559,17 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   its open risks, suggestions, how much is implemented ("7 of 21 parts · 5 implemented, 2
   partial…", or "Not implemented yet"), its evidence filters and evidence results. Controls are
   grouped by family (catalog group), each a disclosure; which families are open is remembered per
-  system, a search opens them all, and a family opens itself to show a control that just changed.
+  system, and a search opens them all.
   Rows in a closed family aren't rendered, so they don't fetch their evidence. `ControlLinkRow`
   is gone; the control's view keeps LinkedColumns for part beside implementation. Design system:
   ItemList's trailing content can now shrink and wrap on a narrow screen.
+- **Implementation control view: Edit section removed, with the old drawer.** The view's last
+  section held the classic statements editor and a "Components and sharing" button into the old
+  implementation drawer. Both are gone, with every file only they used: the statements editor
+  and its forms, the import-from-SSP and export dialogs, the Shared responsibility panel,
+  inherited responsibilities, the drawer's component statements and AI suggestions panel, two
+  composables, and the drawer's state in the UI store. **No longer reachable on this screen:**
+  per-control AI suggestion review (the page's "Apply all suggestions" stays, and rows still
+  count suggestions), shared responsibility (what a component provides; importing an upstream
+  implementation, and the "Just changed" highlight it set), per-statement risk links, and
+  statement export/import. Each needs rebuilding into the control's view if wanted.

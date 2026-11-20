@@ -2,13 +2,11 @@
 /**
  * This System > Implementation (/systems/:systemId/implementation): which profiles the system
  * implements, every control they bring in (grouped as in the catalog, searchable), how each is
- * implemented, and a drawer with a control's component statements, AI suggestions and shared
- * responsibilities. The data logic is the classic page's, unchanged.
+ * implemented. A control opens in its own view (ControlView).
  */
 import { computed as dsComputed, ref as dsRef } from 'vue';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
-import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
@@ -24,7 +22,7 @@ import { statementExcerpt } from './controlParts';
 import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import ProfilesField from './ProfilesField.vue';
 import { provideControlTree } from './controlTree';
-import { onMounted, provide, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useSystemStore } from '@/stores/system.ts';
@@ -32,25 +30,14 @@ import {
   useSystemSecurityPlanStore,
   type SystemSecurityPlanProfileBinding,
 } from '@/stores/system-security-plans';
-import { useUIStore } from '@/stores/ui.ts';
 import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
-import {
-  decamelizeKeys,
-  useAuthenticatedInstance,
-  useDataApi,
-} from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS, RESOURCES } from '@/constants/permissions';
-import {
-  LeveragedControlsKey,
-  useLeveragedControls,
-} from '@/composables/useLeveragedControls';
-import ControlSuggestions from './ControlSuggestions.vue';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
-  ByComponent,
   Control,
   ControlImplementation,
   ImplementedRequirement,
@@ -59,13 +46,6 @@ import type {
   SystemComponent,
 } from '@/oscal';
 import type { Dashboard } from '@/stores/filters';
-import type {
-  SharedResponsibilityProvided,
-  SubscribeResponseMeta,
-} from '@/types/ssp-leverage';
-import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
-import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
-import ByComponentStatement from './ByComponentStatement.vue';
 import { useToast } from '@/ds/toasts';
 import { useConfirm } from '@/ds/confirm';
 import {
@@ -84,25 +64,17 @@ import {
 import { getErrorDetail } from '@/utils/httpErrors';
 import { useAiConfigStore } from '@/stores/ai-config';
 import {
-  buildDashboardSuggestionControlResultsEndpoint,
   buildDashboardSuggestionsEndpoint,
   DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
-  type ControlSuggestionResult,
   type DashboardSuggestion,
 } from '@/views/dashboard/partials/dashboard-suggestions';
 
 const systemStore = useSystemStore();
 const sspStore = useSystemSecurityPlanStore();
-const uiStore = useUIStore();
 const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
 const aiConfigStore = useAiConfigStore();
-
-const controlDrawerOpen = computed({
-  get: () => uiStore.controlImplementationDrawerOpen,
-  set: (val) => uiStore.setControlImplementationDrawerOpen(val),
-});
 
 const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
 const profileBindingsLoading = ref(false);
@@ -127,11 +99,6 @@ const loading = computed<boolean>(
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
-const selectedImplementedRequirement = ref<ImplementedRequirement>();
-// The control whose drawer is open. Tracked separately from the implemented
-// requirement so the drawer (and its AI suggestions panel) can open for a
-// control that has pending suggestions but no implementation yet.
-const selectedControlId = ref<string>();
 const RISK_FETCH_LIMIT = 100;
 const loadedSspRisksFor = ref<string | null>(null);
 const preparingBulkSuggestions = ref(false);
@@ -146,8 +113,6 @@ const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   { immediate: false },
 );
 const pendingDashboardSuggestions = ref<DashboardSuggestion[]>([]);
-const dashboardSuggestionControlResults = ref<ControlSuggestionResult[]>([]);
-const dashboardSuggestionStateLoading = ref(false);
 
 const nodes = ref<Array<TreeNode>>([]);
 const loadedDashboardSuggestionStateFor = ref<string | null>(null);
@@ -196,26 +161,7 @@ const pendingDashboardSuggestionsByControl = computed(() => {
   return grouped;
 });
 
-const dashboardSuggestionResultsByControl = computed(() => {
-  const results: Record<string, ControlSuggestionResult> = {};
-  for (const result of dashboardSuggestionControlResults.value ?? []) {
-    const key = normalizeId(result.controlId);
-    if (!key) {
-      continue;
-    }
-    results[key] = result;
-  }
-  return results;
-});
-
-const selectedDrawerControlId = computed(
-  () =>
-    selectedControlId.value ?? selectedImplementedRequirement.value?.controlId,
-);
-
-// Flattens the catalog tree once per rebuild so the drawer can look up a
-// control's title/description by id, regardless of whether it was opened by
-// clicking a row or restored from persisted drawer state on page load.
+// Flattens the catalog tree once per rebuild so a control's view can look its control up by id.
 const controlsById = computed(() => {
   const map: Record<string, Control> = {};
   const walk = (node: TreeNode) => {
@@ -231,28 +177,6 @@ const controlsById = computed(() => {
     walk(node);
   }
   return map;
-});
-
-const selectedControl = computed<Control | undefined>(() => {
-  const key = normalizeId(selectedDrawerControlId.value);
-  return key ? controlsById.value[key] : undefined;
-});
-
-const selectedControlDescription = computed(() => {
-  const statementPart = selectedControl.value?.parts?.find(
-    (part) => part.name === 'statement',
-  );
-  return statementPart?.prose ?? '';
-});
-
-const selectedControlDashboardSuggestions = computed(() => {
-  const key = normalizeId(selectedDrawerControlId.value);
-  return key ? (pendingDashboardSuggestionsByControl.value[key] ?? []) : [];
-});
-
-const selectedControlSuggestionResult = computed(() => {
-  const key = normalizeId(selectedDrawerControlId.value);
-  return key ? dashboardSuggestionResultsByControl.value[key] : undefined;
 });
 
 function controlSuggestionCount(controlId?: string): number {
@@ -340,12 +264,10 @@ async function loadDashboardSuggestionState() {
   const sspId = systemStore.system.securityPlan?.uuid;
   if (!sspId || !aiConfigStore.dashboardSuggestionsEnabled) {
     pendingDashboardSuggestions.value = [];
-    dashboardSuggestionControlResults.value = [];
     loadedDashboardSuggestionStateFor.value = null;
     loadingDashboardSuggestionStateFor.value = null;
     dashboardSuggestionStateLoadPromise = null;
     dashboardSuggestionStateRequestId.value += 1;
-    dashboardSuggestionStateLoading.value = false;
     return;
   }
 
@@ -362,18 +284,14 @@ async function loadDashboardSuggestionState() {
   }
 
   loadingDashboardSuggestionStateFor.value = sspId;
-  dashboardSuggestionStateLoading.value = true;
   const requestId = (dashboardSuggestionStateRequestId.value += 1);
   const loadPromise = (async () => {
-    const [pendingResult, controlResultsResult] = await Promise.allSettled([
+    const [pendingResult] = await Promise.allSettled([
       axios.get<DataResponse<DashboardSuggestion[]>>(
         buildDashboardSuggestionsEndpoint(sspId, 'pending'),
         {
           camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
         },
-      ),
-      axios.get<DataResponse<ControlSuggestionResult[]>>(
-        buildDashboardSuggestionControlResultsEndpoint(sspId),
       ),
     ]);
 
@@ -386,10 +304,6 @@ async function loadDashboardSuggestionState() {
 
     pendingDashboardSuggestions.value =
       pendingResult.status === 'fulfilled' ? pendingResult.value.data.data : [];
-    dashboardSuggestionControlResults.value =
-      controlResultsResult.status === 'fulfilled'
-        ? controlResultsResult.value.data.data
-        : [];
     loadedDashboardSuggestionStateFor.value = sspId;
   })();
   dashboardSuggestionStateLoadPromise = loadPromise;
@@ -403,7 +317,6 @@ async function loadDashboardSuggestionState() {
     ) {
       loadingDashboardSuggestionStateFor.value = null;
       dashboardSuggestionStateLoadPromise = null;
-      dashboardSuggestionStateLoading.value = false;
     }
   }
 }
@@ -453,10 +366,6 @@ function getStatementWorkItems(): Array<{
   return items;
 }
 
-// By-component statements in the drawer ---------------------------------------------------------
-// (The classic drawer rendered these without save or delete handlers, so its Edit and Delete did
-// nothing.)
-
 const { can } = usePermissions();
 const statementEditDenied = computed(() =>
   can(RESOURCES.SSP, ACTIONS.UPDATE)
@@ -464,118 +373,17 @@ const statementEditDenied = computed(() =>
     : "Your access doesn't include changing this security plan.",
 );
 
-/**
- * Every component statement for the selected control: on the requirement itself, and on each of
- * its statements (where most live). The classic drawer listed only the first kind, so it showed
- * "Components (0)" for controls the tree counted as implemented.
- */
-const drawerByComponents = computed(() => {
-  const requirement = selectedImplementedRequirement.value;
-  if (!requirement) return [];
-  return [
-    ...(requirement.byComponents ?? []).map((byComponent) => ({
-      byComponent,
-      statementId: undefined as string | undefined,
-    })),
-    ...(requirement.statements ?? []).flatMap((statement) =>
-      (statement.byComponents ?? []).map((byComponent) => ({
-        byComponent,
-        statementId: statement.uuid as string | undefined,
-      })),
-    ),
-  ];
-});
-
-function byComponentUrl(
-  byComponent: ByComponent,
-  statementId?: string,
-): string | undefined {
-  const sspId = systemStore.system.securityPlan?.uuid;
-  const requirement = selectedImplementedRequirement.value;
-  if (!sspId || !requirement) return undefined;
-  const base = `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${requirement.uuid}`;
-  return statementId
-    ? `${base}/statements/${statementId}/by-components/${byComponent.uuid}`
-    : `${base}/by-components/${byComponent.uuid}`;
-}
-
-async function saveByComponent(byComponent: ByComponent, statementId?: string) {
-  const url = byComponentUrl(byComponent, statementId);
-  if (!url) return;
-  try {
-    await axios.put(url, byComponent, { transformRequest: [decamelizeKeys] });
-    await loadControlImplementations();
-    toast.add({
-      severity: 'success',
-      summary: 'Statement saved',
-      life: 3000,
-    });
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: "The statement wasn't saved",
-      detail: await getErrorDetail(error, 'Try again.'),
-      life: 5000,
-    });
-  }
-}
-
-async function deleteByComponent(
-  byComponent: ByComponent,
-  statementId?: string,
-) {
-  const url = byComponentUrl(byComponent, statementId);
-  if (!url) return;
-  try {
-    await axios.delete(url);
-    await loadControlImplementations();
-    toast.add({
-      severity: 'success',
-      summary: 'Statement deleted',
-      life: 3000,
-    });
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: "The statement wasn't deleted",
-      detail: await getErrorDetail(error, 'Try again.'),
-      life: 5000,
-    });
-  }
-}
-
 async function loadControlImplementations() {
   const { data: implementationResponse } = await fetchControlImplementations();
   const implementation = implementationResponse?.value?.data;
   if (!implementation) {
     controlImplementations.value = {};
-    selectedImplementedRequirement.value = undefined;
-    uiStore.controlImplementationSelectedRequirementId = null;
-    uiStore.controlImplementationDrawerOpen = false;
     return;
   }
 
   const nextMap: { [key: string]: ImplementedRequirement } = {};
-  let selectedRequirementFound = false;
   for (const impl of implementation.implementedRequirements) {
     nextMap[impl.controlId] = impl;
-    if (
-      uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
-      uiStore.controlImplementationDrawerOpen
-    ) {
-      selectedImplementedRequirement.value = impl;
-      selectedControlId.value = impl.controlId;
-      selectedRequirementFound = true;
-    }
-  }
-  if (
-    uiStore.controlImplementationDrawerOpen &&
-    uiStore.controlImplementationSelectedRequirementId &&
-    !selectedRequirementFound
-  ) {
-    selectedImplementedRequirement.value = undefined;
-    uiStore.controlImplementationSelectedRequirementId = null;
-    uiStore.controlImplementationDrawerOpen = false;
   }
   controlImplementations.value = nextMap;
 }
@@ -965,129 +773,9 @@ const selectedSspId = computed(
   () => systemStore.system.securityPlan?.uuid ?? '',
 );
 
-// One leveraged-controls fetch for the whole page — every statement card (and the
-// statement drawer) injects this instead of refetching per control.
-const leveragedControls = useLeveragedControls(
-  computed(() => systemStore.system.securityPlan?.uuid),
-);
-provide(LeveragedControlsKey, leveragedControls);
-
-// ---- Shared responsibility: editing what this SSP provides ----
-
 const selectedSspTitle = computed(
   () => systemStore.system.securityPlan?.metadata?.title ?? 'This system',
 );
-
-const showProvidesEditDialog = ref(false);
-const providesEditTarget = ref<{
-  controlId: string;
-  statementId: string;
-  byComponentUuid: string;
-} | null>(null);
-// Bumped to re-key (and so re-fetch) the SharedResponsibilityPanel after a save.
-const sharedResponsibilityRefreshKey = ref(0);
-
-// The rollup row carries the controlId/statementId/byComponentUuid the export dialog needs;
-// it resolves the live OSCAL uuids itself, so nothing here depends on what happens to be
-// loaded in the tree.
-function openProvidesEditor(row: SharedResponsibilityProvided) {
-  providesEditTarget.value = {
-    controlId: row.controlId,
-    statementId: row.statementId,
-    byComponentUuid: row.byComponentUuid,
-  };
-  showProvidesEditDialog.value = true;
-}
-
-async function handleProvidesSaved() {
-  sharedResponsibilityRefreshKey.value += 1;
-  await loadControlImplementations();
-}
-
-async function handleExported() {
-  sharedResponsibilityRefreshKey.value += 1;
-  await loadControlImplementations();
-}
-
-// ---- Shared responsibility: importing an upstream implementation ----
-
-const highlightedControlIds = ref(new Set<string>());
-
-function isHighlightedControl(controlId?: string): boolean {
-  return !!controlId && highlightedControlIds.value.has(normalizeId(controlId));
-}
-
-async function handleImported(payload: { meta?: SubscribeResponseMeta }) {
-  // `created: false` rows were reused, not created — announcing them would claim work the
-  // subscribe didn't do.
-  const created = payload.meta?.created;
-  const newRequirements = (created?.implementedRequirements ?? []).filter(
-    (r) => r.created,
-  );
-  const newStatements = (created?.statements ?? []).filter((s) => s.created);
-
-  await loadControlImplementations();
-  sharedResponsibilityRefreshKey.value += 1;
-  await leveragedControls.refresh();
-
-  // Statements don't carry a controlId of their own — the requirements list does (it
-  // includes reused rows precisely so this join always resolves).
-  const controlIdByRequirementUuid = new Map(
-    (created?.implementedRequirements ?? []).map((r) => [r.uuid, r.controlId]),
-  );
-  const revealed = [
-    ...newRequirements.map((r) => r.controlId),
-    ...newStatements
-      .map((s) => controlIdByRequirementUuid.get(s.implementedRequirementUuid))
-      .filter((id): id is string => !!id),
-  ];
-  highlightedControlIds.value = new Set(revealed.map((id) => normalizeId(id)));
-
-  // A merged payload (importing from several offerings at once) can repeat rows — a Set
-  // keeps the toast from stuttering.
-  const parts = new Set<string>();
-  for (const requirement of newRequirements) {
-    parts.add(`implemented requirement ${requirement.controlId}`);
-  }
-  for (const statement of newStatements) {
-    parts.add(`statement ${statement.statementId}`);
-  }
-
-  if (!parts.size) {
-    toast.add({
-      severity: 'success',
-      summary: 'Implementation imported',
-      detail:
-        'The upstream capability was inherited into existing requirements — nothing new was created.',
-      life: 4000,
-    });
-    return;
-  }
-
-  toast.add({
-    severity: 'success',
-    summary: 'Implementation imported',
-    detail: `Created ${[...parts].join(' and ')}.`,
-    life: 6000,
-  });
-}
-
-// Opens the implementation drawer for a control. The control need not have an
-// implementation: when it only has pending AI suggestions, the drawer still
-// opens (with an empty Components section) so the suggestions panel is reachable.
-function openControlDrawer(controlId?: string) {
-  if (!controlId) {
-    return;
-  }
-  const requirement = controlImplementations.value[controlId];
-  uiStore.setControlImplementationDrawerOpen(true);
-  uiStore.setControlImplementationSelectedRequirementId(
-    requirement?.uuid ?? null,
-  );
-  selectedControlId.value = controlId;
-  selectedImplementedRequirement.value = requirement;
-  void loadDashboardSuggestionState();
-}
 
 watch(
   () => systemStore.system.securityPlan?.uuid,
@@ -1096,12 +784,10 @@ watch(
       sspRisks.value = [];
       loadedSspRisksFor.value = null;
       pendingDashboardSuggestions.value = [];
-      dashboardSuggestionControlResults.value = [];
       loadedDashboardSuggestionStateFor.value = null;
       loadingDashboardSuggestionStateFor.value = null;
       dashboardSuggestionStateLoadPromise = null;
       dashboardSuggestionStateRequestId.value += 1;
-      dashboardSuggestionStateLoading.value = false;
       return;
     }
 
@@ -1131,31 +817,13 @@ watch(
   ([sspId, configFetched, enabled]) => {
     if (!sspId || !configFetched || !enabled) {
       pendingDashboardSuggestions.value = [];
-      dashboardSuggestionControlResults.value = [];
       loadedDashboardSuggestionStateFor.value = null;
       loadingDashboardSuggestionStateFor.value = null;
       dashboardSuggestionStateLoadPromise = null;
       dashboardSuggestionStateRequestId.value += 1;
-      dashboardSuggestionStateLoading.value = false;
       return;
     }
     void loadDashboardSuggestionState();
-  },
-);
-
-watch(
-  () => uiStore.controlImplementationDrawerOpen,
-  (isOpen) => {
-    if (!isOpen) {
-      if (uiStore.controlImplementationSelectedRequirementId) {
-        uiStore.setControlImplementationSelectedRequirementId(null);
-      }
-      selectedImplementedRequirement.value = undefined;
-      selectedControlId.value = undefined;
-      // The import highlight is meant to be transient — "here is the requirement that just
-      // appeared" — not a permanent badge the user meets again in a later session.
-      highlightedControlIds.value = new Set();
-    }
   },
 );
 
@@ -1224,13 +892,10 @@ const { data: sspComponents, execute: fetchSspComponents } = useDataApi<
 >(
   `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/system-implementation/components`,
 );
-const { data: sspFilters, execute: fetchSspFilters } = useDataApi<Dashboard[]>(
-  '/api/filters',
-  {
-    // A camelCase API: it returns global filters and this plan's.
-    params: { sspId: systemStore.system.securityPlan?.uuid },
-  },
-);
+const { data: sspFilters } = useDataApi<Dashboard[]>('/api/filters', {
+  // A camelCase API: it returns global filters and this plan's.
+  params: { sspId: systemStore.system.securityPlan?.uuid },
+});
 const componentsByUuid = dsComputed(
   () => new Map((sspComponents.value ?? []).map((c) => [c.uuid, c])),
 );
@@ -1243,7 +908,6 @@ const filtersByControl = dsComputed(() => {
     }
   return map;
 });
-const refreshFilters = () => void fetchSspFilters().catch(() => undefined);
 
 // Links to a control in its catalog. A profile's import points at a back-matter resource whose
 // link names the catalog (`#<catalog UUID>`), or at the catalog itself.
@@ -1337,13 +1001,12 @@ const sections = dsComputed(() =>
   ),
 );
 // Each family is a disclosure; which are open is remembered per system. A search opens them all,
-// so every match shows, and a family opens itself to show a control that just changed.
+// so every match shows.
 const collapsibleGroups = useCollapsibleGroupsStore();
 const familyKey = (key: string) =>
   `implementation:${systemStore.system.securityPlan?.uuid ?? ''}:${key}`;
 const familyOpen = (section: ControlSection) =>
   Boolean(treeQuery.value.trim()) ||
-  section.controls.some((control) => isHighlightedControl(control.id)) ||
   collapsibleGroups.isOpen(familyKey(section.key));
 const setFamilyOpen = (key: string, open: boolean) =>
   collapsibleGroups.setOpen(familyKey(key), open);
@@ -1386,12 +1049,6 @@ const controlViewOpen = dsComputed({
   },
 });
 
-const drawerTitle = dsComputed(() =>
-  selectedControl.value
-    ? `${selectedControl.value.id} · ${selectedControl.value.title}`
-    : 'Implementation',
-);
-
 provideControlTree({
   sspId: () => systemStore.system.securityPlan?.uuid ?? '',
   suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
@@ -1412,14 +1069,8 @@ provideControlTree({
   riskCount: controlRiskCount,
   riskSeverity: controlHighestSeverity,
   suggestionCount: controlSuggestionCount,
-  highlighted: isHighlightedControl,
-  openDrawer: openControlDrawer,
   controlLink,
   risksLink: (controlId) => ({ name: 'risks:index', query: { controlId } }),
-  onExported: () => void handleExported(),
-  onImported: (payload) =>
-    void handleImported(payload as Parameters<typeof handleImported>[0]),
-  onStatementsClosed: refreshFilters,
 });
 </script>
 
@@ -1524,55 +1175,4 @@ provideControlTree({
     v-model:open="controlViewOpen"
     :control="viewedControl"
   />
-
-  <Drawer
-    v-model:open="controlDrawerOpen"
-    :title="drawerTitle"
-    :description="selectedControlDescription"
-  >
-    <Stack gap="6">
-      <ControlSuggestions
-        v-if="aiConfigStore.dashboardSuggestionsEnabled"
-        :ssp-id="systemStore.system.securityPlan?.uuid"
-        :suggestions="selectedControlDashboardSuggestions"
-        :result="selectedControlSuggestionResult"
-        :loading="dashboardSuggestionStateLoading"
-      />
-      <Stack gap="4">
-        <Text variant="label"
-          >Components ({{ drawerByComponents.length }})</Text
-        >
-        <ByComponentStatement
-          v-for="{ byComponent, statementId } in drawerByComponents"
-          :key="byComponent.uuid"
-          :by-component="byComponent"
-          :control-id="selectedImplementedRequirement?.controlId"
-          :ssp-id="systemStore.system.securityPlan?.uuid"
-          :ssp-risks="sspRisks || []"
-          :risk-fetch-limit="RISK_FETCH_LIMIT"
-          :edit-denied-reason="statementEditDenied"
-          @save="(next) => saveByComponent(next, statementId)"
-          @delete="(next) => deleteByComponent(next, statementId)"
-        />
-        <SharedResponsibilityPanel
-          v-if="selectedSspId && selectedDrawerControlId"
-          :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
-          :ssp-id="selectedSspId"
-          :control-id="selectedDrawerControlId"
-          @edit-provides="openProvidesEditor"
-          @imported="handleImported"
-        />
-        <ExportStatementDialog
-          v-if="selectedSspId && providesEditTarget"
-          v-model:visible="showProvidesEditDialog"
-          :ssp-id="selectedSspId"
-          :ssp-title="selectedSspTitle"
-          :control-id="providesEditTarget.controlId"
-          :statement-id="providesEditTarget.statementId"
-          :by-component-uuid="providesEditTarget.byComponentUuid"
-          @saved="handleProvidesSaved"
-        />
-      </Stack>
-    </Stack>
-  </Drawer>
 </template>

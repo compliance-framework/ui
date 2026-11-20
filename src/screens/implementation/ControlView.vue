@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { Control } from '@/oscal';
-import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
-import Button from '@/ds/components/Button/Button.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import IconButton from '@/ds/components/IconButton/IconButton.vue';
 import LinkedColumns from '@/ds/components/LinkedColumns/LinkedColumns.vue';
@@ -24,7 +22,7 @@ import { useControlTree } from './controlTree';
  * One control in depth, over nearly all of the page: its statement part by part, at every depth
  * (nested parts indented under their parent), each part beside
  * the implementation statement for it (every component's full text and status), then the
- * evidence that checks the control, then the editors. Evidence filters link to a control, not to
+ * evidence that checks the control. Evidence filters link to a control, not to
  * its parts, so evidence is the control's, below the parts. One link at the top opens the control
  * in its catalog (in a new tab). Each implementation box shows the statement's remarks, then
  * "By component" and the components when there are any, and has an edit button that
@@ -244,33 +242,6 @@ const editDenied = (key: string) =>
           <Text v-else variant="secondary"
             >No evidence filter checks this control yet.</Text
           >
-        </Stack>
-      </PanelSection>
-
-      <PanelSection
-        title="Edit"
-        description="Until editing moves into this view: the statements editor, and the component, suggestion and sharing details."
-      >
-        <Stack gap="4">
-          <Cluster gap="2">
-            <Button
-              icon="next"
-              :disabled-reason="
-                implementation || tree.suggestionCount(id)
-                  ? undefined
-                  : 'No implementation or suggestions yet.'
-              "
-              @click="tree.openDrawer(id)"
-              >Components and sharing</Button
-            >
-          </Cluster>
-          <IndexControlImplementation
-            :control="control"
-            :implementation="implementation"
-            @exported="tree.onExported"
-            @imported="tree.onImported"
-            @closed="tree.onStatementsClosed"
-          />
         </Stack>
       </PanelSection>
     </Stack>

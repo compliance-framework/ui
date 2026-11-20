@@ -31,15 +31,9 @@ export interface ControlTreeContext {
   riskCount: (controlId: string) => number;
   riskSeverity: (controlId: string) => 'high' | 'medium' | 'low' | undefined;
   suggestionCount: (controlId: string) => number;
-  highlighted: (controlId: string) => boolean;
-  openDrawer: (controlId: string) => void;
   /** Opens the control's view. */
   controlLink: (controlId: string) => RouteLocationRaw;
   risksLink: (controlId: string) => unknown;
-  onExported: (...args: unknown[]) => void;
-  onImported: (...args: unknown[]) => void;
-  /** A control's statement editor closed: its filter links may have changed. */
-  onStatementsClosed: () => void;
 }
 
 const key: InjectionKey<ControlTreeContext> = Symbol('control-tree');

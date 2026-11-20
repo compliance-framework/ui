@@ -13,22 +13,6 @@ export const useUIStore = defineStore(
   'ui',
   () => {
     /**
-     * Map of expanded node keys in the Control Implementation tree.
-     * Used to maintain tree expansion state across navigations.
-     */
-    const controlImplementationExpandedKeys = ref<Record<string, boolean>>({});
-
-    /**
-     * ID of the currently selected requirement in the Control Implementation view.
-     */
-    const controlImplementationSelectedRequirementId = ref<string | null>(null);
-
-    /**
-     * Controls the visibility of the detail drawer in the Control Implementation view.
-     */
-    const controlImplementationDrawerOpen = ref(false);
-
-    /**
      * Map of expanded node keys in the Compliance Map (lineage) tree.
      * Used to maintain tree expansion state across navigations.
      */
@@ -59,32 +43,6 @@ export const useUIStore = defineStore(
      * Controls the visibility of the detail drawer in the Compliance Map graph view.
      */
     const lineageGraphDrawerOpen = ref(false);
-
-    /**
-     * Updates the expanded keys for the Control Implementation tree.
-     * @param keys - Object mapping node keys to their expansion state (boolean).
-     */
-    function setControlImplementationExpandedKeys(
-      keys: Record<string, boolean>,
-    ) {
-      controlImplementationExpandedKeys.value = keys;
-    }
-
-    /**
-     * Sets the currently selected requirement ID.
-     * @param id - The UUID of the requirement or null to clear selection.
-     */
-    function setControlImplementationSelectedRequirementId(id: string | null) {
-      controlImplementationSelectedRequirementId.value = id;
-    }
-
-    /**
-     * Controls the open/closed state of the Control Implementation drawer.
-     * @param open - Whether the drawer should be open.
-     */
-    function setControlImplementationDrawerOpen(open: boolean) {
-      controlImplementationDrawerOpen.value = open;
-    }
 
     /**
      * Updates the expanded keys for the Compliance Map tree.
@@ -135,18 +93,12 @@ export const useUIStore = defineStore(
     }
 
     return {
-      controlImplementationExpandedKeys,
-      controlImplementationSelectedRequirementId,
-      controlImplementationDrawerOpen,
       lineageExpandedKeys,
       lineageSelectedNodeKey,
       lineageDrawerOpen,
       lineageGraphPath,
       lineageGraphSelectedNodeKey,
       lineageGraphDrawerOpen,
-      setControlImplementationExpandedKeys,
-      setControlImplementationSelectedRequirementId,
-      setControlImplementationDrawerOpen,
       setLineageExpandedKeys,
       setLineageSelectedNodeKey,
       setLineageDrawerOpen,

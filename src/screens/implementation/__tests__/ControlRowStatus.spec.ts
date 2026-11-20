@@ -35,7 +35,6 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
     risksLink: () => ({ name: 'risks:index' }),
     suggestionsEnabled: () => false,
     suggestionCount: () => 0,
-    highlighted: () => false,
   } as unknown as ControlTreeContext;
   const Host = defineComponent({
     setup() {

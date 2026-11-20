@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import CreateByComponentForm from '../CreateByComponentForm.vue';
 import DashboardLinkForm from '../DashboardLinkForm.vue';
 import EvidenceDashboardForm from '../EvidenceDashboardForm.vue';
 import type { Dashboard } from '@/stores/filters';
@@ -47,52 +46,6 @@ describe('control statement extracted forms', () => {
     name: 'Dashboard',
     filter: { scope: {} },
   } as unknown as Dashboard;
-
-  it('blocks component submit until a component is selected', async () => {
-    const wrapper = mount(CreateByComponentForm, {
-      props: {
-        selectedComponent: null,
-        description: '',
-        statusState: '',
-        statusRemarks: '',
-        componentItems: [{ name: 'Component One', value: 'component-1' }],
-        statusOptions: [{ label: 'No status', value: '' }],
-        componentsLoading: false,
-      },
-      global: { stubs },
-    });
-
-    await wrapper.find('form').trigger('submit');
-
-    expect(wrapper.emitted('submit')).toBeUndefined();
-    expect(wrapper.text()).toContain('Please select a valid component.');
-  });
-
-  it('emits component submit when valid, emits cancel without submit, and renders server errors', async () => {
-    const wrapper = mount(CreateByComponentForm, {
-      props: {
-        selectedComponent: { name: 'Component One', value: 'component-1' },
-        description: '',
-        statusState: '',
-        statusRemarks: '',
-        componentItems: [{ name: 'Component One', value: 'component-1' }],
-        statusOptions: [{ label: 'No status', value: '' }],
-        componentsLoading: false,
-        serverError: 'Create failed',
-      },
-      global: { stubs },
-    });
-
-    expect(wrapper.text()).toContain('Create failed');
-    await wrapper.find('form').trigger('submit');
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Cancel')
-      ?.trigger('click');
-
-    expect(wrapper.emitted('submit')).toHaveLength(1);
-    expect(wrapper.emitted('cancel')).toHaveLength(1);
-  });
 
   it('blocks dashboard linking until a dashboard is selected', async () => {
     const wrapper = mount(DashboardLinkForm, {

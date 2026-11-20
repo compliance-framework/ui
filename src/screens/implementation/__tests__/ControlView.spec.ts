@@ -9,10 +9,6 @@ vi.mock(
   '@/views/control-implementations/partials/ControlEvidenceCounter.vue',
   () => ({ default: { template: '<span />' } }),
 );
-vi.mock(
-  '@/views/control-implementations/partials/IndexControlImplementation.vue',
-  () => ({ default: { template: '<span />' } }),
-);
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
   RouterLink: { template: '<a><slot /></a>' },
@@ -63,10 +59,6 @@ function mountView() {
     editDenied: () => undefined,
     reload: vi.fn(async () => undefined),
     catalogLink: () => ({ name: 'catalog-view', params: { id: 'cat-1' } }),
-    openDrawer: vi.fn(),
-    onExported: vi.fn(),
-    onImported: vi.fn(),
-    onStatementsClosed: vi.fn(),
   } as unknown as ControlTreeContext;
   const Host = defineComponent({
     setup() {

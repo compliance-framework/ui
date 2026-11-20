@@ -172,6 +172,10 @@ Made during the work (open to review):
   beside the search (all ticked at first); a control in several profiles shows once. Only
   top-level, current controls are listed: the API's resolved profiles include every enhancement
   and withdrawn control.
+  A control's view (a drawer) holds its parts beside their implementation, and its evidence; its
+  old Edit section (the classic statements editor and the "Components and sharing" drawer, with
+  AI suggestions per control, shared responsibility and per-statement risks) was removed on
+  2026-11-20, with its code. Those features return only when rebuilt into the view.
 - **List pages summarise; a record's full content has its own view** (2026-11-19, from the
   Implementation page). A row shows counts and names, not text; its title (a real link), or a
   click anywhere else on it, opens the record in a wide Drawer whose state is in the address

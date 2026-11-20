@@ -4,7 +4,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { Control } from '@/oscal';
 import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
 import { countsSentence } from '@/ds/components/StatusBadge/statuses';
-import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
@@ -43,7 +42,6 @@ const filterCount = computed(() => tree.filters(id.value).length);
 
 <template>
   <Cluster gap="3">
-    <Tag v-if="tree.highlighted(id)" label="Just changed" />
     <TextLink
       v-if="tree.riskCount(id)"
       :to="tree.risksLink(id) as RouteLocationRaw"
