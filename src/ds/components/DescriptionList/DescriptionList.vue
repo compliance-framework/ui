@@ -9,9 +9,11 @@ withDefaults(
     items: { key: string; label: string; value?: string | number | null }[];
     /**
      * `columns` flows pairs into as many columns as fit; `stacked` is one per row; `inline` runs the
-     * pairs along one wrapping line, for key facts under a page title.
+     * pairs along one wrapping line, for key facts under a page title; `aligned` is one pair per
+     * row in a compact table, terms in one column and values lined up in the next, for pairs inside
+     * a list row (e.g. each component and its statuses).
      */
-    layout?: 'columns' | 'stacked' | 'inline';
+    layout?: 'columns' | 'stacked' | 'inline' | 'aligned';
   }>(),
   { layout: 'columns' },
 );
@@ -62,6 +64,24 @@ withDefaults(
   flex-direction: row;
   align-items: baseline;
   gap: var(--ds-space-2);
+}
+
+.description-list--aligned {
+  grid-template-columns: fit-content(50%) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-space-1) var(--ds-space-3);
+}
+
+.description-list--aligned .description-list__item {
+  display: contents;
+}
+
+/* In a row, a term is a name, not a heading: in the row's small type, not capitals. */
+.description-list--aligned .description-list__term {
+  font-size: var(--ds-font-size-caption);
+  font-weight: var(--ds-font-weight-regular);
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .description-list__item {

@@ -1629,3 +1629,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the pill is the same on every part a component implements; links per statement are wanted. No
   local filter is linked to a component yet, so no pill shows on local data until one is.
   New in the design system: `Pill` (a label on a tone's solid colour); `StatusPill` now uses it.
+- **Implementation list: one component per line.** A row's components and their pills ran on as
+  `Name: [pill] Name: [pill] [pill]`, wrapping, so it was hard to tell which pills were whose. Each
+  component now has a line of its own under the parts count, names in one column and pills lined
+  up in the next. Rows with many components are taller. New in the design system: DescriptionList's
+  `aligned` layout (one pair per row, compact, terms in the row's small type).

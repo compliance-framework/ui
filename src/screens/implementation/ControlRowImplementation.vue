@@ -3,7 +3,9 @@ import { computed } from 'vue';
 import type { Control } from '@/oscal';
 import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 import StatusPill from '@/ds/components/StatusPill/StatusPill.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import {
   implementationSummary,
@@ -14,9 +16,9 @@ import { useControlTree } from './controlTree';
 
 /**
  * The end of a control row's second line in the Implementation list: how many of its parts are
- * implemented and each component that implements it with its status as a pill ("Okta:
- * [Implemented]"; green when implemented, amber when partial, blue otherwise), or that nothing
- * does yet.
+ * implemented, then each component that implements it on a line of its own, its name and its
+ * statuses as pills lined up in two columns (green when implemented, amber when partial, blue
+ * otherwise), or that nothing does yet.
  */
 const props = defineProps<{ control: Control }>();
 const tree = useControlTree();
@@ -48,21 +50,28 @@ const components = computed(() =>
   <Text v-else-if="!components.length" as="span" variant="caption"
     >No component implements it yet</Text
   >
-  <template v-else>
+  <Stack v-else gap="1" align="start">
     <Text v-if="partsText" as="span" variant="caption">{{ partsText }}</Text>
-    <Cluster
-      v-for="component in components"
-      :key="component.uuid"
-      gap="1"
-      align="center"
+    <DescriptionList
+      layout="aligned"
+      :items="
+        components.map((c) => ({ key: c.uuid, label: c.name, value: '' }))
+      "
     >
-      <Text as="span" variant="caption">{{ component.name }}:</Text>
-      <StatusPill
-        v-for="status in component.statuses"
-        :key="status"
-        :status="status"
-        :tone="implementationTone(status)"
-      />
-    </Cluster>
-  </template>
+      <template
+        v-for="component in components"
+        :key="component.uuid"
+        #[`value-${component.uuid}`]
+      >
+        <Cluster gap="1" align="center">
+          <StatusPill
+            v-for="status in component.statuses"
+            :key="status"
+            :status="status"
+            :tone="implementationTone(status)"
+          />
+        </Cluster>
+      </template>
+    </DescriptionList>
+  </Stack>
 </template>

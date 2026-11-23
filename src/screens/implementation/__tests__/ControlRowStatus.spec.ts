@@ -56,7 +56,7 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
 
 describe('ControlRowStatus and ControlRowImplementation', () => {
   it('summarises the implementation, filters and risks in one line', () => {
-    const text = mountStatus(
+    const wrapper = mountStatus(
       {
         uuid: 'r',
         controlId: 'ac-2',
@@ -76,10 +76,12 @@ describe('ControlRowStatus and ControlRowImplementation', () => {
         ],
       } as unknown as ImplementedRequirement,
       2,
-    ).text();
+    );
+    const text = wrapper.text();
+    expect(wrapper.find('dt').text()).toBe('Okta');
+    expect(wrapper.find('dd').text()).toBe('Implemented');
     expect(text).toContain('2 open risks (high)');
     expect(text).toContain('1 of 2 parts');
-    expect(text).toContain('Okta:Implemented');
     expect(text).toContain('1 evidence filter');
   });
 
