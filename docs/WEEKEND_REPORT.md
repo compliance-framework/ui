@@ -1696,3 +1696,7 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - **Control view: no "Statement and implementation" heading.** With the drawer titled
   "Implementation of …", the statement starts straight under the header; Evidence keeps its heading.
   (PanelSection's `divided` prop, added for that first section, went with it.)
+- **Implementation list: evidence instead of a filter count.** A control row no longer says "N
+  evidence filters"; it shows the control's evidence capsule, or "No evidence yet." when there are
+  no results (your choice over an all-zero capsule or nothing). The filters themselves are listed
+  in the control's view.

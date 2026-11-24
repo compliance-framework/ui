@@ -7,7 +7,10 @@ import ControlRowStatus from '../ControlRowStatus.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
 vi.mock('@/screens/EvidenceCapsule.vue', () => ({
-  default: { template: '<span>evidence</span>' },
+  default: {
+    props: ['controlId', 'quiet'],
+    template: '<span>{{ quiet ? "" : "evidence for " + controlId }}</span>',
+  },
 }));
 
 const control = {
@@ -81,7 +84,9 @@ describe('ControlRowStatus and ControlRowImplementation', () => {
     expect(wrapper.find('dd').text()).toBe('Implemented');
     expect(text).toContain('2 open risks (high)');
     expect(text).toContain('1 of 2 parts');
-    expect(text).toContain('1 evidence filter');
+    // Its evidence, not a count of its filters, which are in the control's view.
+    expect(text).not.toContain('evidence filter');
+    expect(text).toContain('evidence for ac-2');
   });
 
   it('says when a control is not implemented yet', () => {
