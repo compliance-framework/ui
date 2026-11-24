@@ -11,13 +11,13 @@ import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { useToast } from '@/ds/toasts';
-import EvidencePill from '../EvidencePill.vue';
+import EvidenceCapsule from '../EvidenceCapsule.vue';
 import { evidenceLink } from '../filters/evidenceLink';
 import { useControlTree } from './controlTree';
 
 /**
- * The evidence that checks a control: its overall pill, then each evidence filter linked to it
- * with the filter's own pill, a link to its evidence and a button to unlink it. Any of the plan's
+ * The evidence that checks a control: its results overall, then each evidence filter linked to it
+ * with its own results after its name (each a capsule of satisfied, unknown and not satisfied counts), a link to its evidence and a button to unlink it. Any of the plan's
  * filters (global or its own) can be linked by typing its name; new ones are made on the evidence
  * filters page, linked from here in a new tab. A filter links to controls or to components, not
  * both, so filters linked to components aren't offered. Links save straight away; without access
@@ -102,7 +102,7 @@ watch(chosen, (id) => {
   <Stack gap="4">
     <Cluster gap="2" align="center">
       <Text as="span" variant="secondary">Overall</Text>
-      <EvidencePill
+      <EvidenceCapsule
         :control-id="controlId"
         :ssp-id="tree.sspId()"
         :refresh-key="refreshKey"
@@ -111,8 +111,8 @@ watch(chosen, (id) => {
     <Stack v-if="filters.length" as="ul" gap="2">
       <li v-for="filter in filters" :key="filter.id">
         <Cluster gap="2" align="center">
-          <EvidencePill :filter-id="filter.id" />
           <TextLink :to="evidenceLink(filter)">{{ filter.name }}</TextLink>
+          <EvidenceCapsule :filter-id="filter.id" />
           <IconButton
             icon="unlink"
             :label="`Unlink ${filter.name}`"

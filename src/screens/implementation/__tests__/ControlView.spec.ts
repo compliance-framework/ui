@@ -6,7 +6,7 @@ import Clause from '@/ds/components/Clause/Clause.vue';
 import ControlView from '../ControlView.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
-vi.mock('@/screens/EvidencePill.vue', () => ({
+vi.mock('@/screens/EvidenceCapsule.vue', () => ({
   default: { template: '<span />' },
 }));
 vi.mock('@/composables/axios', () => ({

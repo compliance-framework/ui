@@ -6,13 +6,13 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import { plural } from '@/ds/format';
-import EvidencePill from '../EvidencePill.vue';
+import EvidenceCapsule from '../EvidenceCapsule.vue';
 import { useControlTree } from './controlTree';
 
 /**
  * The end of a control row's first line in the Implementation list: open risks, suggestions, how
- * many evidence filters check it, and its evidence as one pill (satisfied, not satisfied or
- * unknown). Its implementation is on the second
+ * many evidence filters check it, and its evidence results as a capsule (satisfied, unknown and
+ * not satisfied counts). Its implementation is on the second
  * line (ControlRowImplementation); the detail is in the control's view.
  */
 const props = defineProps<{ control: Control }>();
@@ -47,10 +47,11 @@ const filterKey = computed(() =>
     <Text v-if="filterCount" as="span" variant="caption">{{
       plural(filterCount, 'evidence filter')
     }}</Text>
-    <EvidencePill
+    <EvidenceCapsule
       :control-id="id"
       :ssp-id="tree.sspId()"
       :refresh-key="filterKey"
+      quiet
     />
   </Cluster>
 </template>

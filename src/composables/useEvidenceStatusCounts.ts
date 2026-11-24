@@ -28,15 +28,3 @@ export function computeEvidenceStatusCounts(
     { total: 0, red: 0, green: 0, gray: 0 },
   );
 }
-
-/**
- * Evidence results as one status: not satisfied when any result is, satisfied when every result
- * is, and otherwise (some unknown, or none at all) unknown.
- */
-export function evidenceStatus(
-  counts: EvidenceStatusCounts,
-): 'satisfied' | 'not-satisfied' | 'unknown' {
-  if (counts.red) return 'not-satisfied';
-  if (counts.green && !counts.gray) return 'satisfied';
-  return 'unknown';
-}

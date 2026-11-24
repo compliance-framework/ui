@@ -11,7 +11,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => api,
 }));
 vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
-vi.mock('@/screens/EvidencePill.vue', () => ({
+vi.mock('@/screens/EvidenceCapsule.vue', () => ({
   default: { props: ['filterId', 'controlId'], template: '<i>pill</i>' },
 }));
 

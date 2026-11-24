@@ -6,7 +6,7 @@ import ControlRowImplementation from '../ControlRowImplementation.vue';
 import ControlRowStatus from '../ControlRowStatus.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
-vi.mock('@/screens/EvidencePill.vue', () => ({
+vi.mock('@/screens/EvidenceCapsule.vue', () => ({
   default: { template: '<span>evidence</span>' },
 }));
 
