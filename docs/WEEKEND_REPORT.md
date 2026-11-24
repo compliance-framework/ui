@@ -1668,3 +1668,18 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   one line of body text tall (new IconButton size `inline`, a square of the body line height, about
   22px), so it no longer makes a block's first line taller than its text. It's under the 24px target
   size, which WCAG 2.2 allows here as nothing else is within 24px of it.
+- **Control view: implementation blocks tinted.** To set the plan's words apart from the catalog's,
+  each implementation block now sits on a faint tint (the sunken surface) behind its accent rule.
+  Mocked against a serif for the control text and both together; you chose the tint alone. It's a
+  deliberate exception to the rule that only a Panel gets a background, recorded in REDESIGN.md.
+- **Control view: remarks in italics.** A block's remarks (the plan's note on the clause as a
+  whole) are now italic, setting them apart from the components' own text. New in the design
+  system: Text's `italic` prop (style only, not `<em>`).
+- **Fix: closing a toast closed the drawer.** Toasts sit outside every dialog, so clicking a toast's
+  close button counted as a click outside the open drawer and dismissed it. The toast region is now
+  marked `data-overlay-keep-open`, and the shared modal (`useDismissGuard`) ignores clicks inside
+  anything so marked. Applies to every Dialog and Drawer.
+- **Control view: fewer labels.** The whole control's implementation block no longer has "The
+  whole control" over it: it's the block before clause a. (a Clause with no text is its annotation
+  alone). The control's evidence counts moved from an "Overall" line to beside the Evidence heading
+  (new PanelSection `title-end` slot).

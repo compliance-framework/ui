@@ -43,4 +43,14 @@ describe('Clause', () => {
       'More',
     );
   });
+
+  it('is its annotation alone when it has no text', () => {
+    const wrapper = mount(Clause, {
+      slots: { annotation: 'Okta: implemented' },
+    });
+    expect(wrapper.find('.clause__line').exists()).toBe(false);
+    expect(wrapper.find('.clause__annotation').text()).toBe(
+      'Okta: implemented',
+    );
+  });
 });

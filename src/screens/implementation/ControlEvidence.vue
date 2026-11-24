@@ -16,7 +16,7 @@ import { evidenceLink } from '../filters/evidenceLink';
 import { useControlTree } from './controlTree';
 
 /**
- * The evidence that checks a control: its results overall, then each evidence filter linked to it
+ * The evidence filters that check a control (its results overall sit by the section's title), each
  * with its own results after its name (each a capsule of satisfied, unknown and not satisfied counts), a link to its evidence and a button to unlink it. Any of the plan's
  * filters (global or its own) can be linked by typing its name; new ones are made on the evidence
  * filters page, linked from here in a new tab. A filter links to controls or to components, not
@@ -29,12 +29,6 @@ const api = useAuthenticatedInstance();
 const toast = useToast();
 
 const filters = computed(() => tree.filters(props.controlId));
-const refreshKey = computed(() =>
-  filters.value
-    .map((f) => f.id)
-    .sort()
-    .join(','),
-);
 const linked = computed(() => new Set(filters.value.map((f) => f.id)));
 const choices = computed(() =>
   tree
@@ -100,14 +94,6 @@ watch(chosen, (id) => {
 
 <template>
   <Stack gap="4">
-    <Cluster gap="2" align="center">
-      <Text as="span" variant="secondary">Overall</Text>
-      <EvidenceCapsule
-        :control-id="controlId"
-        :ssp-id="tree.sspId()"
-        :refresh-key="refreshKey"
-      />
-    </Cluster>
     <Stack v-if="filters.length" as="ul" gap="2">
       <li v-for="filter in filters" :key="filter.id">
         <Cluster gap="2" align="center">

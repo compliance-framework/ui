@@ -40,7 +40,7 @@ const emit = defineEmits<{ edit: []; done: [] }>();
       @click="emit('edit')"
     />
     <Stack gap="3">
-      <Text v-if="remarks" variant="secondary" preserve-whitespace>{{
+      <Text v-if="remarks" variant="secondary" italic preserve-whitespace>{{
         remarks
       }}</Text>
       <ComponentStatements

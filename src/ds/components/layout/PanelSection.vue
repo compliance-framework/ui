@@ -4,7 +4,8 @@ import { useId } from 'vue';
 /**
  * A titled section inside a Panel, divided from the one above by a rule: one surface with
  * headings instead of a stack of bordered panels, for a record shown in a narrow pane. A labelled
- * section with an h3 by default; actions sit top-right as in Panel.
+ * section with an h3 by default; actions sit top-right as in Panel. The `title-end` slot puts a
+ * small status right after the title, e.g. the section's evidence counts.
  */
 withDefaults(
   defineProps<{
@@ -30,8 +31,18 @@ const headingId = useId();
   >
     <header class="panel-section__header">
       <div class="panel-section__titles">
+        <div v-if="$slots['title-end']" class="panel-section__title-row">
+          <component
+            :is="`h${level}`"
+            :id="headingId"
+            class="panel-section__title"
+            >{{ title }}</component
+          >
+          <slot name="title-end" />
+        </div>
         <component
           :is="`h${level}`"
+          v-else
           :id="headingId"
           class="panel-section__title"
           >{{ title }}</component
@@ -71,6 +82,13 @@ const headingId = useId();
   flex-direction: column;
   gap: var(--ds-space-1);
   min-width: 0;
+}
+
+.panel-section__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
 }
 
 .panel-section__title {

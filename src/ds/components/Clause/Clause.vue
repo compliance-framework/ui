@@ -5,10 +5,11 @@ import Tooltip from '../Tooltip/Tooltip.vue';
  * One clause of a document set out like a legal text: its label ("a.", "1.", "(a)") hangs to the
  * left of its text, and each `depth` (0 to 3) indents it one step under its parent. The
  * `annotation` slot holds something said about the clause rather than part of it, e.g. how it is
- * implemented: it sits a further step in, behind an accent rule and in the body font, so it reads
- * as a note in the margin of the text, not as more of it. A label with a `hint` (e.g. the clause's
+ * implemented: it sits a further step in, on a tinted background behind an accent rule and in the
+ * body font, so it reads as a note on the text, not as more of it. A label with a `hint` (e.g. the clause's
  * ID) shows it on hover and focus. The `actions` slot puts controls for the clause, e.g. a Menu,
- * right after its text, where they are seen.
+ * right after its text, where they are seen. Without text or actions, a clause is its annotation
+ * alone, e.g. what implements a control as a whole.
  */
 withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
   label: '',
@@ -28,7 +29,7 @@ withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
     </Tooltip>
     <span v-else class="clause__label">{{ label }}</span>
     <div class="clause__body">
-      <div class="clause__line">
+      <div v-if="$slots.default || $slots.actions" class="clause__line">
         <div class="clause__text"><slot /></div>
         <div v-if="$slots.actions" class="clause__actions">
           <slot name="actions" />
@@ -121,7 +122,9 @@ withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
 
 .clause__annotation {
   margin-left: var(--ds-space-2);
-  padding-left: var(--ds-space-4);
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-2)
+    var(--ds-space-4);
+  background: var(--ds-color-surface-sunken);
   border-left: var(--ds-border-width-indicator) solid var(--ds-color-indicator);
   font-size: var(--ds-font-size-body);
 }

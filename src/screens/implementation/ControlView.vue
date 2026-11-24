@@ -9,6 +9,7 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
+import EvidenceCapsule from '../EvidenceCapsule.vue';
 import ControlEvidence from './ControlEvidence.vue';
 import PartImplementation from './PartImplementation.vue';
 import { partMap, type PartBand } from './controlParts';
@@ -36,6 +37,14 @@ const id = computed(() => props.control.id);
 const implementation = computed(() => tree.implementation(id.value));
 const map = computed(() => partMap(props.control, implementation.value));
 const catalogLink = computed(() => tree.catalogLink(id.value));
+/** Changes when the control's filters do, so its evidence counts are fetched again. */
+const filterKey = computed(() =>
+  tree
+    .filters(id.value)
+    .map((f) => f.id)
+    .sort()
+    .join(','),
+);
 
 /** The band being edited: 'whole', a part's ID, or another statement's UUID. */
 const editing = ref<string | null>(null);
@@ -100,7 +109,6 @@ function partMenu(band: PartBand): MenuEntry[] {
           >
           <Text v-if="map.lead" variant="prose">{{ map.lead }}</Text>
           <Clause v-if="map.whole.length || implementation?.remarks">
-            <Text variant="secondary">The whole control</Text>
             <template #annotation>
               <PartImplementation
                 :control-id="id"
@@ -174,6 +182,14 @@ function partMenu(band: PartBand): MenuEntry[] {
       </PanelSection>
 
       <PanelSection title="Evidence">
+        <template #title-end>
+          <EvidenceCapsule
+            :control-id="id"
+            :ssp-id="tree.sspId()"
+            :refresh-key="filterKey"
+            quiet
+          />
+        </template>
         <ControlEvidence :control-id="id" />
       </PanelSection>
     </Stack>

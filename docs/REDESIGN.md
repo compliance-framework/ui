@@ -194,6 +194,9 @@ Made during the work (open to review):
   clause like a legal text (Clause: hanging labels, nested clauses indented), and each clause's
   implementation is an annotation a step further in behind an accent rule. This replaced the
   linked boxes (LinkedColumns, now deleted), which grew unwieldy at a box per part.
+  Since 2026-11-24 each annotation also sits on the sunken surface tint, so the plan's words stand
+  apart from the catalog's: a deliberate exception to "only a Panel has a card background", as a
+  tinted note rather than a card (no border or shadow). Chosen over a serif for the control text.
   One pencil per clause edits the whole implementation block in place: the statement's remarks
   (or, for the whole control, the implementation's) and its components, saved together.
   Each part's menu (Clause `actions` slot, right after its text) chooses "This statement requires

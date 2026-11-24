@@ -2,7 +2,8 @@
 /**
  * Running text in one of the type roles, so screens never style text themselves (DEC-04).
  * `label` is the uppercase tracked style used for eyebrows and small headings; `prose` is for
- * long-form text such as statements, descriptions and remarks (D-23).
+ * long-form text such as statements, descriptions and remarks (D-23). `italic` sets text apart
+ * in style without stressing it (not `<em>`), e.g. remarks about the text around them.
  */
 withDefaults(
   defineProps<{
@@ -10,8 +11,9 @@ withDefaults(
       'body' | 'secondary' | 'caption' | 'label' | 'metric' | 'code' | 'prose';
     as?: 'p' | 'span' | 'div' | 'strong' | 'code';
     preserveWhitespace?: boolean;
+    italic?: boolean;
   }>(),
-  { variant: 'body', as: 'p', preserveWhitespace: false },
+  { variant: 'body', as: 'p', preserveWhitespace: false, italic: false },
 );
 </script>
 
@@ -21,7 +23,10 @@ withDefaults(
     class="text"
     :class="[
       `text--${variant}`,
-      { 'text--preserve-whitespace': preserveWhitespace },
+      {
+        'text--preserve-whitespace': preserveWhitespace,
+        'text--italic': italic,
+      },
     ]"
     ><slot
   /></component>
@@ -35,6 +40,10 @@ withDefaults(
 
 .text--preserve-whitespace {
   white-space: pre-wrap;
+}
+
+.text--italic {
+  font-style: italic;
 }
 
 .text--body {
