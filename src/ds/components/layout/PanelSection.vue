@@ -5,9 +5,7 @@ import { useId } from 'vue';
  * A titled section inside a Panel, divided from the one above by a rule: one surface with
  * headings instead of a stack of bordered panels, for a record shown in a narrow pane. A labelled
  * section with an h3 by default; actions sit top-right as in Panel. The `title-end` slot puts a
- * small status right after the title, e.g. the section's evidence counts. `divided` false drops the
- * rule, for a first section with nothing above it to divide from (e.g. right under a drawer's
- * header).
+ * small status right after the title, e.g. the section's evidence counts.
  */
 withDefaults(
   defineProps<{
@@ -15,10 +13,8 @@ withDefaults(
     ariaLabel?: string;
     description?: string;
     level?: 2 | 3 | 4;
-    divided?: boolean;
   }>(),
   {
-    divided: true,
     description: undefined,
     ariaLabel: undefined,
     level: 3,
@@ -30,7 +26,6 @@ const headingId = useId();
 <template>
   <section
     class="panel-section"
-    :class="{ 'panel-section--undivided': !divided }"
     :aria-label="ariaLabel"
     :aria-labelledby="ariaLabel ? undefined : headingId"
   >
@@ -72,11 +67,6 @@ const headingId = useId();
   min-width: 0;
   padding-top: var(--ds-space-4);
   border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
-}
-
-.panel-section--undivided {
-  padding-top: 0;
-  border-top: none;
 }
 
 .panel-section__header {

@@ -109,81 +109,77 @@ function partMenu(band: PartBand): MenuEntry[] {
     "
   >
     <Stack gap="6">
-      <PanelSection title="Statement and implementation" :divided="false">
-        <Stack gap="4">
-          <Text v-if="map.lead" variant="prose">{{ map.lead }}</Text>
-          <Clause v-if="map.whole.length || implementation?.remarks">
-            <template #annotation>
-              <PartImplementation
-                :control-id="id"
-                :remarks="implementation?.remarks"
-                :by-components="map.whole"
-                empty-text=""
-                edit-label="Edit what implements the whole control"
-                :editing="editing === 'whole'"
-                :edit-denied="editDenied('whole')"
-                @edit="editing = 'whole'"
-                @done="editing = null"
-              />
-            </template>
-          </Clause>
-          <Clause
-            v-for="band in map.bands"
-            :key="band.id"
-            :label="band.label"
-            :hint="band.id"
-            :depth="band.depth"
-          >
-            {{ band.prose }}
-            <template #actions>
-              <Menu :label="`Actions for ${band.id}`" :items="partMenu(band)" />
-            </template>
-            <template v-if="band.required" #annotation>
-              <PartImplementation
-                :control-id="id"
-                :part-id="band.id"
-                :statement="band.statement"
-                :remarks="band.statement?.remarks"
-                :by-components="band.statement?.byComponents ?? []"
-                :empty-text="
-                  band.statement
-                    ? 'No component implements this part yet.'
-                    : 'Nothing written for this part yet.'
-                "
-                :edit-label="`Edit the implementation of ${band.id}`"
-                :editing="editing === band.id"
-                :edit-denied="editDenied(band.id)"
-                @edit="editing = band.id"
-                @done="editing = null"
-              />
-            </template>
-          </Clause>
-          <Clause
-            v-for="statement in map.others"
-            :key="statement.uuid"
-            :label="statement.statementId"
-          >
-            <Text variant="secondary"
-              >No part of this control has this ID.</Text
-            >
-            <template #annotation>
-              <PartImplementation
-                :control-id="id"
-                :part-id="statement.statementId"
-                :statement="statement"
-                :remarks="statement.remarks"
-                :by-components="statement.byComponents ?? []"
-                empty-text="No component implements this part yet."
-                :edit-label="`Edit the implementation of ${statement.statementId}`"
-                :editing="editing === statement.uuid"
-                :edit-denied="editDenied(statement.uuid)"
-                @edit="editing = statement.uuid"
-                @done="editing = null"
-              />
-            </template>
-          </Clause>
-        </Stack>
-      </PanelSection>
+      <Stack gap="4">
+        <Text v-if="map.lead" variant="prose">{{ map.lead }}</Text>
+        <Clause v-if="map.whole.length || implementation?.remarks">
+          <template #annotation>
+            <PartImplementation
+              :control-id="id"
+              :remarks="implementation?.remarks"
+              :by-components="map.whole"
+              empty-text=""
+              edit-label="Edit what implements the whole control"
+              :editing="editing === 'whole'"
+              :edit-denied="editDenied('whole')"
+              @edit="editing = 'whole'"
+              @done="editing = null"
+            />
+          </template>
+        </Clause>
+        <Clause
+          v-for="band in map.bands"
+          :key="band.id"
+          :label="band.label"
+          :hint="band.id"
+          :depth="band.depth"
+        >
+          {{ band.prose }}
+          <template #actions>
+            <Menu :label="`Actions for ${band.id}`" :items="partMenu(band)" />
+          </template>
+          <template v-if="band.required" #annotation>
+            <PartImplementation
+              :control-id="id"
+              :part-id="band.id"
+              :statement="band.statement"
+              :remarks="band.statement?.remarks"
+              :by-components="band.statement?.byComponents ?? []"
+              :empty-text="
+                band.statement
+                  ? 'No component implements this part yet.'
+                  : 'Nothing written for this part yet.'
+              "
+              :edit-label="`Edit the implementation of ${band.id}`"
+              :editing="editing === band.id"
+              :edit-denied="editDenied(band.id)"
+              @edit="editing = band.id"
+              @done="editing = null"
+            />
+          </template>
+        </Clause>
+        <Clause
+          v-for="statement in map.others"
+          :key="statement.uuid"
+          :label="statement.statementId"
+        >
+          <Text variant="secondary">No part of this control has this ID.</Text>
+          <template #annotation>
+            <PartImplementation
+              :control-id="id"
+              :part-id="statement.statementId"
+              :statement="statement"
+              :remarks="statement.remarks"
+              :by-components="statement.byComponents ?? []"
+              empty-text="No component implements this part yet."
+              :edit-label="`Edit the implementation of ${statement.statementId}`"
+              :editing="editing === statement.uuid"
+              :edit-denied="editDenied(statement.uuid)"
+              @edit="editing = statement.uuid"
+              @done="editing = null"
+            />
+          </template>
+        </Clause>
+      </Stack>
 
       <PanelSection title="Evidence">
         <template #title-end>

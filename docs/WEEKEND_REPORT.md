@@ -1687,9 +1687,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   Management**": the prefix in regular weight, the ID as a code chip, the title bold, then an icon
   link that opens the control in its catalog in a new tab (replacing the "See ac-2 in its catalog"
   line). New in the design system: Drawer/ModalPanel `titlePrefix`, `titleCode` and `titleLink`.
-  The two rules under the header are gone: the first PanelSection takes `divided=false`, and every
+  The two rules under the header are gone: the first section's own rule, and every
   Dialog and Drawer now shows the rule under its header only once its body has scrolled (or when it
   has a filters bar), so content passing under the header is still set off.
 - **Control view: linking a filter behind a plus.** The "Link an evidence filter" search and the
   "Create an evidence filter" link now sit behind a plus button under the filter list. It opens the
   search with the cursor in it, and closes again once a filter is linked.
+- **Control view: no "Statement and implementation" heading.** With the drawer titled
+  "Implementation of …", the statement starts straight under the header; Evidence keeps its heading.
+  (PanelSection's `divided` prop, added for that first section, went with it.)
