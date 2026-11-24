@@ -4,14 +4,17 @@ import type { Control } from '@/oscal';
 import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import Clause from '@/ds/components/Clause/Clause.vue';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import { evidenceLink } from '../filters/evidenceLink';
 import PartImplementation from './PartImplementation.vue';
-import { partMap } from './controlParts';
+import { partMap, type PartBand } from './controlParts';
 import { useControlTree } from './controlTree';
+import { useImplementationRequired } from './useImplementationRequired';
 
 /**
  * One control in depth, over nearly all of the page: its statement set out like a legal document,
@@ -21,7 +24,9 @@ import { useControlTree } from './controlTree';
  * Then the evidence that checks the control: evidence filters link to a control, not to its parts.
  * One link at the top opens the control in its catalog (in a new tab). Each clause's edit button
  * turns its implementation into a form in place (PartEditor), one clause at a time; closing with a
- * form open asks first.
+ * form open asks first. Each part's menu, right after its text, marks whether the statement requires
+ * implementation (a lead-in whose sub-parts are implemented doesn't); one that doesn't has no
+ * implementation block at all.
  */
 const props = defineProps<{ control: Control }>();
 const open = defineModel<boolean>('open', { default: false });
@@ -40,6 +45,42 @@ const editDenied = (key: string) =>
   (editing.value && editing.value !== key
     ? 'Save or cancel the part you are editing first.'
     : undefined);
+
+const { setRequired, saving } = useImplementationRequired();
+const REQUIRED_OPTIONS = [
+  { value: 'required', label: 'This statement requires implementation' },
+  {
+    value: 'not-required',
+    label: 'This statement does not require implementation',
+  },
+];
+/** A choice between the two, ticked as it stands; inert, with the reason, when it can't change now. */
+function partMenu(band: PartBand): MenuEntry[] {
+  const denied =
+    tree.editDenied() ??
+    (editing.value === band.id
+      ? 'Save or cancel this part first.'
+      : saving.value
+        ? 'Saving…'
+        : undefined);
+  if (denied)
+    return REQUIRED_OPTIONS.map((option) => ({
+      label: option.label,
+      disabledReason: denied,
+    }));
+  return [
+    {
+      type: 'radio',
+      label: 'Implementation',
+      value: band.required ? 'required' : 'not-required',
+      options: REQUIRED_OPTIONS,
+      onChange: (value) => {
+        const required = value === 'required';
+        if (required !== band.required) setRequired(id.value, band, required);
+      },
+    },
+  ];
+}
 </script>
 
 <template>
@@ -83,7 +124,10 @@ const editDenied = (key: string) =>
             :depth="band.depth"
           >
             {{ band.prose }}
-            <template #annotation>
+            <template #actions>
+              <Menu :label="`Actions for ${band.id}`" :items="partMenu(band)" />
+            </template>
+            <template v-if="band.required" #annotation>
               <PartImplementation
                 :control-id="id"
                 :part-id="band.id"

@@ -10,6 +10,11 @@ vi.mock(
   '@/views/control-implementations/partials/ControlEvidenceCounter.vue',
   () => ({ default: { template: '<span />' } }),
 );
+vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({}),
+  decamelizeKeys: (x: unknown) => x,
+}));
+vi.mock('@/ds/toasts', () => ({ useToast: () => ({ add: vi.fn() }) }));
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
   RouterLink: { template: '<a><slot /></a>' },
@@ -49,10 +54,10 @@ const implementation = {
   ],
 } as unknown as ImplementedRequirement;
 
-function mountView() {
+function mountView(requirement = implementation) {
   const context = {
     sspId: () => 'ssp-1',
-    implementation: () => implementation,
+    implementation: () => requirement,
     component: () => ({ title: 'Okta' }),
     filters: () => [{ id: 'f1', name: 'MFA enforced', filter: {} }],
     suggestionCount: () => 0,
@@ -108,5 +113,31 @@ describe('ControlView', () => {
 
   it("lists the control's evidence filters", () => {
     expect(mountView().text()).toContain('MFA enforced');
+  });
+
+  it('shows no implementation block for a statement that does not require implementation', () => {
+    const wrapper = mountView({
+      ...implementation,
+      statements: [
+        ...implementation.statements!,
+        {
+          uuid: 's-b',
+          statementId: 'ac-2_smt.b',
+          props: [
+            {
+              ns: 'https://compliance-framework.github.io/ns/oscal',
+              name: 'implementation-required',
+              value: 'false',
+            },
+          ],
+        },
+      ],
+    });
+    const clauses = wrapper.findAllComponents(Clause);
+    expect(clauses[0]!.find('.clause__annotation').exists()).toBe(true);
+    expect(clauses[1]!.find('.clause__annotation').exists()).toBe(false);
+    expect(wrapper.findAll('button[aria-label^="Actions for"]')).toHaveLength(
+      2,
+    );
   });
 });

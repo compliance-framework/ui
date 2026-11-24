@@ -1642,3 +1642,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   or implementation as it was, so the component changes after them are kept; checked against the
   local API (remarks set and cleared, every component statement unchanged). A part with no
   statement yet gets one when remarks are written.
+- **Control view: statements that don't require implementation.** Each clause has a ⋮ menu right
+  after its text choosing "This statement requires implementation" or "This statement does not
+  require implementation" (the current one ticked). It's for lead-ins such as ac-2 h ("Notify
+  account managers … within:") whose sub-parts are what get implemented. The mark is a CCF property
+  on the part's statement in the SSP (`implementation-required: false`), created along with the
+  statement if there isn't one; the API has no field for it. A statement that doesn't require
+  implementation has no implementation block at all (anything already written on it stays in the
+  SSP but isn't shown), and leaves the list row's "N of M parts" count (ac-2 now reads 7 of 20).
+  ac-2 h is marked in local data. New in the design system: Clause's `actions` slot.

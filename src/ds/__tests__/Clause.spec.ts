@@ -32,5 +32,15 @@ describe('Clause', () => {
     });
     expect(wrapper.classes()).toContain('clause--depth-3');
     expect(wrapper.find('.clause__annotation').exists()).toBe(false);
+    expect(wrapper.find('.clause__actions').exists()).toBe(false);
+  });
+
+  it('puts its actions right after its text', () => {
+    const wrapper = mount(Clause, {
+      slots: { default: 'Text', actions: '<button>More</button>' },
+    });
+    expect(wrapper.find('.clause__line > .clause__actions').text()).toBe(
+      'More',
+    );
   });
 });

@@ -7,7 +7,8 @@ import Tooltip from '../Tooltip/Tooltip.vue';
  * `annotation` slot holds something said about the clause rather than part of it, e.g. how it is
  * implemented: it sits a further step in, behind an accent rule and in the body font, so it reads
  * as a note in the margin of the text, not as more of it. A label with a `hint` (e.g. the clause's
- * ID) shows it on hover and focus.
+ * ID) shows it on hover and focus. The `actions` slot puts controls for the clause, e.g. a Menu,
+ * right after its text, where they are seen.
  */
 withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
   label: '',
@@ -27,7 +28,12 @@ withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
     </Tooltip>
     <span v-else class="clause__label">{{ label }}</span>
     <div class="clause__body">
-      <div class="clause__text"><slot /></div>
+      <div class="clause__line">
+        <div class="clause__text"><slot /></div>
+        <div v-if="$slots.actions" class="clause__actions">
+          <slot name="actions" />
+        </div>
+      </div>
       <div v-if="$slots.annotation" class="clause__annotation">
         <slot name="annotation" />
       </div>
@@ -88,7 +94,25 @@ withDefaults(defineProps<{ label?: string; hint?: string; depth?: number }>(), {
   min-width: 0;
 }
 
+.clause__line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+}
+
+.clause__actions {
+  flex: none;
+
+  /* Centred on the text's first line without making that line taller. */
+  font-size: var(--ds-font-size-prose);
+  line-height: var(--ds-leading-prose);
+  margin-block: calc((1lh - var(--ds-size-control-md)) / 2);
+}
+
 .clause__text {
+  flex: 0 1 auto;
+  min-width: 0;
+
   color: var(--ds-color-text-primary);
   font-size: var(--ds-font-size-prose);
   line-height: var(--ds-leading-prose);

@@ -3,7 +3,9 @@ import type {
   Control,
   ImplementedRequirement,
   Statement,
+  Property,
 } from '@/oscal';
+import { CCF_OSCAL_NAMESPACE } from '@/types/subjects';
 import {
   insertParams,
   partOutline,
@@ -27,6 +29,8 @@ export interface PartBand {
   /** How deep the part is: 0 for a., 1 for a.1, 2 for a.1.(a). */
   depth: number;
   statement?: Statement;
+  /** False when the plan marks the part as needing no implementation statement of its own. */
+  required: boolean;
 }
 
 /** A control's implementation laid against its statement, part by part. */
@@ -56,7 +60,7 @@ export function partMap(
   const flatten = (
     items: PartOutlineItem[],
     depth: number,
-  ): Omit<PartBand, 'statement'>[] =>
+  ): Omit<PartBand, 'statement' | 'required'>[] =>
     items.flatMap((item) => [
       {
         id: item.id,
@@ -78,10 +82,10 @@ export function partMap(
           depth: 0,
         },
       ];
-  const bands = parts.map((part) => ({
-    ...part,
-    statement: statements.find((s) => same(s.statementId, part.id)),
-  }));
+  const bands = parts.map((part) => {
+    const statement = statements.find((s) => same(s.statementId, part.id));
+    return { ...part, statement, required: implementationRequired(statement) };
+  });
   return {
     lead: outline.length ? text(statementPart?.prose ?? '') : '',
     whole: implementation?.byComponents ?? [],
@@ -90,6 +94,34 @@ export function partMap(
       (s) => !bands.some((band) => same(band.id, s.statementId)),
     ),
   };
+}
+
+/**
+ * The plan's mark that a part needs no implementation statement of its own, e.g. a lead-in such as
+ * ac-2 h ("Notify account managers…:") whose sub-parts are what get implemented. A CCF property on
+ * the part's statement in the SSP; without it, every part needs one.
+ */
+const NOT_REQUIRED: Property = {
+  ns: CCF_OSCAL_NAMESPACE,
+  name: 'implementation-required',
+  value: 'false',
+};
+const isNotRequired = (p: Property) =>
+  p.ns === NOT_REQUIRED.ns && p.name === NOT_REQUIRED.name;
+
+export function implementationRequired(statement?: Statement): boolean {
+  return !statement?.props?.some(
+    (p) => isNotRequired(p) && p.value?.trim().toLowerCase() === 'false',
+  );
+}
+
+/** A statement's properties with the mark set as `required` says, its other properties kept. */
+export function withImplementationRequired(
+  props: Property[] | undefined,
+  required: boolean,
+): Property[] {
+  const others = (props ?? []).filter((p) => !isNotRequired(p));
+  return required ? others : [...others, { ...NOT_REQUIRED }];
 }
 
 /** The badge for a component's implementation status, if it has a known one. */
@@ -108,7 +140,10 @@ const STATUS_ORDER: StatusKey[] = [
 
 /** What a list row says about an implementation, without its text. */
 export interface ImplementationSummary {
-  /** Parts with a component of their own (whole-control components aside), and all the parts. */
+  /**
+   * Parts with a component of their own (whole-control components aside), and all the parts, both
+   * leaving out parts that need no implementation statement.
+   */
   partsCovered: number;
   partsTotal: number;
   /**
@@ -131,10 +166,11 @@ export function implementationSummary(map: PartMap): ImplementationSummary {
     if (status) found.add(status);
     statuses.set(bc.componentUuid, found);
   }
+  const required = map.bands.filter((b) => b.required);
   return {
-    partsCovered: map.bands.filter((b) => b.statement?.byComponents?.length)
+    partsCovered: required.filter((b) => b.statement?.byComponents?.length)
       .length,
-    partsTotal: map.bands.length,
+    partsTotal: required.length,
     components: [...statuses].map(([uuid, found]) => ({
       uuid,
       statuses: STATUS_ORDER.filter((s) => found.has(s)),

@@ -190,6 +190,12 @@ Made during the work (open to review):
   linked boxes (LinkedColumns, now deleted), which grew unwieldy at a box per part.
   One pencil per clause edits the whole implementation block in place: the statement's remarks
   (or, for the whole control, the implementation's) and its components, saved together.
+  Each part's menu (Clause `actions` slot, right after its text) chooses "This statement requires
+  implementation" or "This statement does not require implementation": a lead-in like ac-2 h,
+  whose sub-parts are implemented, doesn't. Stored on the SSP's statement for the part as the CCF
+  property `implementation-required: false` (ns `https://compliance-framework.github.io/ns/oscal`),
+  so it is per plan, not per catalog. Such parts have no implementation block at all and leave the
+  row's "N of M parts" count.
 - **Parameters: set values marked, unset ones as NIST prints them** (2026-11-20). Values are set in
   the catalog, never per SSP. Wherever control text is shown (catalog page, Implementation), a
   parameter with a value reads `--value--`, one without reads "[Assignment: organization-defined

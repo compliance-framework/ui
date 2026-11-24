@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Control, ImplementedRequirement } from '@/oscal';
+import { CCF_OSCAL_NAMESPACE } from '@/types/subjects';
 import {
+  implementationRequired,
   implementationSummary,
   partMap,
   statementExcerpt,
+  withImplementationRequired,
 } from './controlParts';
 
 const control = {
@@ -95,6 +98,7 @@ describe('partMap', () => {
         prose: 'Identify users.',
         depth: 0,
         statement: undefined,
+        required: true,
       },
     ]);
   });
@@ -124,6 +128,45 @@ describe('implementationSummary', () => {
         { uuid: 'c2', statuses: [] },
       ],
     });
+  });
+});
+
+describe('implementation required', () => {
+  const mark = {
+    ns: CCF_OSCAL_NAMESPACE,
+    name: 'implementation-required',
+    value: 'false',
+  };
+
+  it('leaves parts that need no statement out of the count', () => {
+    const map = partMap(control, {
+      uuid: 'r',
+      controlId: 'ac-2',
+      statements: [
+        { uuid: 's1', statementId: 'ac-2_smt.b', props: [mark] },
+        {
+          uuid: 's2',
+          statementId: 'ac-2_smt.b.1',
+          byComponents: [bc('b1', 'c1', 'implemented')],
+        },
+      ],
+    } as ImplementedRequirement);
+    expect(map.bands.map((b) => b.required)).toEqual([true, false, true]);
+    expect(implementationSummary(map)).toMatchObject({
+      partsCovered: 1,
+      partsTotal: 2,
+    });
+  });
+
+  it("sets and clears the mark, keeping the statement's other properties", () => {
+    const other = { name: 'note', value: 'x' };
+    const marked = withImplementationRequired([other], false);
+    expect(marked).toEqual([other, mark]);
+    expect(
+      implementationRequired({ uuid: 's', statementId: 'x', props: marked }),
+    ).toBe(false);
+    expect(withImplementationRequired(marked, true)).toEqual([other]);
+    expect(implementationRequired(undefined)).toBe(true);
   });
 });
 
