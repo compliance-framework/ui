@@ -27,6 +27,14 @@ export interface ControlTreeContext {
   catalogLink: (controlId: string) => RouteLocationRaw | undefined;
   /** The evidence filters that check a control. */
   filters: (controlId: string) => Dashboard[];
+  /** Every evidence filter the plan can use: global ones and its own. */
+  allFilters: () => Dashboard[];
+  /** Fetches the evidence filters again, after one is linked or unlinked, or made in another tab. */
+  reloadFilters: () => Promise<void>;
+  /** Why the user can't link or unlink evidence filters, if they can't. */
+  filterEditDenied: () => string | undefined;
+  /** The form for a new evidence filter. */
+  newFilterLink: () => RouteLocationRaw;
   byComponentCount: (controlId: string) => number;
   riskCount: (controlId: string) => number;
   riskSeverity: (controlId: string) => 'high' | 'medium' | 'low' | undefined;

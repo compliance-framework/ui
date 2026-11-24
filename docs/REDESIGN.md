@@ -179,6 +179,13 @@ Made during the work (open to review):
   The whole row is the control's link (ItemList `rowLink`, a stretched title link). The row names
   each implementing component with its status rather than counting statuses, and evidence
   results are a `StatusCapsule` (green, grey, red segments with counts, as in the classic UI).
+  Since 2026-11-24 a row's evidence is one pill instead (EvidencePill): Not satisfied when any
+  result is, Satisfied when every result is, otherwise Unknown (also with no evidence). The control
+  view's Evidence section shows the control's pill, then each linked filter with its own pill
+  (`compliance-by-filter`), and links and unlinks filters in place (PUT `/api/filters/{id}` with the
+  control added to or taken from its controls; a filter following its plan's scope is sent as its
+  own expression, still following). Filters linked to components aren't offered: a filter links to
+  controls or to components, not both.
   Each row has two lines with their own ends: ID (a code chip, as in the evidence table) and title, then risks, filters and
   evidence; the statement's start, then the parts count and components with their status.
   Each status is a StatusPill: green for implemented, amber for partial, blue for the rest.

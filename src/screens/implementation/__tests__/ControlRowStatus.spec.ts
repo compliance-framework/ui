@@ -6,10 +6,9 @@ import ControlRowImplementation from '../ControlRowImplementation.vue';
 import ControlRowStatus from '../ControlRowStatus.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
-vi.mock(
-  '@/views/control-implementations/partials/ControlEvidenceCounter.vue',
-  () => ({ default: { template: '<span>evidence</span>' } }),
-);
+vi.mock('@/screens/EvidencePill.vue', () => ({
+  default: { template: '<span>evidence</span>' },
+}));
 
 const control = {
   id: 'ac-2',

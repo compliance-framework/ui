@@ -191,7 +191,7 @@ const stubs = {
   }),
   Tooltip: { template: '<slot />' },
   RiskIndicatorBadge: { template: '<span />' },
-  ControlEvidenceCounter: { template: '<span />' },
+  EvidencePill: { template: '<span />' },
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },
   ProfilesField: ProfilePickerStub,

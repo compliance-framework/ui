@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { Control } from '@/oscal';
-import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import Clause from '@/ds/components/Clause/Clause.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
@@ -10,7 +9,7 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
-import { evidenceLink } from '../filters/evidenceLink';
+import ControlEvidence from './ControlEvidence.vue';
 import PartImplementation from './PartImplementation.vue';
 import { partMap, type PartBand } from './controlParts';
 import { useControlTree } from './controlTree';
@@ -21,7 +20,8 @@ import { useImplementationRequired } from './useImplementationRequired';
  * clause by clause at every depth (each label hanging, nested clauses indented under their
  * parent), with what implements each clause a step further in behind an accent rule
  * (PartImplementation: remarks, then "By component" and every component's full text and status).
- * Then the evidence that checks the control: evidence filters link to a control, not to its parts.
+ * Then the evidence that checks the control (ControlEvidence): evidence filters link to a control,
+ * not to its parts.
  * One link at the top opens the control in its catalog (in a new tab). Each clause's edit button
  * turns its implementation into a form in place (PartEditor), one clause at a time; closing with a
  * form open asks first. Each part's menu, right after its text, marks whether the statement requires
@@ -35,7 +35,6 @@ const tree = useControlTree();
 const id = computed(() => props.control.id);
 const implementation = computed(() => tree.implementation(id.value));
 const map = computed(() => partMap(props.control, implementation.value));
-const filters = computed(() => tree.filters(id.value));
 const catalogLink = computed(() => tree.catalogLink(id.value));
 
 /** The band being edited: 'whole', a part's ID, or another statement's UUID. */
@@ -175,17 +174,7 @@ function partMenu(band: PartBand): MenuEntry[] {
       </PanelSection>
 
       <PanelSection title="Evidence">
-        <Stack gap="3">
-          <ControlEvidenceCounter :control="control" :ssp-id="tree.sspId()" />
-          <Stack v-if="filters.length" as="ul" gap="2">
-            <li v-for="filter in filters" :key="filter.id">
-              <TextLink :to="evidenceLink(filter)">{{ filter.name }}</TextLink>
-            </li>
-          </Stack>
-          <Text v-else variant="secondary"
-            >No evidence filter checks this control yet.</Text
-          >
-        </Stack>
+        <ControlEvidence :control-id="id" />
       </PanelSection>
     </Stack>
   </Drawer>

@@ -6,10 +6,9 @@ import Clause from '@/ds/components/Clause/Clause.vue';
 import ControlView from '../ControlView.vue';
 import { provideControlTree, type ControlTreeContext } from '../controlTree';
 
-vi.mock(
-  '@/views/control-implementations/partials/ControlEvidenceCounter.vue',
-  () => ({ default: { template: '<span />' } }),
-);
+vi.mock('@/screens/EvidencePill.vue', () => ({
+  default: { template: '<span />' },
+}));
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({}),
   decamelizeKeys: (x: unknown) => x,
@@ -60,6 +59,10 @@ function mountView(requirement = implementation) {
     implementation: () => requirement,
     component: () => ({ title: 'Okta' }),
     filters: () => [{ id: 'f1', name: 'MFA enforced', filter: {} }],
+    allFilters: () => [],
+    reloadFilters: vi.fn(async () => undefined),
+    filterEditDenied: () => undefined,
+    newFilterLink: () => ({ name: 'dashboards.create' }),
     suggestionCount: () => 0,
     components: () => [],
     editDenied: () => undefined,

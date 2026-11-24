@@ -2,16 +2,17 @@
 import { computed } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Control } from '@/oscal';
-import ControlEvidenceCounter from '@/views/control-implementations/partials/ControlEvidenceCounter.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import { plural } from '@/ds/format';
+import EvidencePill from '../EvidencePill.vue';
 import { useControlTree } from './controlTree';
 
 /**
  * The end of a control row's first line in the Implementation list: open risks, suggestions, how
- * many evidence filters check it, and its evidence results. Its implementation is on the second
+ * many evidence filters check it, and its evidence as one pill (satisfied, not satisfied or
+ * unknown). Its implementation is on the second
  * line (ControlRowImplementation); the detail is in the control's view.
  */
 const props = defineProps<{ control: Control }>();
@@ -19,6 +20,13 @@ const tree = useControlTree();
 
 const id = computed(() => props.control.id);
 const filterCount = computed(() => tree.filters(id.value).length);
+const filterKey = computed(() =>
+  tree
+    .filters(id.value)
+    .map((f) => f.id)
+    .sort()
+    .join(','),
+);
 </script>
 
 <template>
@@ -39,6 +47,10 @@ const filterCount = computed(() => tree.filters(id.value).length);
     <Text v-if="filterCount" as="span" variant="caption">{{
       plural(filterCount, 'evidence filter')
     }}</Text>
-    <ControlEvidenceCounter :control="control" :ssp-id="tree.sspId()" />
+    <EvidencePill
+      :control-id="id"
+      :ssp-id="tree.sspId()"
+      :refresh-key="filterKey"
+    />
   </Cluster>
 </template>

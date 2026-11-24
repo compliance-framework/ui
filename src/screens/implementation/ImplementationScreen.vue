@@ -893,10 +893,13 @@ const { data: sspComponents, execute: fetchSspComponents } = useDataApi<
 >(
   `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/system-implementation/components`,
 );
-const { data: sspFilters } = useDataApi<Dashboard[]>('/api/filters', {
-  // A camelCase API: it returns global filters and this plan's.
-  params: { sspId: systemStore.system.securityPlan?.uuid },
-});
+const { data: sspFilters, execute: fetchSspFilters } = useDataApi<Dashboard[]>(
+  '/api/filters',
+  {
+    // A camelCase API: it returns global filters and this plan's.
+    params: { sspId: systemStore.system.securityPlan?.uuid },
+  },
+);
 const componentsByUuid = dsComputed(
   () => new Map((sspComponents.value ?? []).map((c) => [c.uuid, c])),
 );
@@ -1067,6 +1070,15 @@ provideControlTree({
   reload: loadControlImplementations,
   catalogLink,
   filters: (id) => filtersByControl.value.get(normalizeId(id)) ?? [],
+  allFilters: () => sspFilters.value ?? [],
+  reloadFilters: async () => {
+    await fetchSspFilters();
+  },
+  filterEditDenied: () =>
+    can(RESOURCES.FILTER, ACTIONS.UPDATE)
+      ? undefined
+      : "Your access doesn't include changing evidence filters.",
+  newFilterLink: () => ({ name: 'dashboards.create' }),
   byComponentCount: controlByComponentCount,
   riskCount: controlRiskCount,
   riskSeverity: controlHighestSeverity,

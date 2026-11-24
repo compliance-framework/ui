@@ -1651,3 +1651,15 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   implementation has no implementation block at all (anything already written on it stays in the
   SSP but isn't shown), and leaves the list row's "N of M parts" count (ac-2 now reads 7 of 20).
   ac-2 h is marked in local data. New in the design system: Clause's `actions` slot.
+- **Evidence: a pill per control and per filter, and linking filters.** Each control row's evidence
+  capsule is now one pill in three states: Not satisfied (red) when any result is, Satisfied (green)
+  when every result is, otherwise Unknown (grey, also when there's no evidence, so every control
+  in local data shows Unknown). In the control view, the Evidence section shows the control's pill,
+  then each linked filter with its own pill (from `compliance-by-filter`), a link to its evidence and
+  an unlink button. "Link an evidence filter" searches the plan's filters (global and its own) and
+  links one straight away; "Create an evidence filter" opens the filter form in a new tab. Filters
+  linked to components aren't offered (the API takes a filter's controls or its components, not
+  both). Checked against the local API: Kyverno baseline linked to ac-6 and unlinked again. Without
+  the filter update permission the list shows without the link and unlink controls. The old
+  `ControlEvidenceCounter` is deleted; `EvidenceCounts` (the capsule) stays for component evidence
+  and the catalog.

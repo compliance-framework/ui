@@ -1255,7 +1255,10 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         });
       return json(route, { data: [] });
     }
-    if (path.startsWith('/api/evidence/compliance-by-control/'))
+    if (
+      path.startsWith('/api/evidence/compliance-by-control/') ||
+      path.startsWith('/api/evidence/compliance-by-filter/')
+    )
       return json(route, { data: [] });
     // A record of the redesigned OSCAL types, with every sub-collection its tabs read.
     const oscalRecord = path.match(
