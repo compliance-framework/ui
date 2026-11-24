@@ -221,7 +221,6 @@ async function save(): Promise<void> {
     >
       <Textarea v-model="remarks" auto-grow />
     </FormField>
-    <Text as="span" variant="label">By component</Text>
     <Stack v-if="shown.length" as="ul" gap="5">
       <li v-for="row in shown" :key="row.key">
         <Stack gap="2">

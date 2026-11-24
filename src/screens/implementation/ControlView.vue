@@ -19,7 +19,7 @@ import { useImplementationRequired } from './useImplementationRequired';
  * One control in depth, over nearly all of the page: its statement set out like a legal document,
  * clause by clause at every depth (each label hanging, nested clauses indented under their
  * parent), with what implements each clause a step further in behind an accent rule
- * (PartImplementation: remarks, then "By component" and every component's full text and status).
+ * (PartImplementation: remarks, then every component's full text and status).
  * Then the evidence that checks the control (ControlEvidence): evidence filters link to a control,
  * not to its parts.
  * One link at the top opens the control in its catalog (in a new tab). Each clause's edit button

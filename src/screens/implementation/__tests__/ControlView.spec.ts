@@ -103,15 +103,16 @@ describe('ControlView', () => {
     ]);
   });
 
-  it('links to the catalog once, and says "By component" only over components', () => {
+  it('links to the catalog once, and edits each clause with a pencil one line tall', () => {
     const wrapper = mountView();
     expect(
       wrapper.findAll('a').filter((a) => a.text().includes('in its catalog')),
     ).toHaveLength(1);
-    const labels = wrapper
-      .findAll('.clause__annotation')
-      .map((note) => note.text().includes('By component'));
-    expect(labels).toEqual([true, false]);
+    expect(wrapper.text()).not.toContain('By component');
+    const pencils = wrapper.findAll('.clause__annotation .icon-button');
+    expect(pencils).toHaveLength(2);
+    for (const pencil of pencils)
+      expect(pencil.classes()).toContain('icon-button--inline');
   });
 
   it("lists the control's evidence filters", () => {

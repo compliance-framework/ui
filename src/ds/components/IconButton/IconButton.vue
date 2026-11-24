@@ -11,7 +11,8 @@ import { buttonSizeKey } from '../Button/buttonSize';
  * Include the object in the label for repeated actions, e.g. "Delete risk Log retention gap".
  * Other attributes (e.g. data-test) reach the button or link itself. `pressed` makes it an on/off
  * toggle (aria-pressed): off, the icon is light and secondary; on, bold. Keep the label the same in
- * both states, e.g. "See hidden labels".
+ * both states, e.g. "See hidden labels". Size `inline` is one line of body text tall, for an action
+ * that sits beside text and shouldn't make its line taller (e.g. an edit button before a note).
  */
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
@@ -19,7 +20,7 @@ const props = withDefaults(
     icon: IconName;
     label: string;
     variant?: 'tertiary' | 'secondary';
-    size?: 'sm' | 'md';
+    size?: 'sm' | 'md' | 'inline';
     to?: RouteLocationRaw;
     disabledReason?: string;
     /** For toggle buttons, e.g. collapsing the nav rail. */
@@ -120,6 +121,14 @@ function onClick(event: MouseEvent): void {
 .icon-button--sm {
   width: var(--ds-size-control-sm);
   height: var(--ds-size-control-sm);
+}
+
+/* One line of body text: a square of the body line height. */
+.icon-button--inline {
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
+  width: 1lh;
+  height: 1lh;
 }
 
 .icon-button:hover {

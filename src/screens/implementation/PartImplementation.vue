@@ -34,6 +34,7 @@ const emit = defineEmits<{ edit: []; done: [] }>();
   <Cluster v-if="!editing" :wrap="false" grow="last" align="start" gap="2">
     <IconButton
       icon="edit"
+      size="inline"
       :label="editLabel"
       :disabled-reason="editDenied"
       @click="emit('edit')"
@@ -42,13 +43,11 @@ const emit = defineEmits<{ edit: []; done: [] }>();
       <Text v-if="remarks" variant="secondary" preserve-whitespace>{{
         remarks
       }}</Text>
-      <template v-if="byComponents.length">
-        <Text as="span" variant="label">By component</Text>
-        <ComponentStatements
-          :control-id="controlId"
-          :by-components="byComponents"
-        />
-      </template>
+      <ComponentStatements
+        v-if="byComponents.length"
+        :control-id="controlId"
+        :by-components="byComponents"
+      />
       <Text v-else-if="emptyText" variant="secondary">{{ emptyText }}</Text>
     </Stack>
   </Cluster>

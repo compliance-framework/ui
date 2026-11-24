@@ -1663,3 +1663,8 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   the filter update permission the list shows without the link and unlink controls. The old
   `ControlEvidenceCounter` is replaced by `EvidenceCapsule`, which fetches a control's or a filter's
   results and draws them with `EvidenceCounts`.
+- **Control view: lighter implementation blocks.** The "By component" label is gone from each
+  clause's implementation (and its edit form): the component names say it. The edit pencil is now
+  one line of body text tall (new IconButton size `inline`, a square of the body line height, about
+  22px), so it no longer makes a block's first line taller than its text. It's under the 24px target
+  size, which WCAG 2.2 allows here as nothing else is within 24px of it.
