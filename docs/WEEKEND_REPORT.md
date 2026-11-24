@@ -1690,3 +1690,6 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   The two rules under the header are gone: the first PanelSection takes `divided=false`, and every
   Dialog and Drawer now shows the rule under its header only once its body has scrolled (or when it
   has a filters bar), so content passing under the header is still set off.
+- **Control view: linking a filter behind a plus.** The "Link an evidence filter" search and the
+  "Create an evidence filter" link now sit behind a plus button under the filter list. It opens the
+  search with the cursor in it, and closes again once a filter is linked.

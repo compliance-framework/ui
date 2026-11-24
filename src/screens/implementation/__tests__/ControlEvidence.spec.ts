@@ -90,6 +90,11 @@ describe('ControlEvidence', () => {
   it("offers the plan's other filters, not those for components, and links one still following", async () => {
     api.put.mockClear();
     const { wrapper } = mountEvidence();
+    // The search is behind a plus button, and closes once a filter is linked.
+    expect(wrapper.findComponent(Combobox).exists()).toBe(false);
+    await wrapper
+      .get('button[aria-label="Link an evidence filter"]')
+      .trigger('click');
     const combobox = wrapper.findComponent(Combobox);
     expect(combobox.props('options')).toEqual([
       { value: 'f2', label: 'Leavers' },
@@ -104,11 +109,14 @@ describe('ControlEvidence', () => {
       controls: ['ac-2'],
       components: [],
     });
+    expect(wrapper.findComponent(Combobox).exists()).toBe(false);
   });
 
   it("can't change the links without access to filters", () => {
     const { wrapper } = mountEvidence("Your access doesn't include it.");
-    expect(wrapper.findComponent(Combobox).exists()).toBe(false);
+    expect(
+      wrapper.find('button[aria-label="Link an evidence filter"]').exists(),
+    ).toBe(false);
     expect(
       wrapper.get('button[aria-label^="Unlink MFA enforced"]').attributes(),
     ).toHaveProperty('aria-disabled');

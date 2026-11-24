@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue';
 import type { Dashboard } from '@/stores/filters';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { getErrorDetail } from '@/utils/httpErrors';
@@ -16,12 +16,13 @@ import { evidenceLink } from '../filters/evidenceLink';
 import { useControlTree } from './controlTree';
 
 /**
- * The evidence filters that check a control (its results overall sit by the section's title), each
- * with its own results after its name (each a capsule of satisfied, unknown and not satisfied counts), a link to its evidence and a button to unlink it. Any of the plan's
- * filters (global or its own) can be linked by typing its name; new ones are made on the evidence
- * filters page, linked from here in a new tab. A filter links to controls or to components, not
- * both, so filters linked to components aren't offered. Links save straight away; without access
- * to change filters, the list shows without the controls to change it.
+ * The evidence filters that check a control (its results overall sit by the section's title),
+ * each with its results after its name (a capsule of satisfied, unknown and not satisfied counts),
+ * a link to its evidence and a button to unlink it. A plus button opens a search to link any of
+ * the plan's filters (global or its own) by name, closing once one is linked; new ones are made on
+ * the evidence filters page, linked from there in a new tab. A filter links to controls or to
+ * components, not both, so filters linked to components aren't offered. Links save straight away;
+ * without access to change filters, the list shows without the controls to change it.
  */
 const props = defineProps<{ controlId: string }>();
 const tree = useControlTree();
@@ -83,11 +84,25 @@ async function change(filter: Dashboard, link: boolean) {
   }
 }
 
+/** The search for a filter to link, behind a plus button; it closes once one is linked. */
+const adding = ref(false);
+const addId = useId();
+const addField = useTemplateRef<InstanceType<typeof FormField>>('addField');
+async function toggleAdding(): Promise<void> {
+  adding.value = !adding.value;
+  if (!adding.value) return;
+  await nextTick();
+  (addField.value?.$el as HTMLElement | undefined)
+    ?.querySelector<HTMLElement>('input, [role="combobox"]')
+    ?.focus();
+}
+
 const chosen = ref('');
 watch(chosen, (id) => {
   const filter = tree.allFilters().find((f) => f.id === id);
   if (!filter) return;
   chosen.value = '';
+  adding.value = false;
   void change(filter, true);
 });
 </script>
@@ -111,8 +126,17 @@ watch(chosen, (id) => {
     <Text v-else variant="secondary"
       >No evidence filter checks this control yet.</Text
     >
-    <template v-if="!tree.filterEditDenied()">
-      <FormField label="Link an evidence filter">
+    <Cluster v-if="!tree.filterEditDenied()">
+      <IconButton
+        icon="add"
+        label="Link an evidence filter"
+        :expanded="adding"
+        :controls="addId"
+        @click="toggleAdding"
+      />
+    </Cluster>
+    <Stack v-if="adding" :id="addId" gap="2">
+      <FormField ref="addField" label="Link an evidence filter">
         <Combobox
           v-model="chosen"
           :options="choices"
@@ -127,6 +151,6 @@ watch(chosen, (id) => {
           >Create an evidence filter (opens in a new tab)</TextLink
         >, then search again.</Text
       >
-    </template>
+    </Stack>
   </Stack>
 </template>
