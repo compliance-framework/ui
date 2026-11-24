@@ -22,8 +22,9 @@ import { useToast } from '@/ds/toasts';
 import { useControlTree } from './controlTree';
 
 /**
- * Edits, in place, what implements one part of a control (or the whole control): each component's
- * status and text, unlinking components, and linking the plan's components, found by typing. New
+ * Edits, in place, what implements one part of a control (or the whole control): its remarks
+ * (what the statement, or for the whole control the implementation, says beyond its components),
+ * each component's status and text, unlinking components, and linking the plan's components, found by typing. New
  * components are made in Configure System → Components, linked from here in a new tab; the list
  * refreshes each time the search opens, so one made there can be linked straight away. Saving
  * creates the control's implementation and the part's statement if they don't exist yet. The API
@@ -36,6 +37,8 @@ const props = defineProps<{
   partId?: string;
   /** The part's statement, if there is one; ignored for the whole control. */
   statement?: Statement;
+  /** The statement's remarks, or for the whole control the implementation's. */
+  remarks?: string;
   byComponents: ByComponent[];
 }>();
 const emit = defineEmits<{ done: [] }>();
@@ -62,6 +65,7 @@ const rows = ref<Row[]>(
     removed: false,
   })),
 );
+const remarks = ref(props.remarks ?? '');
 const shown = computed(() => rows.value.filter((row) => !row.removed));
 const errors = ref<Record<string, string>>({});
 const saving = ref(false);
@@ -117,26 +121,46 @@ async function save(): Promise<void> {
   saving.value = true;
   const base = `/api/oscal/system-security-plans/${tree.sspId()}/control-implementation/implemented-requirements`;
   const send = { transformRequest: [decamelizeKeys] };
+  // Remarks go first, sent with the rest of their statement (or implementation) as it was, so the
+  // component changes after them aren't overwritten.
+  const newRemarks = remarks.value.trim() || undefined;
+  const remarksChanged = newRemarks !== (props.remarks?.trim() || undefined);
   try {
     let requirement = tree.implementation(props.controlId);
     if (!requirement) {
       const created = await api.post<{ data: ImplementedRequirement }>(
         base,
-        { uuid: uuidv4(), controlId: props.controlId },
+        {
+          uuid: uuidv4(),
+          controlId: props.controlId,
+          remarks: props.partId ? undefined : newRemarks,
+        },
         send,
       );
       requirement = created.data.data;
+    } else if (!props.partId && remarksChanged) {
+      await api.put(
+        `${base}/${requirement.uuid}`,
+        { ...requirement, remarks: newRemarks },
+        send,
+      );
     }
     let target = `${base}/${requirement.uuid}/by-components`;
     if (props.partId) {
       let statementUuid = props.statement?.uuid;
-      if (!statementUuid && shown.value.length) {
+      if (!statementUuid && (shown.value.length || newRemarks)) {
         const created = await api.post<{ data: Statement }>(
           `${base}/${requirement.uuid}/statements`,
-          { uuid: uuidv4(), statementId: props.partId },
+          { uuid: uuidv4(), statementId: props.partId, remarks: newRemarks },
           send,
         );
         statementUuid = created.data.data.uuid;
+      } else if (props.statement && remarksChanged) {
+        await api.put(
+          `${base}/${requirement.uuid}/statements/${props.statement.uuid}`,
+          { ...props.statement, remarks: newRemarks },
+          send,
+        );
       }
       target = `${base}/${requirement.uuid}/statements/${statementUuid}/by-components`;
     }
@@ -187,6 +211,17 @@ async function save(): Promise<void> {
 
 <template>
   <Stack gap="4">
+    <FormField
+      label="Remarks"
+      :hint="
+        partId
+          ? 'About this part as a whole, beyond what each component does.'
+          : 'About the whole control, beyond what each component does.'
+      "
+    >
+      <Textarea v-model="remarks" auto-grow />
+    </FormField>
+    <Text as="span" variant="label">By component</Text>
     <Stack v-if="shown.length" as="ul" gap="5">
       <li v-for="row in shown" :key="row.key">
         <Stack gap="2">

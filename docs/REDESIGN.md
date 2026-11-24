@@ -188,6 +188,8 @@ Made during the work (open to review):
   clause like a legal text (Clause: hanging labels, nested clauses indented), and each clause's
   implementation is an annotation a step further in behind an accent rule. This replaced the
   linked boxes (LinkedColumns, now deleted), which grew unwieldy at a box per part.
+  One pencil per clause edits the whole implementation block in place: the statement's remarks
+  (or, for the whole control, the implementation's) and its components, saved together.
 - **Parameters: set values marked, unset ones as NIST prints them** (2026-11-20). Values are set in
   the catalog, never per SSP. Wherever control text is shown (catalog page, Implementation), a
   parameter with a value reads `--value--`, one without reads "[Assignment: organization-defined

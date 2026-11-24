@@ -77,7 +77,7 @@ describe('PartEditor', () => {
       },
       { uuid: 'req-1', controlId: 'ac-2' } as ImplementedRequirement,
     );
-    await wrapper.get('textarea').setValue('New text.');
+    await wrapper.findAll('textarea').at(-1)!.setValue('New text.');
     await button(wrapper, 'Save').trigger('click');
     await flushPromises();
     expect(api.put).toHaveBeenCalledWith(
@@ -103,5 +103,65 @@ describe('PartEditor', () => {
     // New components are made where components live, in a new tab.
     expect(wrapper.text()).toContain('Create a component (opens in a new tab)');
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("saves a part's remarks on its statement, before its components", async () => {
+    const statement = {
+      uuid: 'st-1',
+      statementId: 'ac-2_smt.c',
+      remarks: 'Old note.',
+      byComponents: [],
+    };
+    const { wrapper } = mountEditor(
+      { partId: 'ac-2_smt.c', statement, remarks: 'Old note.' },
+      { uuid: 'req-1', controlId: 'ac-2' } as ImplementedRequirement,
+    );
+    expect(wrapper.get('textarea').element.value).toBe('Old note.');
+    await wrapper.get('textarea').setValue('New note.');
+    await button(wrapper, 'Save').trigger('click');
+    await flushPromises();
+    expect(api.put).toHaveBeenCalledWith(
+      `${BASE}/req-1/statements/st-1`,
+      { ...statement, remarks: 'New note.' },
+      expect.anything(),
+    );
+  });
+
+  it('creates the statement for remarks on a part nothing implements yet', async () => {
+    api.post.mockResolvedValueOnce({ data: { data: { uuid: 'st-new' } } });
+    const { wrapper } = mountEditor({ partId: 'ac-2_smt.d' }, {
+      uuid: 'req-1',
+      controlId: 'ac-2',
+    } as ImplementedRequirement);
+    await wrapper.get('textarea').setValue('A note.');
+    await button(wrapper, 'Save').trigger('click');
+    await flushPromises();
+    expect(api.post).toHaveBeenCalledWith(
+      `${BASE}/req-1/statements`,
+      expect.objectContaining({
+        statementId: 'ac-2_smt.d',
+        remarks: 'A note.',
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("saves the whole control's remarks on the implementation", async () => {
+    api.put.mockClear();
+    const requirement = {
+      uuid: 'req-1',
+      controlId: 'ac-2',
+      remarks: 'Old.',
+      statements: [{ uuid: 'st-1', statementId: 'ac-2_smt.a' }],
+    } as ImplementedRequirement;
+    const { wrapper } = mountEditor({ remarks: 'Old.' }, requirement);
+    await wrapper.get('textarea').setValue('');
+    await button(wrapper, 'Save').trigger('click');
+    await flushPromises();
+    expect(api.put).toHaveBeenCalledWith(
+      `${BASE}/req-1`,
+      { ...requirement, remarks: undefined },
+      expect.anything(),
+    );
   });
 });

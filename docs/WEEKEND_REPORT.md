@@ -1634,3 +1634,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   component now has a line of its own under the parts count, names in one column and pills lined
   up in the next. Rows with many components are taller. New in the design system: DescriptionList's
   `aligned` layout (one pair per row, compact, terms in the row's small type).
+- **Control view: remarks editable in place.** A clause's remarks (the statement's own note, e.g.
+  ac-2 c: "Group membership conditions are documented in the access matrix.") showed but couldn't
+  be edited since the old Edit section went. The clause's pencil now opens one form for the whole
+  block: a Remarks field, then the components. The whole control's pencil edits the
+  implementation's remarks the same way. Remarks save first, sent with the rest of their statement
+  or implementation as it was, so the component changes after them are kept; checked against the
+  local API (remarks set and cleared, every component statement unchanged). A part with no
+  statement yet gets one when remarks are written.
