@@ -6,7 +6,6 @@ import Clause from '@/ds/components/Clause/Clause.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import Text from '@/ds/components/Text/Text.vue';
-import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import PanelSection from '@/ds/components/layout/PanelSection.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import EvidenceCapsule from '../EvidenceCapsule.vue';
@@ -23,7 +22,8 @@ import { useImplementationRequired } from './useImplementationRequired';
  * (PartImplementation: remarks, then every component's full text and status).
  * Then the evidence that checks the control (ControlEvidence): evidence filters link to a control,
  * not to its parts.
- * One link at the top opens the control in its catalog (in a new tab). Each clause's edit button
+ * The header reads "Implementation of <ID> <title>", with an icon link after it that opens the
+ * control in its catalog (in a new tab). Each clause's edit button
  * turns its implementation into a form in place (PartEditor), one clause at a time; closing with a
  * form open asks first. Each part's menu, right after its text, marks whether the statement requires
  * implementation (a lead-in whose sub-parts are implemented doesn't); one that doesn't has no
@@ -96,17 +96,21 @@ function partMenu(band: PartBand): MenuEntry[] {
     v-model:open="open"
     size="wide"
     :dirty="editing !== null"
-    :title="`${control.id} · ${control.title}`"
+    title-prefix="Implementation of"
+    :title-code="control.id"
+    :title="control.title"
+    :title-link="
+      catalogLink
+        ? {
+            to: catalogLink,
+            label: `See ${control.id} in its catalog (opens in a new tab)`,
+          }
+        : undefined
+    "
   >
     <Stack gap="6">
-      <PanelSection title="Statement and implementation">
+      <PanelSection title="Statement and implementation" :divided="false">
         <Stack gap="4">
-          <Text v-if="catalogLink"
-            ><TextLink :to="catalogLink" target="_blank"
-              >See {{ control.id }} in its catalog (opens in a new
-              tab)</TextLink
-            ></Text
-          >
           <Text v-if="map.lead" variant="prose">{{ map.lead }}</Text>
           <Clause v-if="map.whole.length || implementation?.remarks">
             <template #annotation>

@@ -194,6 +194,8 @@ Made during the work (open to review):
   clause like a legal text (Clause: hanging labels, nested clauses indented), and each clause's
   implementation is an annotation a step further in behind an accent rule. This replaced the
   linked boxes (LinkedColumns, now deleted), which grew unwieldy at a box per part.
+  The drawer's title is "Implementation of <ID> <title>" (Drawer `titlePrefix`, `titleCode`,
+  `titleLink` to the control in its catalog, in a new tab).
   Since 2026-11-24 each annotation also sits on the sunken surface tint, so the plan's words stand
   apart from the catalog's: a deliberate exception to "only a Panel has a card background", as a
   tinted note rather than a card (no border or shadow). Chosen over a serif for the control text.

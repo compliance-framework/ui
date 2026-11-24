@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import {
   DialogContent,
   DialogDescription,
@@ -11,16 +12,25 @@ import IconButton from '../IconButton/IconButton.vue';
 import DiscardPrompt from './DiscardPrompt.vue';
 import { useDismissGuard } from './useDismissGuard';
 import { useScrollable } from '../ScrollArea/useScrollable';
+import type { RouteLocationRaw } from 'vue-router';
 
 /**
  * The one modal implementation behind Dialog and Drawer (F-11, F-18, F-20): named title, focus
  * in, trapped and returned (F-11 AC2), Escape, a body that scrolls inside the panel, a sticky
  * footer, and the dirty guard (F-20 AC4). `placement` is centre (Dialog) or a side (Drawer).
+ * A record's title can lead with what the panel shows of it (`titlePrefix`, "Implementation of",
+ * not bold) and its ID as a code chip (`titleCode`), and `titleLink` adds an icon link after it
+ * that opens the record elsewhere in a new tab. The rule under the header shows only once the body
+ * has scrolled, when content passes under it.
  */
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(
   defineProps<{
     title: string;
+    titlePrefix?: string;
+    titleCode?: string;
+    /** `label` names the link and should say it opens a new tab. */
+    titleLink?: { to: RouteLocationRaw; label: string };
     description?: string;
     placement: 'center' | 'left' | 'right';
     size?: 's' | 'm' | 'l';
@@ -30,6 +40,9 @@ const props = withDefaults(
     dirty?: boolean;
   }>(),
   {
+    titlePrefix: undefined,
+    titleCode: undefined,
+    titleLink: undefined,
     description: undefined,
     size: 'm',
     wide: false,
@@ -46,6 +59,14 @@ const guard = useDismissGuard(
 );
 const { confirming, requestClose, keepEditing, discard } = guard;
 const { scrollable } = useScrollable('body');
+/** The title as one line of text, naming the scrolling body. */
+const fullTitle = computed(() =>
+  [props.titlePrefix, props.titleCode, props.title].filter(Boolean).join(' '),
+);
+const scrolled = ref(false);
+function onScroll(event: Event): void {
+  scrolled.value = (event.target as HTMLElement).scrollTop > 0;
+}
 
 defineExpose({ requestClose });
 </script>
@@ -75,18 +96,34 @@ defineExpose({ requestClose });
       >
         <header
           class="modal__header"
-          :class="{ 'modal__header--bare': titleHidden && !description }"
+          :class="{
+            'modal__header--bare': titleHidden && !description,
+            'modal__header--ruled': scrolled || $slots.filters,
+          }"
         >
           <div
             class="modal__titles"
             :class="{ 'visually-hidden': titleHidden }"
           >
-            <DialogTitle
-              class="modal__title"
-              tabindex="-1"
-              data-overlay-title
-              >{{ title }}</DialogTitle
-            >
+            <div class="modal__title-row">
+              <DialogTitle class="modal__title" tabindex="-1" data-overlay-title
+                ><template v-if="titlePrefix"
+                  ><span class="modal__title-prefix">{{ titlePrefix }}</span
+                  >{{ ' ' }}</template
+                ><template v-if="titleCode"
+                  ><code class="modal__title-code">{{ titleCode }}</code
+                  >{{ ' ' }}</template
+                >{{ title }}</DialogTitle
+              >
+              <IconButton
+                v-if="titleLink"
+                icon="external"
+                size="sm"
+                :label="titleLink.label"
+                :to="titleLink.to"
+                target="_blank"
+              />
+            </div>
             <DialogDescription v-if="description" class="modal__description">{{
               description
             }}</DialogDescription>
@@ -102,8 +139,9 @@ defineExpose({ requestClose });
           :data-scroll="scrollable ? '' : undefined"
           data-overlay-body
           :role="scrollable ? 'region' : undefined"
-          :aria-label="scrollable ? title : undefined"
+          :aria-label="scrollable ? fullTitle : undefined"
           :tabindex="scrollable ? 0 : undefined"
+          @scroll.passive="onScroll"
         >
           <slot :request-close="requestClose" />
         </div>
@@ -223,7 +261,12 @@ defineExpose({ requestClose });
   gap: var(--ds-space-3);
   padding: var(--ds-space-4) var(--ds-space-4) var(--ds-space-4)
     var(--ds-space-5);
-  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  border-bottom: var(--ds-border-width) solid transparent;
+  transition: border-color var(--ds-duration-fast) var(--ds-ease-standard);
+}
+
+.modal__header--ruled {
+  border-bottom-color: var(--ds-color-border-subtle);
 }
 
 .modal__header--bare {
@@ -238,6 +281,26 @@ defineExpose({ requestClose });
   gap: var(--ds-space-1);
   min-width: 0;
   padding-top: var(--ds-space-2);
+}
+
+.modal__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.modal__title-prefix {
+  font-weight: var(--ds-font-weight-regular);
+}
+
+/* The ID as a code chip, as in lists and the evidence table. */
+.modal__title-code {
+  padding: 0 var(--ds-space-2);
+  background: var(--ds-color-status-neutral-bg);
+  font-family: var(--ds-font-code);
+  font-size: var(--ds-font-size-body);
+  font-weight: var(--ds-font-weight-regular);
 }
 
 .modal__title {

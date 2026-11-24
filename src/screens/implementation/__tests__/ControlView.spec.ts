@@ -78,7 +78,11 @@ function mountView(requirement = implementation) {
   return mount(Host, {
     global: {
       stubs: {
-        Drawer: { template: '<div><slot /></div>' },
+        Drawer: {
+          props: ['title', 'titlePrefix', 'titleCode', 'titleLink'],
+          template:
+            '<div><h2>{{ titlePrefix }} <code>{{ titleCode }}</code> {{ title }}</h2><a v-if="titleLink">{{ titleLink.label }}</a><slot /></div>',
+        },
         RouterLink: { template: '<a><slot /></a>' },
         Tooltip: { template: '<slot />' },
       },
@@ -105,6 +109,9 @@ describe('ControlView', () => {
 
   it('links to the catalog once, and edits each clause with a pencil one line tall', () => {
     const wrapper = mountView();
+    expect(wrapper.get('h2').text()).toBe(
+      'Implementation of ac-2 Account Management',
+    );
     expect(
       wrapper.findAll('a').filter((a) => a.text().includes('in its catalog')),
     ).toHaveLength(1);

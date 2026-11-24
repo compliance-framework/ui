@@ -1683,3 +1683,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   whole control" over it: it's the block before clause a. (a Clause with no text is its annotation
   alone). The control's evidence counts moved from an "Overall" line to beside the Evidence heading
   (new PanelSection `title-end` slot).
+- **Control view: a record title.** The drawer's header reads "Implementation of `ac-2` **Account
+  Management**": the prefix in regular weight, the ID as a code chip, the title bold, then an icon
+  link that opens the control in its catalog in a new tab (replacing the "See ac-2 in its catalog"
+  line). New in the design system: Drawer/ModalPanel `titlePrefix`, `titleCode` and `titleLink`.
+  The two rules under the header are gone: the first PanelSection takes `divided=false`, and every
+  Dialog and Drawer now shows the rule under its header only once its body has scrolled (or when it
+  has a filters bar), so content passing under the header is still set off.
