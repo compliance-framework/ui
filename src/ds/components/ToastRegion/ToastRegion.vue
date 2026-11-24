@@ -28,7 +28,12 @@ const groups = computed(() => [
 <template>
   <!-- Outside AppShell (and on guest pages), so it provides tooltips for its buttons itself. -->
   <TooltipProvider>
-    <section class="toast-region" aria-label="App notifications" data-scroll>
+    <section
+      class="toast-region"
+      aria-label="App notifications"
+      data-scroll
+      data-overlay-keep-open
+    >
       <div
         v-for="group in groups"
         :key="group.role"

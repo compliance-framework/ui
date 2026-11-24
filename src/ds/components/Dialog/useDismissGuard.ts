@@ -5,6 +5,8 @@ import { nextTick, ref, watch, type Ref } from 'vue';
  * Every way of closing goes through `requestClose`; when the content is dirty it shows the
  * inline discard prompt instead of closing. Escape and overlay clicks are routed here by
  * handling reka's escapeKeyDown and pointerDownOutside events. Focus returns to the opener.
+ * A click in something marked `data-overlay-keep-open` (the toasts, which sit outside every
+ * dialog) isn't a click outside: closing a toast leaves the dialog open.
  */
 const FIELD =
   'input:not([type="hidden"]), select, textarea, [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]';
@@ -97,6 +99,15 @@ export function useDismissGuard(
   }
 
   function onPointerDownOutside(event: Event): void {
+    const detail = (event as CustomEvent<{ originalEvent?: Event }>).detail;
+    const target = detail?.originalEvent?.target ?? event.target;
+    if (
+      target instanceof Element &&
+      target.closest('[data-overlay-keep-open]')
+    ) {
+      event.preventDefault();
+      return;
+    }
     if (!dirty()) return;
     event.preventDefault();
     if (!confirming.value) requestClose();
