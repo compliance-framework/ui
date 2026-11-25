@@ -1,4 +1,4 @@
-FROM node:22@sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb AS build
+FROM node:22@sha256:7c400d78797d8cbe3f6bb21d2227b86af4cd24b0014cc9f62ff989cc16de988e AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -6,7 +6,7 @@ COPY . .
 RUN npm run build
 
 # production stage
-FROM nginx:stable-alpine@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3 AS production
+FROM nginx:stable-alpine@sha256:8eb04fe3b385090e9aa02961f77398ad09b6bf33ab07f6669a5bb7acce22c0d3 AS production
 # image-scan:os-patches begin
 # Managed by compliance-framework/workflows image-scan (docs/image-scan.md#os-package-patches); removed once the base image ships the fixes.
 RUN apk upgrade --no-cache libcrypto3 libssl3 libxml2 zlib
