@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Control } from '@/oscal';
-import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
-import StatusPill from '@/ds/components/StatusPill/StatusPill.vue';
-import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import { statuses } from '@/ds/components/StatusBadge/statuses';
+import Pill from '@/ds/components/Pill/Pill.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
-import Stack from '@/ds/components/layout/Stack.vue';
-import Text from '@/ds/components/Text/Text.vue';
 import {
   implementationSummary,
   implementationTone,
@@ -15,63 +12,29 @@ import {
 import { useControlTree } from './controlTree';
 
 /**
- * The end of a control row's second line in the Implementation list: how many of its parts are
- * implemented, then each component that implements it on a line of its own, its name and its
- * statuses as pills lined up in two columns (green when implemented, amber when partial, blue
- * otherwise), or that nothing does yet.
+ * The end of a control row's second line in the Implementation list: how many of its component
+ * implementations have each status ("5 implemented", "2 partial"), as pills (green when
+ * implemented, amber when partial, blue otherwise, grey without a status). Nothing when no
+ * component implements it. The list summarises; the control's view has the detail.
  */
 const props = defineProps<{ control: Control }>();
 const tree = useControlTree();
 
-const implementation = computed(() => tree.implementation(props.control.id));
-const summary = computed(() =>
-  implementationSummary(partMap(props.control, implementation.value)),
-);
-const partsText = computed(() => {
-  const { partsCovered, partsTotal } = summary.value;
-  return partsTotal > 1 && partsCovered
-    ? `${partsCovered} of ${partsTotal} parts`
-    : '';
-});
-/** Each component's name and its statuses across the parts ("no status" when it has none). */
-const components = computed(() =>
-  summary.value.components.map(({ uuid, statuses: found }) => ({
-    uuid,
-    name: tree.component(uuid)?.title ?? 'Unknown component',
-    statuses: found.length ? found : (['no-status'] as StatusKey[]),
-  })),
+const counts = computed(
+  () =>
+    implementationSummary(
+      partMap(props.control, tree.implementation(props.control.id)),
+    ).statusCounts,
 );
 </script>
 
 <template>
-  <Text v-if="!implementation" as="span" variant="caption"
-    >Not implemented yet</Text
-  >
-  <Text v-else-if="!components.length" as="span" variant="caption"
-    >No component implements it yet</Text
-  >
-  <Stack v-else gap="1" align="start">
-    <Text v-if="partsText" as="span" variant="caption">{{ partsText }}</Text>
-    <DescriptionList
-      layout="aligned"
-      :items="
-        components.map((c) => ({ key: c.uuid, label: c.name, value: '' }))
-      "
-    >
-      <template
-        v-for="component in components"
-        :key="component.uuid"
-        #[`value-${component.uuid}`]
-      >
-        <Cluster gap="1" align="center">
-          <StatusPill
-            v-for="status in component.statuses"
-            :key="status"
-            :status="status"
-            :tone="implementationTone(status)"
-          />
-        </Cluster>
-      </template>
-    </DescriptionList>
-  </Stack>
+  <Cluster v-if="counts.length" gap="1" align="center">
+    <Pill
+      v-for="{ status, count } in counts"
+      :key="status"
+      :label="`${count} ${statuses[status].label.toLowerCase()}`"
+      :tone="status === 'no-status' ? 'neutral' : implementationTone(status)"
+    />
+  </Cluster>
 </template>

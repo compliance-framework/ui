@@ -10,10 +10,10 @@ import EvidenceCapsule from '../EvidenceCapsule.vue';
 import { useControlTree } from './controlTree';
 
 /**
- * The end of a control row's first line in the Implementation list: open risks, suggestions and
- * its evidence results as a capsule (satisfied, unknown and not satisfied counts), or "No evidence
- * yet." Its implementation is on the second line (ControlRowImplementation); its filters are in
- * the control's view.
+ * The end of a control row's first line in the Implementation list: open risks and suggestions
+ * when it has any, then its evidence results as a capsule (satisfied, unknown and not satisfied
+ * counts), or "No evidence yet." Its implementation counts are on the second line
+ * (ControlRowImplementation); its filters are in the control's view.
  */
 const props = defineProps<{ control: Control }>();
 const tree = useControlTree();

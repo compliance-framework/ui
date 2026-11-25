@@ -185,11 +185,13 @@ Made during the work (open to review):
   control added to or taken from its controls; a filter following its plan's scope is sent as its
   own expression, still following). Filters linked to components aren't offered: a filter links to
   controls or to components, not both.
-  Each row has two lines with their own ends: ID (a code chip, as in the evidence table) and title, then risks, filters and
-  evidence; the statement's start, then the parts count and components with their status.
-  Each status is a StatusPill: green for implemented, amber for partial, blue for the rest.
-  Each component is on a line of its own, names and pills lined up in two columns
-  (DescriptionList `aligned`), after a run of `Name: [pill]` pairs was hard to pair up.
+  The list summarises and the control's view has the detail (2026-11-25): each row has two
+  lines with their own ends. ID (a code chip, as in the evidence table) and title, then risks
+  and suggestions when there are any, and the evidence capsule; then "N statements · M with an
+  implementation" (parts marked as needing none left out), and the component implementations
+  counted by status as pills ("5 implemented", "2 partial": green for implemented, amber for
+  partial, blue for the rest, grey without a status). No statement text and no component names:
+  they made the rows noisy.
 - **A control's view reads as a document** (2026-11-20). Its statement is laid out clause by
   clause like a legal text (Clause: hanging labels, nested clauses indented), and each clause's
   implementation is an annotation a step further in behind an accent rule. This replaced the

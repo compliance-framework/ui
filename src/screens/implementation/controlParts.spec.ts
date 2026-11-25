@@ -5,7 +5,6 @@ import {
   implementationRequired,
   implementationSummary,
   partMap,
-  statementExcerpt,
   withImplementationRequired,
 } from './controlParts';
 
@@ -105,7 +104,7 @@ describe('partMap', () => {
 });
 
 describe('implementationSummary', () => {
-  it('counts the parts with components of their own, and gives each component its statuses', () => {
+  it('counts the statements, those a component implements, and implementations by status', () => {
     const summary = implementationSummary(
       partMap(control, {
         uuid: 'r',
@@ -121,12 +120,39 @@ describe('implementationSummary', () => {
       } as ImplementedRequirement),
     );
     expect(summary).toEqual({
-      partsCovered: 1,
-      partsTotal: 3,
-      components: [
-        { uuid: 'c1', statuses: ['implemented', 'partial'] },
-        { uuid: 'c2', statuses: [] },
+      statements: 3,
+      implemented: 1,
+      statusCounts: [
+        { status: 'implemented', count: 1 },
+        { status: 'partial', count: 1 },
+        { status: 'no-status', count: 1 },
       ],
+    });
+  });
+
+  it('counts a control without parts as one statement, implemented by whole-control components', () => {
+    const plain = {
+      id: 'ac-3',
+      title: 'Access Enforcement',
+      parts: [],
+    } as Control;
+    expect(implementationSummary(partMap(plain, undefined))).toEqual({
+      statements: 1,
+      implemented: 0,
+      statusCounts: [],
+    });
+    expect(
+      implementationSummary(
+        partMap(plain, {
+          uuid: 'r',
+          controlId: 'ac-3',
+          byComponents: [bc('w', 'c1', 'planned'), bc('x', 'c2', 'planned')],
+        } as ImplementedRequirement),
+      ),
+    ).toMatchObject({
+      statements: 1,
+      implemented: 1,
+      statusCounts: [{ status: 'planned', count: 2 }],
     });
   });
 });
@@ -153,8 +179,8 @@ describe('implementation required', () => {
     } as ImplementedRequirement);
     expect(map.bands.map((b) => b.required)).toEqual([true, false, true]);
     expect(implementationSummary(map)).toMatchObject({
-      partsCovered: 1,
-      partsTotal: 2,
+      statements: 2,
+      implemented: 1,
     });
   });
 
@@ -167,23 +193,5 @@ describe('implementation required', () => {
     ).toBe(false);
     expect(withImplementationRequired(marked, true)).toEqual([other]);
     expect(implementationRequired(undefined)).toBe(true);
-  });
-});
-
-describe('statementExcerpt', () => {
-  it('starts with the lead-in, or else the first part, with parameters written out', () => {
-    expect(statementExcerpt(control)).toBe('The organization:');
-    const noLead = {
-      ...control,
-      parts: [{ ...control.parts![0]!, prose: undefined }],
-    } as Control;
-    expect(statementExcerpt(noLead)).toBe(
-      'a. Review every [Assignment: organization-defined time period];',
-    );
-  });
-
-  it('cuts a long statement on a word', () => {
-    const excerpt = statementExcerpt(control, 12);
-    expect(excerpt).toBe('The…');
   });
 });

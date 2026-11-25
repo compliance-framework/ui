@@ -57,7 +57,7 @@ function mountStatus(implementation?: ImplementedRequirement, risks = 0) {
 }
 
 describe('ControlRowStatus and ControlRowImplementation', () => {
-  it('summarises the implementation, filters and risks in one line', () => {
+  it('counts the implementations by status, beside the risks and evidence', () => {
     const wrapper = mountStatus(
       {
         uuid: 'r',
@@ -73,6 +73,24 @@ describe('ControlRowStatus and ControlRowImplementation', () => {
                 description: 'x',
                 implementationStatus: { state: 'implemented' },
               },
+              {
+                uuid: 'bc2',
+                componentUuid: 'iam',
+                description: 'y',
+                implementationStatus: { state: 'partial' },
+              },
+            ],
+          },
+          {
+            uuid: 's2',
+            statementId: 'ac-2_smt.b',
+            byComponents: [
+              {
+                uuid: 'bc3',
+                componentUuid: 'okta',
+                description: 'z',
+                implementationStatus: { state: 'implemented' },
+              },
             ],
           },
         ],
@@ -80,16 +98,21 @@ describe('ControlRowStatus and ControlRowImplementation', () => {
       2,
     );
     const text = wrapper.text();
-    expect(wrapper.find('dt').text()).toBe('Okta');
-    expect(wrapper.find('dd').text()).toBe('Implemented');
+    // Counts, not each component: the control's view has those.
+    expect(wrapper.findAll('.pill').map((p) => p.text())).toEqual([
+      '2 implemented',
+      '1 partial',
+    ]);
+    expect(text).not.toContain('Okta');
     expect(text).toContain('2 open risks (high)');
-    expect(text).toContain('1 of 2 parts');
     // Its evidence, not a count of its filters, which are in the control's view.
     expect(text).not.toContain('evidence filter');
     expect(text).toContain('evidence for ac-2');
   });
 
-  it('says when a control is not implemented yet', () => {
-    expect(mountStatus().text()).toContain('Not implemented yet');
+  it('shows no counts when no component implements a control', () => {
+    const wrapper = mountStatus();
+    expect(wrapper.findAll('.pill')).toHaveLength(0);
+    expect(wrapper.text()).toBe('evidence for ac-2');
   });
 });

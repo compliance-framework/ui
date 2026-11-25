@@ -1700,3 +1700,10 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   evidence filters"; it shows the control's evidence capsule, or "No evidence yet." when there are
   no results (your choice over an all-zero capsule or nothing). The filters themselves are listed
   in the control's view.
+- **Implementation list: a summary per control.** The rows were noisy, so they now summarise
+  and leave the detail to the control's view. First line: ID, title, then risks and suggestions
+  when there are any, and the evidence capsule. Second line: "20 statements · 6 with an
+  implementation" (parts marked as needing no implementation left out; a control without parts is
+  one statement, implemented by its whole-control components), then the component
+  implementations counted by status as pills ("5 implemented", "2 partial", "1 planned"). The
+  statement excerpt and the component-by-component lines are gone (`statementExcerpt` deleted).

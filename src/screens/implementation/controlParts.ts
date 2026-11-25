@@ -141,55 +141,43 @@ const STATUS_ORDER: StatusKey[] = [
 /** What a list row says about an implementation, without its text. */
 export interface ImplementationSummary {
   /**
-   * Parts with a component of their own (whole-control components aside), and all the parts, both
-   * leaving out parts that need no implementation statement.
+   * The statements that need an implementation (each part, leaving out parts marked as needing
+   * none; a control without parts is one statement), and how many of them a component implements.
+   * Whole-control components count for a control without parts only.
    */
-  partsCovered: number;
-  partsTotal: number;
+  statements: number;
+  implemented: number;
   /**
-   * Each component that implements any of it, once, in the order first met, with its statuses
-   * across the parts in the order work progresses (none when it has no status).
+   * How many component implementations have each status, in the order work progresses, those
+   * without a status last; statuses no implementation has are left out.
    */
-  components: { uuid: string; statuses: StatusKey[] }[];
+  statusCounts: { status: StatusKey; count: number }[];
 }
 
 export function implementationSummary(map: PartMap): ImplementationSummary {
+  const required = map.bands.filter((b) => b.required);
   const all = [
     ...map.whole,
-    ...map.bands.flatMap((b) => b.statement?.byComponents ?? []),
+    ...required.flatMap((b) => b.statement?.byComponents ?? []),
     ...map.others.flatMap((s) => s.byComponents ?? []),
   ];
-  const statuses = new Map<string, Set<StatusKey>>();
+  const counts = new Map<StatusKey, number>();
   for (const bc of all) {
-    const found = statuses.get(bc.componentUuid) ?? new Set<StatusKey>();
-    const status = implementationStatus(bc);
-    if (status) found.add(status);
-    statuses.set(bc.componentUuid, found);
+    const status = implementationStatus(bc) ?? 'no-status';
+    counts.set(status, (counts.get(status) ?? 0) + 1);
   }
-  const required = map.bands.filter((b) => b.required);
+  // A control without parts has one band, its whole statement, which its whole-control
+  // components implement.
+  const single = map.bands.length === 1 && !map.bands[0]!.label;
   return {
-    partsCovered: required.filter((b) => b.statement?.byComponents?.length)
-      .length,
-    partsTotal: required.length,
-    components: [...statuses].map(([uuid, found]) => ({
-      uuid,
-      statuses: STATUS_ORDER.filter((s) => found.has(s)),
-    })),
+    statements: required.length,
+    implemented: required.filter(
+      (b) => b.statement?.byComponents?.length || (single && map.whole.length),
+    ).length,
+    statusCounts: [...STATUS_ORDER, 'no-status' as StatusKey]
+      .filter((status) => counts.has(status))
+      .map((status) => ({ status, count: counts.get(status)! })),
   };
-}
-
-/**
- * The start of a control's statement, for a list row: its lead-in, or its first part, with
- * parameters written out, cut at about `max` characters on a word.
- */
-export function statementExcerpt(control: Control, max = 160): string {
-  const map = partMap(control, undefined);
-  const text = (map.lead || map.bands[0]?.text || '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (text.length <= max) return text;
-  const cut = text.slice(0, max);
-  return `${cut.slice(0, cut.lastIndexOf(' ') > 0 ? cut.lastIndexOf(' ') : max)}…`;
 }
 
 /** An implementation status's pill colour: green when implemented, amber when partial, else blue. */

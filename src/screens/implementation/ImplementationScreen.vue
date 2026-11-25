@@ -19,7 +19,8 @@ import ControlRowImplementation from './ControlRowImplementation.vue';
 import ControlRowStatus from './ControlRowStatus.vue';
 import ControlView from './ControlView.vue';
 import { controlSections, type ControlSection } from './controlSections';
-import { statementExcerpt } from './controlParts';
+import { implementationSummary, partMap } from './controlParts';
+import { plural } from '@/ds/format';
 import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import ProfilesField from './ProfilesField.vue';
 import { provideControlTree } from './controlTree';
@@ -1023,8 +1024,15 @@ const familyItems = (section: ControlSection) =>
     code: control.id,
     title: control.title,
     to: controlLink(control.id),
-    meta: statementExcerpt(control),
+    meta: summaryText(control),
   }));
+/** A row's second line: how many statements need an implementation, and how many have one. */
+function summaryText(control: Control) {
+  const { statements, implemented } = implementationSummary(
+    partMap(control, controlImplementations.value[control.id]),
+  );
+  return `${plural(statements, 'statement')} · ${implemented} with an implementation`;
+}
 const controlById = (section: ControlSection, id: string) =>
   section.controls.find((control) => control.id === id)!;
 const noSectionsText = dsComputed(() => {
