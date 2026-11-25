@@ -63,7 +63,11 @@ export function filterControls(
   const needle = view.q.toLowerCase();
   return controls.filter(
     (control) =>
-      (!view.status || controlStatus(control) === view.status) &&
+      (!view.status ||
+        controlStatus(control) === view.status ||
+        // Met upstream (an inherited implementation) is satisfied: "satisfied" lists it too.
+        (view.status === 'satisfied' &&
+          controlStatus(control) === 'inherited')) &&
       (!needle ||
         `${control.controlId} ${control.title} ${control.groupTitle ?? ''}`
           .toLowerCase()
@@ -84,18 +88,21 @@ export function evidenceSegments(
   ];
 }
 
-/** How an inherited control's link to its provider stands, in words. */
+/**
+ * How a control's inherited implementation stands, in words: the control is the system's own; part
+ * of its implementation comes from an upstream system.
+ */
 export function leverageLabel(
   leverage: ProfileComplianceControlLeverage,
 ): string {
   switch (leverage.status) {
     case 'drifted':
-      return 'Inherited · drifted';
+      return 'Inherited implementation · drifted';
     case 'revoked':
-      return 'Inherited · revoked';
+      return 'Inherited implementation · revoked';
     case 'superseded':
-      return 'Inherited · superseded';
+      return 'Inherited implementation · superseded';
     default:
-      return 'Inherited';
+      return 'Inherited implementation';
   }
 }

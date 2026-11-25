@@ -9,7 +9,7 @@ import DistributionBar from '@/ds/components/DistributionBar/DistributionBar.vue
 import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
 import FormField from '@/ds/components/FormField/FormField.vue';
 import Grid from '@/ds/components/layout/Grid.vue';
-import MetricTile from '@/ds/components/MetricTile/MetricTile.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import ProgressBar from '@/ds/components/ProgressBar/ProgressBar.vue';
 import Select from '@/ds/components/Select/Select.vue';
@@ -60,60 +60,35 @@ const statusLink = (s: ControlStatus | '') => ({
   query: withView({ ...view.value, status: s }),
   hash: '#controls',
 });
-const tiles = computed(() => {
-  const s = summary.value;
-  if (!s) return [];
-  return [
-    {
-      key: 'satisfied',
-      label: 'Satisfied',
-      value: String(s.satisfied),
-      to: statusLink('satisfied'),
-    },
-    {
-      key: 'inherited',
-      label: 'Inherited',
-      value: String(s.inherited ?? 0),
-      to: statusLink('inherited'),
-    },
-    {
-      key: 'not-satisfied',
-      label: 'Not satisfied',
-      value: String(s.notSatisfied),
-      to: statusLink('not-satisfied'),
-    },
-    {
-      key: 'unknown',
-      label: 'Unknown',
-      value: String(s.unknown),
-      to: statusLink('unknown'),
-    },
-    {
-      key: 'compliance',
-      label: 'Compliance',
-      value: `${s.compliancePercent}%`,
-      description: `of ${plural(s.totalControls, 'control')}`,
-      to: statusLink(''),
-    },
-    {
-      key: 'assessed',
-      label: 'Assessed',
-      value: `${s.assessedPercent}%`,
-      description: 'have evidence',
-      to: statusLink(''),
-    },
-  ];
-});
+/**
+ * The controls by status: one bar, and a key under it whose entries each give a count with its
+ * share of all the controls and link to those controls below. A control met upstream (the API's
+ * "inherited": no evidence of its own, but an inherited implementation whose responsibilities
+ * this system meets) is satisfied, so it counts as satisfied, and the satisfied entry says how
+ * many were met upstream.
+ */
 const overall = computed(() => {
   const s = summary.value;
-  return s
-    ? [
-        { status: 'satisfied' as const, count: s.satisfied },
-        { status: 'inherited' as const, count: s.inherited ?? 0 },
-        { status: 'not-satisfied' as const, count: s.notSatisfied },
-        { status: 'unknown' as const, count: s.unknown },
-      ]
-    : [];
+  if (!s) return [];
+  const inherited = s.inherited ?? 0;
+  const share = (count: number) =>
+    s.totalControls ? Math.round((count / s.totalControls) * 100) : 0;
+  return (
+    [
+      ['satisfied', 'satisfied', s.satisfied + inherited],
+      ['not-satisfied', 'not satisfied', s.notSatisfied],
+      ['unknown', 'unknown', s.unknown],
+    ] as const
+  ).map(([status, words, count]) => ({
+    status,
+    count,
+    text: `${count} ${words} · ${share(count)}%`,
+    to: statusLink(status),
+    inherited:
+      status === 'satisfied' && inherited
+        ? { text: `${inherited} met upstream`, to: statusLink('inherited') }
+        : undefined,
+  }));
 });
 const groups = computed(() =>
   (progress.value?.groups ?? []).map((group) => {
@@ -123,14 +98,17 @@ const groups = computed(() =>
     return {
       ...group,
       segments: [
-        { status: 'satisfied' as const, count: group.satisfied },
-        { status: 'inherited' as const, count: group.inherited ?? 0 },
+        {
+          status: 'satisfied' as const,
+          count: group.satisfied + (group.inherited ?? 0),
+        },
         { status: 'not-satisfied' as const, count: group.notSatisfied },
         { status: 'unknown' as const, count: group.unknown },
       ],
       caption: [
-        `${group.satisfied} satisfied`,
-        (group.inherited ?? 0) > 0 ? `${group.inherited} inherited` : '',
+        `${group.satisfied + (group.inherited ?? 0)} satisfied${
+          group.inherited ? ` (${group.inherited} met upstream)` : ''
+        }`,
         `${group.notSatisfied} not satisfied`,
         `${group.unknown} unknown`,
         progress.value?.implementation
@@ -153,7 +131,7 @@ watch(
 const statusOptions = [
   { value: '', label: 'Any status' },
   { value: 'satisfied', label: 'Satisfied' },
-  { value: 'inherited', label: 'Inherited' },
+  { value: 'inherited', label: 'Met upstream' },
   { value: 'not-satisfied', label: 'Not satisfied' },
   { value: 'unknown', label: 'Unknown' },
 ];
@@ -186,30 +164,30 @@ const summaryText = computed(() =>
 
 <template>
   <Stack gap="6">
-    <Grid min="sm" gap="3">
-      <MetricTile
-        v-for="tile in tiles"
-        :key="tile.key"
-        :label="tile.label"
-        :value="tile.value"
-        :description="tile.description"
-        :to="tile.to"
-      />
-    </Grid>
-
     <Grid min="lg" gap="4">
       <Panel
         title="Overall compliance"
-        :description="`${summary?.compliancePercent}% compliant`"
+        :description="`${summary?.assessedPercent}% assessed · ${plural(summary?.totalControls ?? 0, 'control')}`"
       >
-        <Stack gap="2">
+        <Stack gap="3">
           <DistributionBar :segments="overall" />
-          <Text variant="caption"
-            >{{ summary?.satisfied }} satisfied ·
-            {{ summary?.inherited ?? 0 }} inherited ·
-            {{ summary?.notSatisfied }} not satisfied ·
-            {{ summary?.unknown }} unknown</Text
-          >
+          <Stack gap="1">
+            <Cluster
+              v-for="entry in overall"
+              :key="entry.status"
+              gap="1"
+              align="center"
+            >
+              <StatusBadge :status="entry.status" dot />
+              <TextLink :to="entry.to">{{ entry.text }}</TextLink>
+              <Text v-if="entry.inherited" as="span" variant="secondary"
+                >(<TextLink :to="entry.inherited.to">{{
+                  entry.inherited.text
+                }}</TextLink
+                >)</Text
+              >
+            </Cluster>
+          </Stack>
         </Stack>
       </Panel>
       <Panel v-if="progress?.implementation" title="Implementation coverage">
@@ -296,7 +274,9 @@ const summaryText = computed(() =>
             </Stack>
           </template>
           <template #cell-status="{ row: r }"
-            ><StatusBadge :status="r.status"
+            ><StatusBadge
+              :status="r.status"
+              :label="r.status === 'inherited' ? 'Met upstream' : undefined"
           /></template>
           <template #cell-evidence="{ row: r }">
             <Stack gap="1">

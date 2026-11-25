@@ -50,7 +50,15 @@ describe('complianceView', () => {
     const controls = [
       control('ac-1', 'satisfied', 'Policy'),
       control('ac-2', 'not-satisfied', 'Accounts'),
+      control('ac-3', 'inherited', 'Enforcement'),
     ];
+    // Satisfied includes inherited (satisfied upstream); inherited alone is narrower.
+    const ids = (status: 'satisfied' | 'inherited') =>
+      filterControls(controls, { exclude: [], status, q: '' }).map(
+        (c) => c.controlId,
+      );
+    expect(ids('satisfied')).toEqual(['ac-1', 'ac-3']);
+    expect(ids('inherited')).toEqual(['ac-3']);
     expect(
       filterControls(controls, {
         exclude: [],
@@ -83,7 +91,9 @@ describe('complianceView', () => {
       totalResponsibilities: 1,
       inheritedFrom: [],
     };
-    expect(leverageLabel(leverage)).toBe('Inherited · drifted');
-    expect(leverageLabel({ ...leverage, status: 'active' })).toBe('Inherited');
+    expect(leverageLabel(leverage)).toBe('Inherited implementation · drifted');
+    expect(leverageLabel({ ...leverage, status: 'active' })).toBe(
+      'Inherited implementation',
+    );
   });
 });

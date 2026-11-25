@@ -98,7 +98,6 @@ confirmations and the error dialog app-wide.
 
 Small things noticed along the way, to sweep up later:
 
-- Compliance: the six totals wrap to two rows at 1440px; a compact tile row would fit them on one.
 - The classic Compliance page read `uuid` from `GET /ssp/:id/profiles`, but the API returns `id`,
   so on `main` it may never find the attached profiles. The new page accepts both. Worth checking
   on `main`.
@@ -178,6 +177,17 @@ Made during the work (open to review):
   each control once, with the totals, groups and implementation coverage counted again as the API
   counts them. Unlike Implementation, its counts are the API's: every enhancement and withdrawn
   control the profile resolves to (FedRAMP Low is 664 controls here).
+- **Compliance leads with one bar, and "inherited" is an implementation, not a status**
+  (2026-11-25). The six total tiles (bare counts with no total beside them) became the "Overall
+  compliance" panel: assessed share and control count, one bar, and a key whose entries give each
+  count with its share ("5 satisfied · 56%") and link to those controls. A control comes from the
+  profile and stays the system's; what can be inherited is part of its implementation, from an
+  upstream system. The API's "inherited" bucket means a control with no evidence of its own whose
+  inherited implementation counts (link active, this system's responsibilities met), so it is
+  shown as satisfied, "met upstream": folded into the satisfied segment and count, named in the
+  key ("4 met upstream", its own link) and the group captions, and in the status column and
+  filter. "Satisfied" lists those controls too. A row's link to the upstream system reads
+  "Inherited implementation".
   A control's view (a drawer) holds its parts beside their implementation, and its evidence; its
   old Edit section (the classic statements editor and the "Components and sharing" drawer, with
   AI suggestions per control, shared responsibility and per-statement risks) was removed on

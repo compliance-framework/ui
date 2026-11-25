@@ -1715,3 +1715,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   profile, so each ticked profile is fetched once and kept. The unticked ones are in the URL
   (`exclude=`); the old `profile=` links now show every profile. A profile's own Compliance tab is
   unchanged.
+- **Compliance: one bar instead of six tiles; "met upstream".** The Satisfied tile's "1" said
+  nothing about how many controls there are. The tiles are gone: "Overall compliance" now leads,
+  with the assessed share and the control count, the bar, and a key of links: "5 satisfied · 56%
+  (4 met upstream)", "1 not satisfied · 11%", "3 unknown · 33%" (your option 3). The API's
+  "inherited" bucket is folded into satisfied, because it is satisfied: no evidence of its own,
+  but an inherited implementation (link active, this system's responsibilities met). Your point
+  that a control isn't inherited, its implementation is, gave the wording: "met upstream" for the
+  status (key, group captions, status column, filter) and "Inherited implementation" for a row's
+  link to the upstream system. The Satisfied filter now lists those controls too. Note the credit
+  doesn't check the upstream system's evidence, only the link and this system's responsibilities.
