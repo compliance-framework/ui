@@ -6,14 +6,16 @@ import type {
 import type { StatusKey } from '@/ds/components/StatusBadge/statuses';
 
 /**
- * This System > Compliance's view state in the URL: the profile shown (when several are
- * attached), the control status filter and a search. Defaults stay out of the URL.
+ * This System > Compliance's view state in the URL: the attached profiles left out (all are
+ * included by default, so a newly attached one is too), the control status filter and a search.
+ * Defaults stay out of the URL.
  */
 export type ControlStatus =
   'satisfied' | 'not-satisfied' | 'unknown' | 'inherited';
 
 export interface ComplianceView {
-  profile: string;
+  /** The profiles whose controls are left out, by ID. */
+  exclude: string[];
   status: ControlStatus | '';
   q: string;
 }
@@ -32,7 +34,7 @@ function single(value: LocationQuery[string] | undefined): string {
 export function readView(query: LocationQuery): ComplianceView {
   const status = single(query.status);
   return {
-    profile: single(query.profile),
+    exclude: single(query.exclude).split(',').filter(Boolean),
     status: STATUSES.find((s) => s === status) ?? '',
     q: single(query.q).trim(),
   };
@@ -40,7 +42,7 @@ export function readView(query: LocationQuery): ComplianceView {
 
 export function viewQuery(view: ComplianceView): LocationQueryRaw {
   const query: LocationQueryRaw = {};
-  if (view.profile) query.profile = view.profile;
+  if (view.exclude.length) query.exclude = view.exclude.join(',');
   if (view.status) query.status = view.status;
   if (view.q) query.q = view.q;
   return query;

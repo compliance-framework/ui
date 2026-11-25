@@ -8,18 +8,21 @@ import { useSystemStore } from '@/stores/system';
 import { getErrorStatus } from '@/utils/httpErrors';
 import type { QueryStatus } from '@/ds/query';
 import DataState from '@/ds/components/DataState/DataState.vue';
-import FormField from '@/ds/components/FormField/FormField.vue';
-import Select from '@/ds/components/Select/Select.vue';
+import CheckboxGroup from '@/ds/components/CheckboxGroup/CheckboxGroup.vue';
+import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import ComplianceProgressView from './ComplianceProgressView.vue';
 import { readView, viewQuery, type ComplianceView } from './complianceView';
+import { mergeProgress } from './mergeProgress';
 
 /**
- * This System > Compliance: how the system measures up against an attached profile. Totals,
+ * This System > Compliance: how the system measures up against its attached profiles. Totals,
  * overall and per-group breakdowns, implementation coverage, and every control with its status
- * and evidence. Each total filters the controls below it; with several profiles attached, the
- * profile is chosen above. Profile, filter and search live in the URL.
+ * and evidence. Each total filters the controls below it. With several profiles attached, they
+ * are checkboxes above ("Include controls from", as on Implementation), all ticked by default: the
+ * ticked profiles' controls are counted together, each control once. The profiles left out, the
+ * filter and the search live in the URL.
  */
 const route = useRoute();
 const router = useRouter();
@@ -34,7 +37,7 @@ const view = computed(() => readView(route.query));
 
 function withView(next: ComplianceView): LocationQueryRaw {
   const query: LocationQueryRaw = { ...route.query };
-  for (const key of ['profile', 'status', 'q']) delete query[key];
+  for (const key of ['exclude', 'status', 'q']) delete query[key];
   return { ...query, ...viewQuery(next) };
 }
 function go(patch: Partial<ComplianceView>): void {
@@ -45,12 +48,16 @@ function go(patch: Partial<ComplianceView>): void {
 
 const profiles = ref<{ uuid: string; title: string }[]>([]);
 const status = ref<QueryStatus | 'no-profile'>('loading');
-const progress = ref<ProfileComplianceProgress>();
+/** Each profile's progress once fetched, so ticking one back on doesn't fetch it again. */
+const fetched = ref<Record<string, ProfileComplianceProgress>>({});
 
-const profileId = computed(
-  () =>
-    profiles.value.find((p) => p.uuid === view.value.profile)?.uuid ??
-    profiles.value[0]?.uuid,
+const includedIds = computed(() =>
+  profiles.value
+    .map((p) => p.uuid)
+    .filter((id) => !view.value.exclude.includes(id)),
+);
+const progress = computed(() =>
+  mergeProgress(includedIds.value.flatMap((id) => fetched.value[id] ?? [])),
 );
 
 async function loadProfiles(): Promise<void> {
@@ -75,16 +82,28 @@ async function loadProfiles(): Promise<void> {
 }
 
 let latest = 0;
-async function loadProgress(id: string): Promise<void> {
+/** Fetches the included profiles' progress not fetched yet; `fresh` fetches them all again. */
+async function loadProgress(fresh = false): Promise<void> {
   const request = ++latest;
+  const missing = includedIds.value.filter((id) => fresh || !fetched.value[id]);
+  if (!missing.length) {
+    status.value = 'ready';
+    return;
+  }
   status.value = 'loading';
   try {
-    const response = await api.get<DataResponse<ProfileComplianceProgress>>(
-      `/api/oscal/profiles/${id}/compliance-progress`,
-      { params: { includeControls: true, sspId: systemId } },
+    const responses = await Promise.all(
+      missing.map((id) =>
+        api.get<DataResponse<ProfileComplianceProgress>>(
+          `/api/oscal/profiles/${id}/compliance-progress`,
+          { params: { includeControls: true, sspId: systemId } },
+        ),
+      ),
     );
     if (request !== latest) return;
-    progress.value = response.data.data;
+    const next = { ...fetched.value };
+    missing.forEach((id, i) => (next[id] = responses[i]!.data.data));
+    fetched.value = next;
     status.value = 'ready';
   } catch (error) {
     if (request !== latest) return;
@@ -94,16 +113,23 @@ async function loadProgress(id: string): Promise<void> {
 
 async function load(): Promise<void> {
   await loadProfiles();
-  if (profileId.value) await loadProgress(profileId.value);
+  if (profiles.value.length) await loadProgress(true);
 }
 void load();
-watch(profileId, (id, previous) => {
-  if (id && previous && id !== previous) void loadProgress(id);
+watch(includedIds, (ids, previous) => {
+  if (previous && ids.join() !== previous.join()) void loadProgress();
 });
 
 const profileOptions = computed(() =>
   profiles.value.map((p) => ({ value: p.uuid, label: p.title })),
 );
+function include(ids: string[]): void {
+  go({
+    exclude: profiles.value
+      .map((p) => p.uuid)
+      .filter((id) => !ids.includes(id)),
+  });
+}
 </script>
 
 <template>
@@ -112,15 +138,12 @@ const profileOptions = computed(() =>
     :description="`How ${systemName} measures up against its profiles.`"
   >
     <template v-if="profiles.length > 1" #banner>
-      <FormField label="Profile">
-        <Select
-          :model-value="profileId ?? ''"
-          :options="profileOptions"
-          @update:model-value="
-            (value) => go({ profile: value, status: '', q: '' })
-          "
-        />
-      </FormField>
+      <CheckboxGroup
+        :model-value="includedIds"
+        legend="Include controls from"
+        :options="profileOptions"
+        @update:model-value="include"
+      />
     </template>
 
     <DataState
@@ -145,8 +168,11 @@ const profileOptions = computed(() =>
       skeleton="panel"
       @retry="load"
     >
+      <Text v-if="!includedIds.length" variant="secondary"
+        >Include the controls from at least one profile.</Text
+      >
       <ComplianceProgressView
-        v-if="progress"
+        v-else-if="progress"
         :progress="progress"
         :system-id="systemId"
       />

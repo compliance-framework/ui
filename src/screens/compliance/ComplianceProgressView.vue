@@ -45,7 +45,7 @@ const view = computed(() => readView(route.query));
 
 function withView(next: ComplianceView): LocationQueryRaw {
   const query: LocationQueryRaw = { ...route.query };
-  for (const key of ['profile', 'status', 'q']) delete query[key];
+  for (const key of ['exclude', 'status', 'q']) delete query[key];
   return { ...query, ...viewQuery(next) };
 }
 function go(patch: Partial<ComplianceView>): void {

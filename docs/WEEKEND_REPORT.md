@@ -1707,3 +1707,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   one statement, implemented by its whole-control components), then the component
   implementations counted by status as pills ("5 implemented", "2 partial", "1 planned"). The
   statement excerpt and the component-by-component lines are gone (`statementExcerpt` deleted).
+- **Compliance: "Include controls from" checkboxes instead of a Profile menu.** As on
+  Implementation, every attached profile is a checkbox, all ticked at first, and the page measures
+  the ticked ones together: a control two profiles share counts once, and the totals, groups and
+  implementation coverage are counted again from the merged controls with the API's own rules
+  (compliance = satisfied + inherited over all; assessed adds not satisfied). The API answers per
+  profile, so each ticked profile is fetched once and kept. The unticked ones are in the URL
+  (`exclude=`); the old `profile=` links now show every profile. A profile's own Compliance tab is
+  unchanged.

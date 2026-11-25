@@ -165,13 +165,19 @@ Made during the work (open to review):
   current system; record tabs are routes; tasks are listed in place rather than in a dialog.
 - **Implementation lists a row per control, by family** (2026-11-19). Three linked boxes per
   control (control → implementation → evidence) were tried first and dropped: in a list they
-  were heavy and hard to scan. Each control is one row (ItemList): ID and title, the start of its
-  statement, and at the end its risks, how much is implemented, its evidence filters and results.
+  were heavy and hard to scan. Each control is one row (ItemList), a summary (see below).
   Controls are grouped by catalog group (family), each a Disclosure, remembered open per system;
   a search opens them all. The profiles are not disclosures: "Include controls from" ticks them
   beside the search (all ticked at first); a control in several profiles shows once. Only
   top-level, current controls are listed: the API's resolved profiles include every enhancement
   and withdrawn control.
+- **Compliance includes profiles the same way** (2026-11-25). With several profiles attached,
+  "Include controls from" ticks them above the totals (all ticked at first; the unticked ones are
+  in the URL as `exclude=`, so a newly attached profile is included). The API measures one profile
+  at a time, so the page fetches each ticked profile's progress and merges them (`mergeProgress`):
+  each control once, with the totals, groups and implementation coverage counted again as the API
+  counts them. Unlike Implementation, its counts are the API's: every enhancement and withdrawn
+  control the profile resolves to (FedRAMP Low is 664 controls here).
   A control's view (a drawer) holds its parts beside their implementation, and its evidence; its
   old Edit section (the classic statements editor and the "Components and sharing" drawer, with
   AI suggestions per control, shared responsibility and per-statement risks) was removed on

@@ -29,13 +29,14 @@ const control = (
 describe('complianceView', () => {
   it('reads and writes the URL, dropping defaults and unknown statuses', () => {
     expect(readView({ status: 'bogus' })).toEqual({
-      profile: '',
+      exclude: [],
       status: '',
       q: '',
     });
-    const view = readView({ profile: 'p1', status: 'inherited', q: ' ac ' });
+    const view = readView({ exclude: 'p1,p2', status: 'inherited', q: ' ac ' });
+    expect(view.exclude).toEqual(['p1', 'p2']);
     expect(viewQuery(view)).toEqual({
-      profile: 'p1',
+      exclude: 'p1,p2',
       status: 'inherited',
       q: 'ac',
     });
@@ -52,13 +53,13 @@ describe('complianceView', () => {
     ];
     expect(
       filterControls(controls, {
-        profile: '',
+        exclude: [],
         status: 'not-satisfied',
         q: '',
       }).map((c) => c.controlId),
     ).toEqual(['ac-2']);
     expect(
-      filterControls(controls, { profile: '', status: '', q: 'policy' }).map(
+      filterControls(controls, { exclude: [], status: '', q: 'policy' }).map(
         (c) => c.controlId,
       ),
     ).toEqual(['ac-1']);
