@@ -164,4 +164,47 @@ describe('PartEditor', () => {
       expect.anything(),
     );
   });
+
+  it('leaves an inherited implementation out of the form, so saving never touches it', async () => {
+    api.put.mockClear();
+    api.delete.mockClear();
+    const own = {
+      uuid: 'bc-own',
+      componentUuid: 'okta',
+      description: 'Okta enforces it.',
+    } as ByComponent;
+    const inherited = {
+      uuid: 'bc-up',
+      componentUuid: 'platform',
+      description: '',
+      inherited: [{ uuid: 'i1', providedUuid: 'p1', description: 'From v1' }],
+    } as ByComponent;
+    const { wrapper } = mountEditor(
+      {
+        partId: 'ac-2_smt.a',
+        statement: { uuid: 'st-1', statementId: 'ac-2_smt.a' },
+        byComponents: [own, inherited],
+      },
+      { uuid: 'req-1', controlId: 'ac-2' } as ImplementedRequirement,
+    );
+    expect(wrapper.text()).toContain(
+      "The implementation inherited from platform isn't changed here.",
+    );
+    // One component form (Okta's), no unlink button for the inherited one.
+    expect(
+      wrapper
+        .findAll('button')
+        .filter((b) => b.attributes('aria-label')?.startsWith('Unlink')),
+    ).toHaveLength(1);
+    await wrapper.findAll('textarea').at(-1)!.setValue('Okta enforces MFA.');
+    await button(wrapper, 'Save').trigger('click');
+    await flushPromises();
+    expect(api.put).toHaveBeenCalledTimes(1);
+    expect(api.put).toHaveBeenCalledWith(
+      `${BASE}/req-1/statements/st-1/by-components/bc-own`,
+      expect.objectContaining({ description: 'Okta enforces MFA.' }),
+      expect.anything(),
+    );
+    expect(api.delete).not.toHaveBeenCalled();
+  });
 });

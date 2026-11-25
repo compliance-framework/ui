@@ -1725,3 +1725,13 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   status (key, group captions, status column, filter) and "Inherited implementation" for a row's
   link to the upstream system. The Satisfied filter now lists those controls too. Note the credit
   doesn't check the upstream system's evidence, only the link and this system's responsibilities.
+- **Implementation drawer: inherited implementations, read-only.** An upstream system used to
+  show as a bare name. Now, e.g. Payments' INT-NODE: "Inherited from Meridian Kubernetes Runtime
+  Platform System Security Plan" (links to its INT-NODE), "Through … Shared capabilities, version
+  1", what the platform provides, then "Your responsibility" Met, and the responsibility. INT-AZ
+  reads Not met with "Evidence: not satisfied", which is why it gets no credit. A link that has
+  drifted, been revoked or superseded gets a pill. The edit form now leaves inherited entries out:
+  before, the inherited entry's empty text blocked saving the block, and it could be unlinked.
+  Editing inheritance (subscribing, saying how a responsibility is met) is not here yet. Found
+  along the way (to-do in REDESIGN): saving whole-control remarks on an upstream system would make
+  the API duplicate its export rows.

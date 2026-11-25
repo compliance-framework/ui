@@ -68,6 +68,8 @@ function mountView(requirement = implementation) {
     editDenied: () => undefined,
     reload: vi.fn(async () => undefined),
     catalogLink: () => ({ name: 'catalog-view', params: { id: 'cat-1' } }),
+    inherited: () => undefined,
+    upstreamLink: () => ({ name: 'system-implementation' }),
   } as unknown as ControlTreeContext;
   const Host = defineComponent({
     setup() {

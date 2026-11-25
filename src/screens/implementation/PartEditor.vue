@@ -29,7 +29,8 @@ import { useControlTree } from './controlTree';
  * refreshes each time the search opens, so one made there can be linked straight away. Saving
  * creates the control's implementation and the part's statement if they don't exist yet. The API
  * can't add a component to the whole control, only to a part, so whole-control components can be
- * changed or removed.
+ * changed or removed. An inherited implementation (from an upstream system) isn't edited here:
+ * it is left out of the form and never sent, so saving can't unlink it.
  */
 const props = defineProps<{
   controlId: string;
@@ -44,6 +45,8 @@ const props = defineProps<{
 const emit = defineEmits<{ done: [] }>();
 
 const tree = useControlTree();
+const titleOf = (uuid: string) =>
+  tree.component(uuid)?.title ?? 'A component not in this plan';
 const api = useAuthenticatedInstance();
 const toast = useToast();
 
@@ -55,15 +58,21 @@ interface Row {
   description: string;
   removed: boolean;
 }
+/** Component implementations inherited from an upstream system: shown, not edited. */
+const inheritedFrom = props.byComponents
+  .filter((bc) => bc.inherited?.length)
+  .map((bc) => ({ key: bc.uuid, name: titleOf(bc.componentUuid) }));
 const rows = ref<Row[]>(
-  props.byComponents.map((bc) => ({
-    key: bc.uuid,
-    original: bc,
-    componentUuid: bc.componentUuid,
-    state: bc.implementationStatus?.state?.trim().toLowerCase() ?? '',
-    description: bc.description,
-    removed: false,
-  })),
+  props.byComponents
+    .filter((bc) => !bc.inherited?.length)
+    .map((bc) => ({
+      key: bc.uuid,
+      original: bc,
+      componentUuid: bc.componentUuid,
+      state: bc.implementationStatus?.state?.trim().toLowerCase() ?? '',
+      description: bc.description,
+      removed: false,
+    })),
 );
 const remarks = ref(props.remarks ?? '');
 const shown = computed(() => rows.value.filter((row) => !row.removed));
@@ -71,8 +80,6 @@ const errors = ref<Record<string, string>>({});
 const saving = ref(false);
 const canAdd = computed(() => Boolean(props.partId));
 
-const titleOf = (uuid: string) =>
-  tree.component(uuid)?.title ?? 'A component not in this plan';
 /** The plan's components a new row can choose: not already in this part. */
 function choices(row: Row) {
   const taken = new Set(
@@ -271,7 +278,13 @@ async function save(): Promise<void> {
         </Stack>
       </li>
     </Stack>
-    <Text v-else variant="secondary">No component implements this yet.</Text>
+    <Text v-else-if="!inheritedFrom.length" variant="secondary"
+      >No component implements this yet.</Text
+    >
+    <Text v-for="item in inheritedFrom" :key="item.key" variant="secondary"
+      >The implementation inherited from {{ item.name }} isn't changed
+      here.</Text
+    >
     <Cluster v-if="canAdd">
       <Button icon="link" size="sm" @click="link">Link a component</Button>
     </Cluster>

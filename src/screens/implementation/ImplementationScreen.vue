@@ -24,6 +24,7 @@ import { plural } from '@/ds/format';
 import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 import ProfilesField from './ProfilesField.vue';
 import { provideControlTree } from './controlTree';
+import { useInheritedImplementations } from './useInheritedImplementations';
 import { onMounted, ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -1062,6 +1063,8 @@ const controlViewOpen = dsComputed({
   },
 });
 
+const inheritedImplementations = useInheritedImplementations(selectedSspId);
+
 provideControlTree({
   sspId: () => systemStore.system.securityPlan?.uuid ?? '',
   suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
@@ -1087,6 +1090,12 @@ provideControlTree({
       ? undefined
       : "Your access doesn't include changing evidence filters.",
   newFilterLink: () => ({ name: 'dashboards.create' }),
+  inherited: inheritedImplementations.inherited,
+  upstreamLink: (sspId, controlId) => ({
+    name: 'system-implementation',
+    params: { systemId: sspId },
+    query: { control: controlId },
+  }),
   byComponentCount: controlByComponentCount,
   riskCount: controlRiskCount,
   riskSeverity: controlHighestSeverity,

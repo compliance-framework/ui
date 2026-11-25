@@ -1376,6 +1376,9 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           },
         });
       if (rest.startsWith('/risks/risk-1/')) return json(route, { data: [] });
+      // Inherited implementations (the Implementation drawer): none in these plans.
+      if (rest === '/leveraged-controls' || rest === '/responsibility-filters')
+        return json(route, { data: [] });
       if (rest === '/profiles')
         return json(route, {
           data: [

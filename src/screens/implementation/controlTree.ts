@@ -2,6 +2,7 @@ import { inject, provide, type InjectionKey } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ImplementedRequirement, SystemComponent } from '@/oscal';
 import type { Dashboard } from '@/stores/filters';
+import type { InheritedImplementation } from './useInheritedImplementations';
 
 /**
  * What the Implementation screen tells each control row, provided once rather than passed to
@@ -35,6 +36,10 @@ export interface ControlTreeContext {
   filterEditDenied: () => string | undefined;
   /** The form for a new evidence filter. */
   newFilterLink: () => RouteLocationRaw;
+  /** The implementation a component implementation inherits from an upstream system, if it does. */
+  inherited: (byComponentUuid: string) => InheritedImplementation | undefined;
+  /** Another system's implementation of a control (an upstream system's, say). */
+  upstreamLink: (sspId: string, controlId: string) => RouteLocationRaw;
   byComponentCount: (controlId: string) => number;
   riskCount: (controlId: string) => number;
   riskSeverity: (controlId: string) => 'high' | 'medium' | 'low' | undefined;

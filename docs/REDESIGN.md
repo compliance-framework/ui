@@ -98,6 +98,11 @@ confirmations and the error dialog app-wide.
 
 Small things noticed along the way, to sweep up later:
 
+- Implementation drawer: saving whole-control remarks PUTs the whole implemented requirement. On
+  an upstream system that sends its `export` back, and the API (v0.22.5, a GORM `Save` of the
+  tree) inserts the export again, since it has no uuid (see local-dev #138's
+  `sync-showcase-statements` guard). Strip `export`/`inherited`/`satisfied` from that PUT, or
+  better, have the API update remarks on their own.
 - The classic Compliance page read `uuid` from `GET /ssp/:id/profiles`, but the API returns `id`,
   so on `main` it may never find the attached profiles. The new page accepts both. Worth checking
   on `main`.
@@ -188,6 +193,16 @@ Made during the work (open to review):
   key ("4 met upstream", its own link) and the group captions, and in the status column and
   filter. "Satisfied" lists those controls too. A row's link to the upstream system reads
   "Inherited implementation".
+- **The control view shows inherited implementations** (2026-11-25), read-only. Where a
+  component implementation is inherited from an upstream system, it reads "Inherited from
+  <system>" (a link to that system's implementation of the control), the offering and version, a
+  pill if the link has drifted, been revoked or superseded, what the upstream system provides,
+  then each responsibility it leaves to this one: Met or Not met (whether this system says how it
+  meets it), its evidence when there is any, and this system's note when it adds to the
+  responsibility's text. Data: `leveraged-controls` (through `useLeveragedControls`), and each
+  upstream system's implementation, once, for the provided text (`useInheritedImplementations`).
+  The edit form leaves inherited entries out, so saving can't unlink them; subscribing, and
+  saying how a responsibility is met, are still to come.
   A control's view (a drawer) holds its parts beside their implementation, and its evidence; its
   old Edit section (the classic statements editor and the "Components and sharing" drawer, with
   AI suggestions per control, shared responsibility and per-statement risks) was removed on

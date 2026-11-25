@@ -20,18 +20,29 @@ const byComponents = [
   },
 ] as unknown as ByComponent[];
 
-function mountStatements(filters: unknown[]) {
+function mountStatements(
+  filters: unknown[],
+  items: ByComponent[] = byComponents,
+  inherited: (uuid: string) => unknown = () => undefined,
+) {
   const context = {
-    component: (uuid: string) => ({ title: uuid === 'okta' ? 'Okta' : 'AWS' }),
+    component: (uuid: string) => ({
+      title: { okta: 'Okta', aws: 'AWS' }[uuid] ?? 'Platform',
+    }),
     filters: () => filters,
+    inherited,
+    upstreamLink: () => ({ name: 'system-implementation' }),
   } as unknown as ControlTreeContext;
   const Host = defineComponent({
     setup() {
       provideControlTree(context);
-      return () => h(ComponentStatements, { controlId: 'ac-2', byComponents });
+      return () =>
+        h(ComponentStatements, { controlId: 'ac-2', byComponents: items });
     },
   });
-  return mount(Host);
+  return mount(Host, {
+    global: { stubs: { RouterLink: { template: '<a><slot /></a>' } } },
+  });
 }
 
 const rows = (wrapper: ReturnType<typeof mountStatements>) =>
@@ -54,5 +65,30 @@ describe('ComponentStatements', () => {
       { id: 'f2', name: 'SSO', components: [{ uuid: 'okta' }] },
     ]);
     expect(rows(wrapper)[0]).toContain('Evidence (2 filters)');
+  });
+
+  it('shows an inherited implementation in place of a component statement', () => {
+    const upstream = {
+      uuid: 'bc-up',
+      componentUuid: 'platform',
+      description: '',
+    } as unknown as ByComponent;
+    const wrapper = mountStatements([], [byComponents[0]!, upstream], (uuid) =>
+      uuid === 'bc-up'
+        ? {
+            upstreamSspId: 'up-1',
+            offeringTitle: 'Shared capabilities',
+            offeringVersion: 1,
+            status: 'active',
+            provided: 'Zone capacity.',
+            responsibilities: [],
+          }
+        : undefined,
+    );
+    const [own, inherited] = rows(wrapper);
+    expect(own).toContain('Okta enforces MFA.');
+    expect(inherited).toMatch(
+      /Inherited from Platform.*Shared capabilities, version 1.*Zone capacity\./,
+    );
   });
 });
